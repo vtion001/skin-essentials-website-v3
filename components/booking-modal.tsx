@@ -325,8 +325,8 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto bg-transparent border-none rounded-3xl p-0 shadow-2xl">
-        <div className="bg-[#fffaff] rounded-3xl overflow-hidden">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden bg-transparent border-none rounded-3xl p-0 shadow-2xl">
+        <div className="bg-[#fffaff] rounded-3xl overflow-hidden flex flex-col max-h-[90vh]">
           {/* Header */}
           <div className="bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] p-6">
             <DialogHeader>
@@ -343,7 +343,7 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
             </DialogHeader>
           </div>
 
-          <div className="p-6">
+          <div className="p-6 flex-1 overflow-y-auto">
             {/* Progress Indicator */}
             <div className="flex items-center justify-center mb-8">
               {[1, 2, 3].map((i) => (
@@ -371,48 +371,245 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
             {/* Step 1: Service Selection */}
             {step === 1 && (
               <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {services.map((service) => (
-                    <Card
-                      key={service.id}
-                      className={`cursor-pointer transition-all duration-300 hover:shadow-xl transform hover:scale-105 ${
-                        selectedService === service.id
-                          ? "border-[#fbc6c5] bg-gradient-to-br from-[#fbc6c5]/10 to-[#d09d80]/10 shadow-xl scale-105"
-                          : "border-gray-200 hover:border-[#fbc6c5]/50 bg-white/60 backdrop-blur-sm"
-                      } rounded-2xl overflow-hidden`}
-                      onClick={() => setSelectedService(service.id)}
-                    >
-                      <CardHeader className="pb-3">
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="text-lg font-bold text-gray-800">{service.name}</CardTitle>
-                          <div className="flex gap-2">
-                            {service.popular && (
-                              <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white">
-                                Popular
-                              </Badge>
-                            )}
-                            {service.price === "Free" && (
-                              <Badge className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white">Free</Badge>
-                            )}
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                        <p className="text-gray-600 text-sm mb-3 leading-relaxed">{service.description}</p>
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-xl bg-gradient-to-r from-[#d09d80] to-[#fbc6c5] bg-clip-text text-transparent">
-                            {service.price}
-                          </span>
-                          <span className="flex items-center text-sm text-gray-500">
-                            <Clock className="w-4 h-4 mr-1" />
-                            {service.duration}
-                          </span>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                {/* Search and Filter */}
+                <div className="mb-6">
+                  <Input
+                    placeholder="Search services..."
+                    className="border-[#fbc6c5]/30 focus:border-[#d09d80] focus:ring-[#d09d80]/20 rounded-xl py-3 px-4 bg-white/60 backdrop-blur-sm"
+                    onChange={(e) => {
+                      const searchTerm = e.target.value.toLowerCase()
+                      const filteredServices = services.filter(service => 
+                        service.name.toLowerCase().includes(searchTerm) ||
+                        service.description.toLowerCase().includes(searchTerm)
+                      )
+                      // You can implement search functionality here if needed
+                    }}
+                  />
                 </div>
-                <div className="flex justify-end">
+
+                {/* Services Grid with better organization */}
+                <div className="max-h-[60vh] overflow-y-auto pr-2 space-y-6">
+                  {/* Popular Services First */}
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                      <Star className="w-5 h-5 mr-2 text-yellow-500" />
+                      Popular Services
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {services.filter(service => service.popular).map((service) => (
+                        <Card
+                          key={service.id}
+                          className={`cursor-pointer transition-all duration-300 hover:shadow-lg transform hover:scale-[1.02] ${
+                            selectedService === service.id
+                              ? "border-[#fbc6c5] bg-gradient-to-br from-[#fbc6c5]/10 to-[#d09d80]/10 shadow-lg scale-[1.02]"
+                              : "border-gray-200 hover:border-[#fbc6c5]/50 bg-white/60 backdrop-blur-sm"
+                          } rounded-xl overflow-hidden`}
+                          onClick={() => setSelectedService(service.id)}
+                        >
+                          <CardHeader className="pb-2">
+                            <div className="flex items-start justify-between">
+                              <CardTitle className="text-base font-bold text-gray-800 leading-tight">{service.name}</CardTitle>
+                              <div className="flex gap-1 ml-2">
+                                {service.popular && (
+                                  <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs">
+                                    Popular
+                                  </Badge>
+                                )}
+                                {service.price === "Free" && (
+                                  <Badge className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-xs">Free</Badge>
+                                )}
+                              </div>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="pt-0">
+                            <p className="text-gray-600 text-xs mb-2 leading-relaxed line-clamp-2">{service.description}</p>
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold text-lg bg-gradient-to-r from-[#d09d80] to-[#fbc6c5] bg-clip-text text-transparent">
+                                {service.price}
+                              </span>
+                              <span className="flex items-center text-xs text-gray-500">
+                                <Clock className="w-3 h-3 mr-1" />
+                                {service.duration}
+                              </span>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Face Enhancement */}
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-800 mb-4">Face Enhancement</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {services.filter(service => ['nose-thread', 'face-thread', 'botox'].includes(service.id)).map((service) => (
+                        <Card
+                          key={service.id}
+                          className={`cursor-pointer transition-all duration-300 hover:shadow-lg transform hover:scale-[1.02] ${
+                            selectedService === service.id
+                              ? "border-[#fbc6c5] bg-gradient-to-br from-[#fbc6c5]/10 to-[#d09d80]/10 shadow-lg scale-[1.02]"
+                              : "border-gray-200 hover:border-[#fbc6c5]/50 bg-white/60 backdrop-blur-sm"
+                          } rounded-xl overflow-hidden`}
+                          onClick={() => setSelectedService(service.id)}
+                        >
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-base font-bold text-gray-800 leading-tight">{service.name}</CardTitle>
+                          </CardHeader>
+                          <CardContent className="pt-0">
+                            <p className="text-gray-600 text-xs mb-2 leading-relaxed line-clamp-2">{service.description}</p>
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold text-lg bg-gradient-to-r from-[#d09d80] to-[#fbc6c5] bg-clip-text text-transparent">
+                                {service.price}
+                              </span>
+                              <span className="flex items-center text-xs text-gray-500">
+                                <Clock className="w-3 h-3 mr-1" />
+                                {service.duration}
+                              </span>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Dermal Fillers */}
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-800 mb-4">Dermal Fillers</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {services.filter(service => service.id.includes('fillers')).map((service) => (
+                        <Card
+                          key={service.id}
+                          className={`cursor-pointer transition-all duration-300 hover:shadow-lg transform hover:scale-[1.02] ${
+                            selectedService === service.id
+                              ? "border-[#fbc6c5] bg-gradient-to-br from-[#fbc6c5]/10 to-[#d09d80]/10 shadow-lg scale-[1.02]"
+                              : "border-gray-200 hover:border-[#fbc6c5]/50 bg-white/60 backdrop-blur-sm"
+                          } rounded-xl overflow-hidden`}
+                          onClick={() => setSelectedService(service.id)}
+                        >
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-base font-bold text-gray-800 leading-tight">{service.name}</CardTitle>
+                          </CardHeader>
+                          <CardContent className="pt-0">
+                            <p className="text-gray-600 text-xs mb-2 leading-relaxed line-clamp-2">{service.description}</p>
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold text-lg bg-gradient-to-r from-[#d09d80] to-[#fbc6c5] bg-clip-text text-transparent">
+                                {service.price}
+                              </span>
+                              <span className="flex items-center text-xs text-gray-500">
+                                <Clock className="w-3 h-3 mr-1" />
+                                {service.duration}
+                              </span>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Skin Treatments */}
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-800 mb-4">Skin Treatments</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {services.filter(service => ['vampire-facial', 'thermage', 'face-stemcell', 'luthillo'].includes(service.id)).map((service) => (
+                        <Card
+                          key={service.id}
+                          className={`cursor-pointer transition-all duration-300 hover:shadow-lg transform hover:scale-[1.02] ${
+                            selectedService === service.id
+                              ? "border-[#fbc6c5] bg-gradient-to-br from-[#fbc6c5]/10 to-[#d09d80]/10 shadow-lg scale-[1.02]"
+                              : "border-gray-200 hover:border-[#fbc6c5]/50 bg-white/60 backdrop-blur-sm"
+                          } rounded-xl overflow-hidden`}
+                          onClick={() => setSelectedService(service.id)}
+                        >
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-base font-bold text-gray-800 leading-tight">{service.name}</CardTitle>
+                          </CardHeader>
+                          <CardContent className="pt-0">
+                            <p className="text-gray-600 text-xs mb-2 leading-relaxed line-clamp-2">{service.description}</p>
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold text-lg bg-gradient-to-r from-[#d09d80] to-[#fbc6c5] bg-clip-text text-transparent">
+                                {service.price}
+                              </span>
+                              <span className="flex items-center text-xs text-gray-500">
+                                <Clock className="w-3 h-3 mr-1" />
+                                {service.duration}
+                              </span>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Laser Treatments */}
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-800 mb-4">Laser Treatments</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {services.filter(service => service.id.includes('laser') || ['pico-laser', 'tattoo-removal', 'melasma-removal'].includes(service.id)).map((service) => (
+                        <Card
+                          key={service.id}
+                          className={`cursor-pointer transition-all duration-300 hover:shadow-lg transform hover:scale-[1.02] ${
+                            selectedService === service.id
+                              ? "border-[#fbc6c5] bg-gradient-to-br from-[#fbc6c5]/10 to-[#d09d80]/10 shadow-lg scale-[1.02]"
+                              : "border-gray-200 hover:border-[#fbc6c5]/50 bg-white/60 backdrop-blur-sm"
+                          } rounded-xl overflow-hidden`}
+                          onClick={() => setSelectedService(service.id)}
+                        >
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-base font-bold text-gray-800 leading-tight">{service.name}</CardTitle>
+                          </CardHeader>
+                          <CardContent className="pt-0">
+                            <p className="text-gray-600 text-xs mb-2 leading-relaxed line-clamp-2">{service.description}</p>
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold text-lg bg-gradient-to-r from-[#d09d80] to-[#fbc6c5] bg-clip-text text-transparent">
+                                {service.price}
+                              </span>
+                              <span className="flex items-center text-xs text-gray-500">
+                                <Clock className="w-3 h-3 mr-1" />
+                                {service.duration}
+                              </span>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Specialized Treatments */}
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-800 mb-4">Specialized Treatments</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {services.filter(service => ['orgasm-shot', 'hair-growth', 'nad-drip', 'glp1-shot'].includes(service.id)).map((service) => (
+                        <Card
+                          key={service.id}
+                          className={`cursor-pointer transition-all duration-300 hover:shadow-lg transform hover:scale-[1.02] ${
+                            selectedService === service.id
+                              ? "border-[#fbc6c5] bg-gradient-to-br from-[#fbc6c5]/10 to-[#d09d80]/10 shadow-lg scale-[1.02]"
+                              : "border-gray-200 hover:border-[#fbc6c5]/50 bg-white/60 backdrop-blur-sm"
+                          } rounded-xl overflow-hidden`}
+                          onClick={() => setSelectedService(service.id)}
+                        >
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-base font-bold text-gray-800 leading-tight">{service.name}</CardTitle>
+                          </CardHeader>
+                          <CardContent className="pt-0">
+                            <p className="text-gray-600 text-xs mb-2 leading-relaxed line-clamp-2">{service.description}</p>
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold text-lg bg-gradient-to-r from-[#d09d80] to-[#fbc6c5] bg-clip-text text-transparent">
+                                {service.price}
+                              </span>
+                              <span className="flex items-center text-xs text-gray-500">
+                                <Clock className="w-3 h-3 mr-1" />
+                                {service.duration}
+                              </span>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-4 border-t border-[#fbc6c5]/20">
                   <Button
                     onClick={() => setStep(2)}
                     disabled={!selectedService}
