@@ -65,11 +65,19 @@ export default function AdminPage() {
   const [filterStatus, setFilterStatus] = useState("all")
   const [isLoading, setIsLoading] = useState(false)
   const [notification, setNotification] = useState<{ type: "success" | "error"; message: string } | null>(null)
+  const [mounted, setMounted] = useState(false)
 
   const router = useRouter()
 
+  // Set mounted state
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   // Add authentication check
   useEffect(() => {
+    if (!mounted) return
+    
     const token = document.cookie
       .split("; ")
       .find((row) => row.startsWith("admin_token="))
@@ -78,7 +86,7 @@ export default function AdminPage() {
     if (!token || token !== "authenticated") {
       router.push("/admin/login")
     }
-  }, [router])
+  }, [router, mounted])
 
   // Add logout function
   const handleLogout = () => {
@@ -121,6 +129,8 @@ export default function AdminPage() {
 
   // Load portfolio items using shared service
   useEffect(() => {
+    if (!mounted) return
+    
     loadPortfolioItems()
 
     // Subscribe to data updates
@@ -151,7 +161,7 @@ export default function AdminPage() {
       window.removeEventListener("storage", handleStorageChange)
       window.removeEventListener("focus", handleFocus)
     }
-  }, [])
+  }, [mounted])
 
   const loadPortfolioItems = async () => {
     setIsLoading(true)
@@ -544,7 +554,7 @@ export default function AdminPage() {
           </div>
 
           {/* Portfolio Items Grid */}
-          {isLoading ? (
+          {!mounted || isLoading ? (
             <div className="flex items-center justify-center py-20">
               <RefreshCw className="w-8 h-8 animate-spin text-[#d09d80]" />
               <span className="ml-3 text-gray-600">Loading portfolio items...</span>
@@ -645,7 +655,7 @@ export default function AdminPage() {
             </div>
           )}
 
-          {filteredItems.length === 0 && !isLoading && (
+          {mounted && filteredItems.length === 0 && !isLoading && (
             <div className="text-center py-20">
               <ImageIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-gray-800 mb-2">No portfolio items found</h3>

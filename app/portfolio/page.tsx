@@ -20,19 +20,25 @@ export default function PortfolioPage() {
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
-  // Ensure portfolio data is fresh when page loads
+  // Ensure portfolio data is fresh when page loads (client-side only)
+  const [mounted, setMounted] = useState(false)
+  
   useEffect(() => {
-    // Force refresh portfolio data from localStorage
-    if (typeof window !== "undefined") {
+    setMounted(true)
+  }, [])
+  
+  useEffect(() => {
+    // Only run after component is mounted to avoid hydration mismatch
+    if (mounted && typeof window !== "undefined") {
       const { PortfolioService } = require("@/lib/portfolio-data")
       PortfolioService.forceRefresh()
     }
-  }, [])
+  }, [mounted])
 
   const handleRefresh = () => {
     setIsRefreshing(true)
     // Force refresh portfolio data
-    if (typeof window !== "undefined") {
+    if (mounted && typeof window !== "undefined") {
       window.location.reload()
     }
   }
