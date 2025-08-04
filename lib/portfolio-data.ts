@@ -279,6 +279,7 @@ const defaultPortfolioData: PortfolioItem[] = [
 // Portfolio service class for managing data with localStorage persistence
 export class PortfolioService {
   private static readonly STORAGE_KEY = "skin_essentials_portfolio_data"
+  private static readonly UPDATE_EVENT = "portfolio_data_updated"
   private static data: PortfolioItem[] = []
   private static initialized = false
 
@@ -318,12 +319,10 @@ export class PortfolioService {
         localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.data))
         console.log("Portfolio data saved to localStorage:", this.data.length, "items")
 
-        // Trigger storage event for cross-tab sync
+        // Trigger custom event for cross-component communication
         window.dispatchEvent(
-          new StorageEvent("storage", {
-            key: this.STORAGE_KEY,
-            newValue: JSON.stringify(this.data),
-            storageArea: localStorage,
+          new CustomEvent(this.UPDATE_EVENT, {
+            detail: { data: this.data },
           }),
         )
       }
@@ -477,5 +476,21 @@ export class PortfolioService {
     this.initialized = false
     this.initialize()
     console.log("Portfolio data force refreshed")
+  }
+
+  // Subscribe to data updates
+  static onUpdate(callback: (data: PortfolioItem[]) => void) {
+    if (typeof window !== "undefined") {
+      const handler = (event: CustomEvent) => {
+        callback(event.detail.data)
+      }
+      window.addEventListener(this.UPDATE_EVENT, handler as EventListener)
+
+      // Return cleanup function
+      return () => {
+        window.removeEventListener(this.UPDATE_EVENT, handler as EventListener)
+      }
+    }
+    return () => {}
   }
 }

@@ -65,26 +65,26 @@ export function PortfolioGallery() {
 
     loadItems()
 
-    // Listen for storage changes to sync with admin panel
+    // Subscribe to portfolio updates
+    const unsubscribe = PortfolioService.onUpdate((data) => {
+      console.log("Portfolio data updated, reloading gallery...")
+      const publishedItems = data.filter((item) => item.status === "published")
+      setPortfolioItems(publishedItems)
+    })
+
+    // Listen for storage changes from other tabs
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === "skin_essentials_portfolio_data") {
-        console.log("Portfolio data changed, reloading...")
+        console.log("Portfolio data changed in another tab, reloading...")
         loadItems()
       }
     }
 
-    // Listen for custom storage events (for same-tab updates)
-    const handleCustomStorageChange = () => {
-      console.log("Portfolio data changed (custom event), reloading...")
-      loadItems()
-    }
-
     window.addEventListener("storage", handleStorageChange)
-    window.addEventListener("storage", handleCustomStorageChange)
 
     return () => {
+      unsubscribe()
       window.removeEventListener("storage", handleStorageChange)
-      window.removeEventListener("storage", handleCustomStorageChange)
     }
   }, [])
 
