@@ -1,0 +1,74 @@
+Error: Hydration failed because the server rendered HTML didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <RedirectBoundary>
+      <RedirectErrorBoundary router={{...}}>
+        <InnerLayoutRouter url="/admin" tree={[...]} cacheNode={{lazyData:null, ...}} segmentPath={[...]}>
+          <ClientPageRoot Component={function AdminPage} searchParams={{}} params={{}}>
+            <AdminPage params={Promise} searchParams={Promise}>
+              <div className="min-h-scre...">
+                <SharedHeader>
+                <div className="pt-24 pb-1...">
+                  <div className="container ...">
+                    <div>
+                    <div className="grid grid-...">
+                      <Card className="bg-white/6...">
+                        <div data-slot="card" className="text-card-...">
+                          <div className="relative a...">
+                            <img
+                              alt="Nose Thread Lift Transformation"
+                              fetchPriority={undefined}
++                             loading={undefined}
+-                             loading="lazy"
+                              width={undefined}
+                              height={undefined}
+                              decoding="async"
+                              data-nimg="fill"
+                              className="object-cover transition-transform duration-300 group-hover:scale-105"
+                              style={{position:"absolute",height:"100%",width:"100%",left:0,top:0,right:0,bottom:0,objectFit:undefined, ...}}
+                              sizes={undefined}
+                              srcSet={undefined}
++                             src="data:image/jpeg;base64,/9j/4AAUSkZJRgABAQEBLAEsAABBTVBG/+EsQkV4aWYAAE1NACoAAAAIAAwB..."
+-                             src={"/placeholder.svg?height=400&width=400"}
+                              ref={function}
+                              onLoad={function onLoad}
+                              onError={function onError}
+                            >
+                            ...
+                          <CardContent className="p-4">
+                            <div data-slot="card-content" className="p-4">
+                              <h3>
+                              <p className="text-sm text-gray-600 mb-3 line-clamp-2">
++                               Complete nose reshaping using PDO threads for natural-looking enhancement
+-                               Complete nose reshaping using PDO threads for natural-looking enhancement. Professional...
+                              ...
+                      ...
+                ...
+          ...
+
+    at throwOnHydrationMismatch (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@15.2.4_react-dom@19.0.0_react@19.0.0__react@19.0.0/node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:13311:11)
+    at prepareToHydrateHostInstance (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@15.2.4_react-dom@19.0.0_react@19.0.0__react@19.0.0/node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:13407:21)
+    at completeWork (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@15.2.4_react-dom@19.0.0_react@19.0.0__react@19.0.0/node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:13745:15)
+    at runWithFiberInDEV (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@15.2.4_react-dom@19.0.0_react@19.0.0__react@19.0.0/node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:1511:30)
+    at completeUnitOfWork (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@15.2.4_react-dom@19.0.0_react@19.0.0__react@19.0.0/node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:15256:19)
+    at performUnitOfWork (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@15.2.4_react-dom@19.0.0_react@19.0.0__react@19.0.0/node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:15137:11)
+    at workLoopConcurrentByScheduler (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@15.2.4_react-dom@19.0.0_react@19.0.0__react@19.0.0/node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:15114:9)
+    at renderRootConcurrent (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@15.2.4_react-dom@19.0.0_react@19.0.0__react@19.0.0/node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:15089:15)
+    at performWorkOnRoot (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@15.2.4_react-dom@19.0.0_react@19.0.0__react@19.0.0/node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:14410:13)
+    at performWorkOnRootViaSchedulerTask (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@15.2.4_react-dom@19.0.0_react@19.0.0__react@19.0.0/node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:16275:7)
+    at MessagePort.performWorkUntilDeadline (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@15.2.4_react-dom@19.0.0_react@19.0.0__react@19.0.0/node_modules/next/dist/compiled/scheduler/cjs/scheduler.development.js:45:48)
+    at p (<anonymous>)
+    at eval (webpack-internal:///(app-pages-browser)/./app/admin/page.tsx:1122:124)
+    at Array.map (<anonymous>)
+    at AdminPage (webpack-internal:///(app-pages-browser)/./app/admin/page.tsx:1001:53)
+    at ClientPageRoot (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@15.2.4_react-dom@19.0.0_react@19.0.0__react@19.0.0/node_modules/next/dist/client/components/client-page.js:20:50)
