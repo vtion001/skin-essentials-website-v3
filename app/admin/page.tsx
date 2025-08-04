@@ -117,12 +117,42 @@ export default function AdminPage() {
   // Load portfolio items using shared service
   useEffect(() => {
     loadPortfolioItems()
+
+    // Subscribe to data updates
+    const unsubscribe = PortfolioService.onUpdate((data) => {
+      console.log("Admin: Portfolio data updated, reloading...")
+      setPortfolioItems(data)
+    })
+
+    // Listen for storage changes from other tabs/windows
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "skin_essentials_portfolio_data") {
+        console.log("Admin: Portfolio data changed in another tab, reloading...")
+        loadPortfolioItems()
+      }
+    }
+
+    // Listen for focus events to reload data when returning to tab
+    const handleFocus = () => {
+      console.log("Admin: Window focused, reloading portfolio data...")
+      loadPortfolioItems()
+    }
+
+    window.addEventListener("storage", handleStorageChange)
+    window.addEventListener("focus", handleFocus)
+
+    return () => {
+      unsubscribe()
+      window.removeEventListener("storage", handleStorageChange)
+      window.removeEventListener("focus", handleFocus)
+    }
   }, [])
 
   const loadPortfolioItems = async () => {
     setIsLoading(true)
     try {
-      // Use the shared portfolio service
+      // Force refresh from localStorage to ensure we have the latest data
+      PortfolioService.forceRefresh()
       const items = PortfolioService.getAllItems()
       setPortfolioItems(items)
     } catch (error) {

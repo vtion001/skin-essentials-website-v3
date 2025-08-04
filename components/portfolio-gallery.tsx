@@ -50,15 +50,16 @@ export function PortfolioGallery() {
   const loadItems = () => {
     setIsLoading(true)
     try {
-      const items = PortfolioService.getPublishedItems()
-      setPortfolioItems(items)
-      setFilteredItems(items)
-      console.log("Portfolio gallery loaded:", items.length, "published items")
+      // Force refresh from localStorage to ensure we have the latest data
+      PortfolioService.forceRefresh()
+      const publishedItems = PortfolioService.getPublishedItems()
+      console.log("Loading portfolio items:", publishedItems.length)
+      setPortfolioItems(publishedItems)
+      setFilteredItems(publishedItems)
     } catch (error) {
       console.error("Error loading portfolio items:", error)
     } finally {
       setIsLoading(false)
-      setIsRefreshing(false)
     }
   }
 
@@ -66,6 +67,7 @@ export function PortfolioGallery() {
   useEffect(() => {
     loadItems()
 
+    // Subscribe to data updates from the shared service
     const unsubscribe = PortfolioService.onUpdate((data) => {
       console.log("Portfolio data updated, reloading gallery...")
       const publishedItems = data.filter((item) => item.status === "published")
@@ -73,7 +75,7 @@ export function PortfolioGallery() {
       setFilteredItems(publishedItems) // Also update filteredItems immediately
     })
 
-    // Listen for storage changes from other tabs
+    // Listen for storage changes from other tabs/windows
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === "skin_essentials_portfolio_data") {
         console.log("Portfolio data changed in another tab, reloading...")
@@ -81,12 +83,20 @@ export function PortfolioGallery() {
       }
     }
 
+    // Listen for focus events to reload data when returning to tab
+    const handleFocus = () => {
+      console.log("Window focused, reloading portfolio data...")
+      loadItems()
+    }
+
     window.addEventListener("storage", handleStorageChange)
+    window.addEventListener("focus", handleFocus)
     document.addEventListener("visibilitychange", handleVisibilityChange)
 
     return () => {
       unsubscribe()
       window.removeEventListener("storage", handleStorageChange)
+      window.removeEventListener("focus", handleFocus)
       document.removeEventListener("visibilitychange", handleVisibilityChange)
     }
   }, [])

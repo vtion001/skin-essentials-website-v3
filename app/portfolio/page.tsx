@@ -20,6 +20,15 @@ export default function PortfolioPage() {
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
+  // Ensure portfolio data is fresh when page loads
+  useEffect(() => {
+    // Force refresh portfolio data from localStorage
+    if (typeof window !== "undefined") {
+      const { PortfolioService } = require("@/lib/portfolio-data")
+      PortfolioService.forceRefresh()
+    }
+  }, [])
+
   const handleRefresh = () => {
     setIsRefreshing(true)
     // Force refresh portfolio data
