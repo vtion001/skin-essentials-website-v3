@@ -355,14 +355,10 @@ export function PortfolioGallery() {
                     <span className="font-semibold text-[#d09d80] text-lg">{item.price}</span>
                   </div>
 
-                  <div className="flex items-center justify-between text-sm text-gray-500">
+                  <div className="flex items-center text-sm text-gray-500">
                     <span className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
                       {new Date(item.date).toLocaleDateString()}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <User className="w-4 h-4" />
-                      Age {item.clientAge}
                     </span>
                   </div>
 
@@ -504,17 +500,11 @@ export function PortfolioGallery() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-sm font-medium text-gray-700">Treatment Date</Label>
-                      <p className="text-lg font-semibold text-gray-900">
-                        {new Date(selectedItem.date).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div>
-                      <Label className="text-sm font-medium text-gray-700">Client Age</Label>
-                      <p className="text-lg font-semibold text-gray-900">{selectedItem.clientAge} years</p>
-                    </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700">Treatment Date</Label>
+                    <p className="text-lg font-semibold text-gray-900">
+                      {new Date(selectedItem.date).toLocaleDateString()}
+                    </p>
                   </div>
 
                   <div>

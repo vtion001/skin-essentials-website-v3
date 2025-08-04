@@ -11,7 +11,6 @@ export interface PortfolioItem {
   date: string
   rating: number
   tags: string[]
-  clientAge: string
   results: string[]
   testimonial?: string
   clientInitials?: string
@@ -35,7 +34,6 @@ const defaultPortfolioData: PortfolioItem[] = [
     date: "2024-01-15",
     rating: 5,
     tags: ["Non-surgical", "Instant results", "Natural looking"],
-    clientAge: "28",
     results: ["Higher nose bridge", "Defined tip", "Improved profile"],
     testimonial: "I'm absolutely amazed by the results! My nose looks so much better and natural. The treatment was professional and comfortable.",
     clientInitials: "M.S.",
@@ -56,7 +54,6 @@ const defaultPortfolioData: PortfolioItem[] = [
     date: "2024-01-10",
     rating: 5,
     tags: ["Anti-aging", "Lifting", "Contouring"],
-    clientAge: "35",
     results: ["Lifted cheeks", "Defined jawline", "Reduced sagging"],
     testimonial: "The lifting effect is incredible! I look 10 years younger.",
     clientInitials: "A.R.",

@@ -111,7 +111,6 @@ export default function AdminPage() {
     date: new Date().toISOString().split("T")[0],
     rating: 5,
     tags: [],
-    clientAge: "",
     results: [],
     testimonial: "",
     clientInitials: "",
@@ -274,7 +273,6 @@ export default function AdminPage() {
       date: new Date().toISOString().split("T")[0],
       rating: 5,
       tags: [],
-      clientAge: "",
       results: [],
       testimonial: "",
       clientInitials: "",
@@ -805,26 +803,14 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="date">Date</Label>
-                    <Input
-                      id="date"
-                      type="date"
-                      value={formData.date}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, date: e.target.value }))}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="clientAge">Client Age</Label>
-                    <Input
-                      id="clientAge"
-                      value={formData.clientAge}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, clientAge: e.target.value }))}
-                      placeholder="e.g., 28"
-                    />
-                  </div>
+                <div>
+                  <Label htmlFor="date">Date</Label>
+                  <Input
+                    id="date"
+                    type="date"
+                    value={formData.date}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, date: e.target.value }))}
+                  />
                 </div>
 
                 <div>
