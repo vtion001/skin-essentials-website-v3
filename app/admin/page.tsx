@@ -1006,15 +1006,9 @@ export default function AdminPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-sm font-medium text-gray-700">Date</Label>
-                      <p className="text-gray-900">{new Date(selectedItem.date).toLocaleDateString()}</p>
-                    </div>
-                    <div>
-                      <Label className="text-sm font-medium text-gray-700">Client Age</Label>
-                      <p className="text-gray-900">{selectedItem.clientAge || 'Not specified'}</p>
-                    </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700">Date</Label>
+                    <p className="text-gray-900">{new Date(selectedItem.date).toLocaleDateString()}</p>
                   </div>
 
                   <div>
