@@ -28,6 +28,8 @@ import {
   Search,
   Filter,
   RefreshCw,
+  Sparkles,
+  Loader2,
 } from "lucide-react"
 import Image from "next/image"
 import { SharedHeader } from "@/components/shared-header"
@@ -113,6 +115,9 @@ export default function AdminPage() {
   const [afterImageFile, setAfterImageFile] = useState<File | null>(null)
   const [beforeImagePreview, setBeforeImagePreview] = useState<string>("")
   const [afterImagePreview, setAfterImagePreview] = useState<string>("")
+
+  // AI generation states
+  const [isGeneratingDescription, setIsGeneratingDescription] = useState(false)
 
   // Load portfolio items using shared service
   useEffect(() => {
@@ -276,6 +281,77 @@ export default function AdminPage() {
   const showNotification = (type: "success" | "error", message: string) => {
     setNotification({ type, message })
     setTimeout(() => setNotification(null), 5000)
+  }
+
+  // AI description generation
+  const generateAIDescription = async () => {
+    if (!formData.title || !formData.category) {
+      showNotification("error", "Please provide a title and category first")
+      return
+    }
+
+    setIsGeneratingDescription(true)
+    try {
+      // Simulate AI generation with a realistic delay
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      // Generate description based on service type and category
+      const serviceDescriptions = {
+        "Thread Lifts": {
+          "Nose Enhancement": "Professional nose thread lift treatment using premium PDO threads for natural-looking enhancement. Achieve a higher nose bridge, refined tip, and improved facial profile without surgery. Quick procedure with immediate results and minimal downtime.",
+          "Face Contouring": "Advanced face thread lift procedure for dramatic lifting and V-shaped contouring. Using specialized lifting threads to target sagging areas, restore facial volume, and create a more youthful appearance with natural-looking results.",
+          "Eyebrow Lift": "Subtle eyebrow thread lift treatment for a more youthful and alert appearance. Using precision thread placement to lift drooping brows, open up the eye area, and create a naturally refreshed look."
+        },
+        "Dermal Fillers": {
+          "Lip Enhancement": "Professional lip filler treatment using premium hyaluronic acid for natural volume enhancement. Achieve fuller, more defined lips with beautiful shape and hydration. Expert injection technique ensures natural-looking results.",
+          "Cheek Enhancement": "Advanced cheek filler treatment for enhanced definition and youthful volume. Using premium dermal fillers to restore cheek fullness, improve facial balance, and create a naturally lifted appearance.",
+          "Body Contouring": "Non-surgical body contouring using advanced dermal filler techniques. Achieve enhanced curves and improved body proportions with professional treatment and natural-looking results."
+        },
+        "Skin Treatments": {
+          "Anti-Aging": "Comprehensive anti-aging treatment for smoother, younger-looking skin. Advanced techniques to reduce fine lines, improve skin texture, and restore natural radiance for a refreshed, youthful complexion.",
+          "Acne Treatment": "Professional acne treatment program designed for clear, healthy skin. Comprehensive approach targeting active breakouts, preventing future blemishes, and improving overall skin texture and confidence.",
+          "Pigmentation": "Advanced pigmentation treatment for even, radiant skin tone. Professional techniques to reduce dark spots, melasma, and uneven pigmentation for a naturally glowing complexion."
+        },
+        "Laser Treatments": {
+          "Hair Removal": "Professional laser hair removal treatment for smooth, hair-free skin. Advanced laser technology for long-lasting results with minimal discomfort and quick treatment sessions.",
+          "Skin Resurfacing": "Advanced laser skin resurfacing for improved texture and radiance. Professional treatment to reduce fine lines, improve skin tone, and achieve a smoother, more youthful complexion.",
+          "Tattoo Removal": "Professional laser tattoo removal using advanced technology. Safe and effective treatment for complete tattoo removal with minimal scarring and optimal results."
+        },
+        "Botox": {
+          "Wrinkle Reduction": "Professional Botox treatment for smooth, natural-looking results. Expert injection technique to reduce fine lines and wrinkles while maintaining natural facial expressions and movement.",
+          "Facial Contouring": "Advanced Botox treatment for facial contouring and refinement. Precise injection techniques to enhance facial features and create a more defined, youthful appearance."
+        },
+        "Specialized Treatments": {
+          "Hair Growth": "Advanced hair growth treatment for thicker, fuller hair. Comprehensive program using proven techniques to stimulate hair growth, reduce hair loss, and improve overall hair health and density.",
+          "Body Enhancement": "Professional body enhancement treatment for improved confidence and natural results. Advanced techniques tailored to individual needs for optimal body contouring and enhancement.",
+          "Wellness": "Comprehensive wellness treatment focusing on overall health and beauty. Professional approach to enhance natural radiance, improve skin health, and boost confidence from within."
+        }
+      }
+
+      const categoryDescriptions = serviceDescriptions[formData.category as keyof typeof serviceDescriptions]
+      let generatedDescription = ""
+
+      if (categoryDescriptions && formData.subcategory) {
+        generatedDescription = categoryDescriptions[formData.subcategory as keyof typeof categoryDescriptions] || ""
+      }
+
+      // Fallback generic description if specific one not found
+      if (!generatedDescription) {
+        generatedDescription = `Professional ${formData.category.toLowerCase()} treatment with excellent results. Expert technique and premium products ensure natural-looking enhancement with minimal downtime. Achieve your beauty goals with our specialized ${formData.title.toLowerCase()} procedure.`
+      }
+
+      // Update form data
+      setFormData(prev => ({
+        ...prev,
+        description: generatedDescription
+      }))
+
+      showNotification("success", "AI description generated successfully!")
+    } catch (error) {
+      showNotification("error", "Failed to generate description. Please try again.")
+    } finally {
+      setIsGeneratingDescription(false)
+    }
   }
 
   // Open edit modal
@@ -666,15 +742,35 @@ export default function AdminPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="description">Description *</Label>
+                  <div className="flex items-center justify-between mb-2">
+                    <Label htmlFor="description">Description *</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={generateAIDescription}
+                      disabled={isGeneratingDescription || !formData.title || !formData.category}
+                      className="border-[#fbc6c5]/30 text-[#d09d80] hover:bg-[#fbc6c5]/10"
+                    >
+                      {isGeneratingDescription ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-4 h-4 mr-2" />
+                      )}
+                      {isGeneratingDescription ? "Generating..." : "Generate with AI"}
+                    </Button>
+                  </div>
                   <Textarea
                     id="description"
                     value={formData.description}
                     onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
-                    placeholder="Describe the treatment and results..."
-                    rows={3}
+                    placeholder="Describe the treatment and results... or click 'Generate with AI' for automatic description"
+                    rows={4}
                     required
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    💡 Tip: Fill in the title and category first, then use AI to generate a professional description
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
