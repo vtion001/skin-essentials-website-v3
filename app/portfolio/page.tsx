@@ -7,10 +7,12 @@ import { MobileNav } from "@/components/mobile-nav"
 import { PullToRefresh } from "@/components/pull-to-refresh"
 import { PortfolioGallery } from "@/components/portfolio-gallery"
 import { SharedHeader } from "@/components/shared-header"
+import { BookingModal } from "@/components/booking-modal"
 
 export default function PortfolioPage() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [isBookingOpen, setIsBookingOpen] = useState(false)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -84,7 +86,11 @@ export default function PortfolioPage() {
               Join thousands of satisfied clients who have achieved their beauty goals with our expert treatments.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="text-[#d09d80] hover:bg-white/90 px-8 py-3 text-lg font-semibold">
+              <Button 
+                size="lg" 
+                onClick={() => setIsBookingOpen(true)}
+                className="text-[#d09d80] hover:bg-white/90 px-8 py-3 text-lg font-semibold"
+              >
                 <Phone className="w-5 h-5 mr-2" />
                 Book Free Consultation
               </Button>
@@ -101,6 +107,9 @@ export default function PortfolioPage() {
 
         {/* Mobile Bottom Navigation */}
         <MobileNav />
+
+        {/* Booking Modal */}
+        <BookingModal isOpen={isBookingOpen} onClose={() => setIsBookingOpen(false)} />
       </div>
     </PullToRefresh>
   )
