@@ -45,31 +45,32 @@ export function PortfolioGallery() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
-  // Load portfolio items on component mount
-  useEffect(() => {
-    const loadItems = () => {
-      setIsLoading(true)
-      try {
-        // Get only published items for public display
-        const items = PortfolioService.getPublishedItems()
-        setPortfolioItems(items)
-        setFilteredItems(items)
-        console.log("Portfolio gallery loaded:", items.length, "published items")
-      } catch (error) {
-        console.error("Error loading portfolio items:", error)
-      } finally {
-        setIsLoading(false)
-      }
+  const loadItems = () => {
+    setIsLoading(true)
+    try {
+      const items = PortfolioService.getPublishedItems()
+      setPortfolioItems(items)
+      setFilteredItems(items)
+      console.log("Portfolio gallery loaded:", items.length, "published items")
+    } catch (error) {
+      console.error("Error loading portfolio items:", error)
+    } finally {
+      setIsLoading(false)
+      setIsRefreshing(false)
     }
+  }
 
+  // Load portfolio items on component mount and set up subscriptions
+  useEffect(() => {
     loadItems()
 
-    // Subscribe to portfolio updates
     const unsubscribe = PortfolioService.onUpdate((data) => {
       console.log("Portfolio data updated, reloading gallery...")
       const publishedItems = data.filter((item) => item.status === "published")
       setPortfolioItems(publishedItems)
+      setFilteredItems(publishedItems) // Also update filteredItems immediately
     })
 
     // Listen for storage changes from other tabs
@@ -81,10 +82,12 @@ export function PortfolioGallery() {
     }
 
     window.addEventListener("storage", handleStorageChange)
+    document.addEventListener("visibilitychange", handleVisibilityChange)
 
     return () => {
       unsubscribe()
       window.removeEventListener("storage", handleStorageChange)
+      document.removeEventListener("visibilitychange", handleVisibilityChange)
     }
   }, [])
 
@@ -132,22 +135,27 @@ export function PortfolioGallery() {
     setCurrentImageIndex((prev) => (prev === 1 ? 0 : 1))
   }
 
-  const refreshData = () => {
-    setIsLoading(true)
-    try {
-      PortfolioService.forceRefresh()
-      const items = PortfolioService.getPublishedItems()
-      setPortfolioItems(items)
-      setFilteredItems(items)
-      console.log("Portfolio data manually refreshed")
-    } catch (error) {
-      console.error("Error refreshing portfolio data:", error)
-    } finally {
-      setIsLoading(false)
+  // Force refresh and update state
+  const handleRefresh = () => {
+    setIsRefreshing(true)
+    PortfolioService.forceRefresh()
+    // The onUpdate subscription should handle the data update and re-render
+    // We'll let the subscription trigger loadItems or directly update state
+    // For immediate feedback, we can call loadItems here as well, but the subscription is the primary mechanism.
+    // Let's rely on the subscription for now to avoid duplicate operations.
+    // If subscription logic is delayed, uncommenting loadItems() might be useful.
+    // loadItems()
+  }
+
+  // Reload data when the tab becomes visible again
+  const handleVisibilityChange = () => {
+    if (document.visibilityState === "visible") {
+      console.log("Tab became visible, checking for updates...")
+      loadItems()
     }
   }
 
-  if (isLoading) {
+  if (isLoading && !isRefreshing) {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#d09d80]"></div>
@@ -198,12 +206,13 @@ export function PortfolioGallery() {
 
         <div className="flex items-center gap-2">
           <Button
+            onClick={handleRefresh}
             variant="outline"
             size="sm"
-            onClick={refreshData}
-            className="border-[#fbc6c5]/30 text-gray-600 hover:bg-[#fbc6c5]/10 bg-transparent"
+            className="border-[#fbc6c5]/30 text-gray-700 hover:bg-[#fbc6c5]/10 bg-transparent"
+            disabled={isRefreshing}
           >
-            <RefreshCw className="w-4 h-4 mr-2" />
+            <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
             Refresh
           </Button>
           <Button

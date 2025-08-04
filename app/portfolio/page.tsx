@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Phone } from "lucide-react"
+import { Phone, RefreshCw } from "lucide-react"
 import { MobileNav } from "@/components/mobile-nav"
 import { PullToRefresh } from "@/components/pull-to-refresh"
 import { PortfolioGallery } from "@/components/portfolio-gallery"
@@ -10,6 +10,7 @@ import { SharedHeader } from "@/components/shared-header"
 
 export default function PortfolioPage() {
   const [isScrolled, setIsScrolled] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -18,6 +19,14 @@ export default function PortfolioPage() {
     window.addEventListener("scroll", handleScroll)
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
+
+  const handleRefresh = () => {
+    setIsRefreshing(true)
+    // Force refresh portfolio data
+    if (typeof window !== "undefined") {
+      window.location.reload()
+    }
+  }
 
   return (
     <PullToRefresh>
@@ -31,6 +40,19 @@ export default function PortfolioPage() {
 
         {/* Shared Header */}
         <SharedHeader showBackButton={true} backHref="/" />
+        
+        {/* Refresh Button */}
+        <div className="fixed top-24 right-4 z-50 md:hidden">
+          <Button
+            onClick={handleRefresh}
+            variant="outline"
+            size="sm"
+            className="bg-white/80 backdrop-blur-sm border-[#fbc6c5]/30 text-gray-700 hover:bg-[#fbc6c5]/10"
+            disabled={isRefreshing}
+          >
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
+          </Button>
+        </div>
 
         {/* Main Content */}
         <main className="pt-24 pb-12 px-4 relative z-10">
