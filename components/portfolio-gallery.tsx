@@ -1,12 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
 import {
   Search,
   Filter,
@@ -14,11 +15,13 @@ import {
   Calendar,
   Clock,
   User,
+  Quote,
+  X,
   ChevronLeft,
   ChevronRight,
-  Heart,
-  Share2,
-  Eye,
+  Grid,
+  List,
+  RefreshCw,
 } from "lucide-react"
 import Image from "next/image"
 import { PortfolioService, type PortfolioItem } from "@/lib/portfolio-data"
@@ -35,10 +38,11 @@ const categories = [
 export function PortfolioGallery() {
   const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([])
   const [filteredItems, setFilteredItems] = useState<PortfolioItem[]>([])
+  const [selectedCategory, setSelectedCategory] = useState("all")
+  const [searchQuery, setSearchQuery] = useState("")
   const [selectedItem, setSelectedItem] = useState<PortfolioItem | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState("all")
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
 
@@ -46,25 +50,67 @@ export function PortfolioGallery() {
   useEffect(() => {
     const loadItems = () => {
       setIsLoading(true)
-      // Get only published items for public portfolio
-      const items = PortfolioService.getPublishedItems()
-      setPortfolioItems(items)
-      setFilteredItems(items)
-      setIsLoading(false)
+      try {
+        // Get only published items for public display
+        const items = PortfolioService.getPublishedItems()
+        setPortfolioItems(items)
+        setFilteredItems(items)
+        console.log("Portfolio gallery loaded:", items.length, "published items")
+      } catch (error) {
+        console.error("Error loading portfolio items:", error)
+      } finally {
+        setIsLoading(false)
+      }
     }
 
     loadItems()
+
+    // Listen for storage changes to sync with admin panel
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "skin_essentials_portfolio_data") {
+        console.log("Portfolio data changed, reloading...")
+        loadItems()
+      }
+    }
+
+    // Listen for custom storage events (for same-tab updates)
+    const handleCustomStorageChange = () => {
+      console.log("Portfolio data changed (custom event), reloading...")
+      loadItems()
+    }
+
+    window.addEventListener("storage", handleStorageChange)
+    window.addEventListener("storage", handleCustomStorageChange)
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange)
+      window.removeEventListener("storage", handleCustomStorageChange)
+    }
   }, [])
 
-  // Filter items based on search and category
+  // Filter items based on category and search
   useEffect(() => {
-    const filtered = PortfolioService.filterItems({
-      category: selectedCategory,
-      status: "published", // Only show published items
-      search: searchQuery,
-    })
+    let filtered = portfolioItems
+
+    // Filter by category
+    if (selectedCategory !== "all") {
+      filtered = filtered.filter((item) => item.category === selectedCategory)
+    }
+
+    // Filter by search query
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase()
+      filtered = filtered.filter(
+        (item) =>
+          item.title.toLowerCase().includes(query) ||
+          item.description.toLowerCase().includes(query) ||
+          item.tags.some((tag) => tag.toLowerCase().includes(query)) ||
+          item.category.toLowerCase().includes(query),
+      )
+    }
+
     setFilteredItems(filtered)
-  }, [searchQuery, selectedCategory, portfolioItems])
+  }, [portfolioItems, selectedCategory, searchQuery])
 
   const openModal = (item: PortfolioItem) => {
     setSelectedItem(item)
@@ -79,24 +125,26 @@ export function PortfolioGallery() {
   }
 
   const nextImage = () => {
-    if (selectedItem) {
-      setCurrentImageIndex(currentImageIndex === 0 ? 1 : 0)
-    }
+    setCurrentImageIndex((prev) => (prev === 0 ? 1 : 0))
   }
 
   const prevImage = () => {
-    if (selectedItem) {
-      setCurrentImageIndex(currentImageIndex === 0 ? 1 : 0)
+    setCurrentImageIndex((prev) => (prev === 1 ? 0 : 1))
+  }
+
+  const refreshData = () => {
+    setIsLoading(true)
+    try {
+      PortfolioService.forceRefresh()
+      const items = PortfolioService.getPublishedItems()
+      setPortfolioItems(items)
+      setFilteredItems(items)
+      console.log("Portfolio data manually refreshed")
+    } catch (error) {
+      console.error("Error refreshing portfolio data:", error)
+    } finally {
+      setIsLoading(false)
     }
-  }
-
-  const getCurrentImage = () => {
-    if (!selectedItem) return ""
-    return currentImageIndex === 0 ? selectedItem.beforeImage : selectedItem.afterImage
-  }
-
-  const getCurrentImageLabel = () => {
-    return currentImageIndex === 0 ? "Before" : "After"
   }
 
   if (isLoading) {
@@ -112,315 +160,405 @@ export function PortfolioGallery() {
     <div className="space-y-8">
       {/* Header */}
       <div className="text-center">
-        <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-          Our{" "}
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#fbc6c5] to-[#d09d80]">Portfolio</span>
-        </h1>
-        <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-          Discover the amazing transformations of our satisfied clients. Each result tells a story of confidence,
-          beauty, and excellence.
+        <h2 className="text-4xl font-bold text-gray-900 mb-4">Our Portfolio</h2>
+        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          Discover the amazing transformations we've achieved for our clients. Each result tells a story of confidence,
+          beauty, and satisfaction.
         </p>
       </div>
 
-      {/* Search and Filter */}
-      <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-          <Input
-            placeholder="Search treatments, results..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 border-[#fbc6c5]/30 focus:border-[#d09d80] focus:ring-[#d09d80]/20 bg-white/80 backdrop-blur-sm"
-          />
+      {/* Filters and Search */}
+      <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
+        <div className="flex items-center gap-4 w-full lg:w-auto">
+          <div className="relative flex-1 lg:w-80">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Input
+              placeholder="Search treatments, results, or categories..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 border-[#fbc6c5]/30 focus:border-[#d09d80] focus:ring-[#d09d80]/20"
+            />
+          </div>
+
+          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <SelectTrigger className="w-48 border-[#fbc6c5]/30">
+              <Filter className="w-4 h-4 mr-2" />
+              <SelectValue placeholder="All Categories" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              {categories.map((category) => (
+                <SelectItem key={category} value={category}>
+                  {category}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-          <SelectTrigger className="w-full md:w-64 border-[#fbc6c5]/30 bg-white/80 backdrop-blur-sm">
-            <Filter className="w-4 h-4 mr-2" />
-            <SelectValue placeholder="Filter by category" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
-            {categories.map((category) => (
-              <SelectItem key={category} value={category}>
-                {category}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={refreshData}
+            className="border-[#fbc6c5]/30 text-gray-600 hover:bg-[#fbc6c5]/10 bg-transparent"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refresh
+          </Button>
+          <Button
+            variant={viewMode === "grid" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setViewMode("grid")}
+            className={
+              viewMode === "grid"
+                ? "bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] text-white"
+                : "border-[#fbc6c5]/30 text-gray-600 hover:bg-[#fbc6c5]/10"
+            }
+          >
+            <Grid className="w-4 h-4" />
+          </Button>
+          <Button
+            variant={viewMode === "list" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setViewMode("list")}
+            className={
+              viewMode === "list"
+                ? "bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] text-white"
+                : "border-[#fbc6c5]/30 text-gray-600 hover:bg-[#fbc6c5]/10"
+            }
+          >
+            <List className="w-4 h-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Results Count */}
-      <div className="text-center">
+      <div className="flex items-center justify-between">
         <p className="text-gray-600">
-          Showing <span className="font-semibold text-[#d09d80]">{filteredItems.length}</span> amazing transformations
+          Showing <span className="font-semibold text-[#d09d80]">{filteredItems.length}</span> result
+          {filteredItems.length !== 1 ? "s" : ""}
+          {selectedCategory !== "all" && (
+            <>
+              {" "}
+              in <span className="font-semibold">{selectedCategory}</span>
+            </>
+          )}
         </p>
+        {(selectedCategory !== "all" || searchQuery) && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setSelectedCategory("all")
+              setSearchQuery("")
+            }}
+            className="border-[#fbc6c5]/30 text-gray-600 hover:bg-[#fbc6c5]/10"
+          >
+            Clear Filters
+          </Button>
+        )}
       </div>
 
-      {/* Portfolio Grid */}
-      {filteredItems.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      {/* Portfolio Grid/List */}
+      {filteredItems.length === 0 ? (
+        <div className="text-center py-20">
+          <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-[#fbc6c5]/20 to-[#d09d80]/20 rounded-full flex items-center justify-center">
+            <Search className="w-12 h-12 text-[#d09d80]/60" />
+          </div>
+          <h3 className="text-2xl font-semibold text-gray-800 mb-2">No results found</h3>
+          <p className="text-gray-600 mb-6">
+            {searchQuery || selectedCategory !== "all"
+              ? "Try adjusting your search criteria or browse all categories"
+              : "Our portfolio is being updated. Please check back soon!"}
+          </p>
+          <Button
+            onClick={() => {
+              setSelectedCategory("all")
+              setSearchQuery("")
+            }}
+            className="bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] hover:from-[#d09d80] hover:to-[#fbc6c5] text-white"
+          >
+            View All Treatments
+          </Button>
+        </div>
+      ) : (
+        <div
+          className={
+            viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8" : "space-y-6"
+          }
+        >
           {filteredItems.map((item) => (
             <Card
               key={item.id}
-              className="group cursor-pointer bg-white/60 backdrop-blur-sm border border-[#fbc6c5]/20 shadow-lg hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden"
+              className={`group cursor-pointer bg-white/60 backdrop-blur-sm border border-[#fbc6c5]/20 shadow-lg hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden ${
+                viewMode === "list" ? "flex flex-col md:flex-row" : ""
+              }`}
               onClick={() => openModal(item)}
             >
-              <div className="relative aspect-[4/3] overflow-hidden">
+              <div
+                className={`relative overflow-hidden ${
+                  viewMode === "list" ? "md:w-80 aspect-[4/3] md:aspect-auto" : "aspect-[4/3]"
+                }`}
+              >
                 <Image
                   src={item.afterImage || "/placeholder.svg"}
                   alt={item.title}
                   fill
                   className="object-cover transition-transform duration-300 group-hover:scale-105"
                 />
-
-                {/* Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-                {/* View Button */}
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <Button size="sm" className="bg-white/90 text-gray-900 hover:bg-white">
-                    <Eye className="w-4 h-4 mr-2" />
-                    View Details
-                  </Button>
-                </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
                 {/* Category Badge */}
-                <div className="absolute top-3 left-3">
-                  <Badge className="bg-[#fbc6c5]/90 text-white backdrop-blur-sm">{item.category}</Badge>
+                <div className="absolute top-4 left-4">
+                  <Badge className="bg-white/90 text-gray-800 hover:bg-white">{item.category}</Badge>
                 </div>
 
                 {/* Rating */}
-                <div className="absolute top-3 right-3 flex items-center gap-1 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1">
+                <div className="absolute top-4 right-4 flex items-center gap-1 bg-white/90 rounded-full px-2 py-1">
                   <Star className="w-3 h-3 text-yellow-400 fill-current" />
-                  <span className="text-xs font-medium">{item.rating}</span>
+                  <span className="text-xs font-medium text-gray-800">{item.rating}</span>
                 </div>
               </div>
 
-              <CardContent className="p-4">
-                <h3 className="font-bold text-gray-800 mb-2 line-clamp-2 group-hover:text-[#d09d80] transition-colors">
+              <CardContent className={`p-6 ${viewMode === "list" ? "flex-1" : ""}`}>
+                <h3 className="font-bold text-xl text-gray-900 mb-2 group-hover:text-[#d09d80] transition-colors">
                   {item.title}
                 </h3>
-                <p className="text-sm text-gray-600 mb-3 line-clamp-2">{item.description}</p>
+                <p className="text-gray-600 mb-4 line-clamp-2">{item.description}</p>
 
-                <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
-                  <span className="flex items-center">
-                    <Calendar className="w-3 h-3 mr-1" />
-                    {new Date(item.date).toLocaleDateString()}
-                  </span>
-                  <span className="font-semibold text-[#d09d80]">{item.price}</span>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1">
-                    <Clock className="w-3 h-3 text-gray-400" />
-                    <span className="text-xs text-gray-500">{item.duration}</span>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between text-sm text-gray-500">
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-4 h-4" />
+                      {item.duration}
+                    </span>
+                    <span className="font-semibold text-[#d09d80] text-lg">{item.price}</span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <User className="w-3 h-3 text-gray-400" />
-                    <span className="text-xs text-gray-500">{item.clientAge}y</span>
+
+                  <div className="flex items-center justify-between text-sm text-gray-500">
+                    <span className="flex items-center gap-1">
+                      <Calendar className="w-4 h-4" />
+                      {new Date(item.date).toLocaleDateString()}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <User className="w-4 h-4" />
+                      Age {item.clientAge}
+                    </span>
+                  </div>
+
+                  {/* Tags */}
+                  <div className="flex flex-wrap gap-2">
+                    {item.tags.slice(0, 3).map((tag, index) => (
+                      <Badge key={index} variant="secondary" className="text-xs bg-[#fbc6c5]/20 text-gray-600">
+                        {tag}
+                      </Badge>
+                    ))}
+                    {item.tags.length > 3 && (
+                      <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-500">
+                        +{item.tags.length - 3} more
+                      </Badge>
+                    )}
                   </div>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
-      ) : (
-        <div className="text-center py-20">
-          <div className="w-24 h-24 bg-gradient-to-br from-[#fbc6c5]/20 to-[#d09d80]/20 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Search className="w-12 h-12 text-gray-400" />
-          </div>
-          <h3 className="text-2xl font-semibold text-gray-800 mb-2">No results found</h3>
-          <p className="text-gray-600 mb-6">
-            Try adjusting your search terms or filter criteria to find what you're looking for.
-          </p>
-          <Button
-            onClick={() => {
-              setSearchQuery("")
-              setSelectedCategory("all")
-            }}
-            className="bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] hover:from-[#d09d80] hover:to-[#fbc6c5] text-white"
-          >
-            Clear Filters
-          </Button>
-        </div>
       )}
 
       {/* Detail Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto bg-[#fffaff]">
-          {selectedItem && (
-            <>
-              <DialogHeader>
-                <div className="flex items-center justify-between">
-                  <DialogTitle className="text-2xl font-bold text-gray-900 pr-8">{selectedItem.title}</DialogTitle>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm">
-                      <Heart className="w-4 h-4" />
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <Share2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </DialogHeader>
+          <DialogHeader>
+            <DialogTitle className="text-3xl font-bold text-gray-900 pr-8">{selectedItem?.title}</DialogTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={closeModal}
+              className="absolute right-4 top-4 rounded-full w-8 h-8 p-0"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </DialogHeader>
 
+          {selectedItem && (
+            <div className="space-y-8">
+              {/* Before/After Images */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Image Section */}
                 <div className="space-y-4">
-                  <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-gray-100">
+                  <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-gray-100">
                     <Image
-                      src={getCurrentImage() || "/placeholder.svg"}
-                      alt={`${selectedItem.title} - ${getCurrentImageLabel()}`}
+                      src={
+                        currentImageIndex === 0
+                          ? selectedItem.beforeImage || "/placeholder.svg"
+                          : selectedItem.afterImage || "/placeholder.svg"
+                      }
+                      alt={currentImageIndex === 0 ? "Before" : "After"}
                       fill
                       className="object-cover"
                     />
-
-                    {/* Image Navigation */}
                     <div className="absolute inset-0 flex items-center justify-between p-4">
-                      <Button variant="secondary" size="sm" onClick={prevImage} className="bg-white/80 hover:bg-white">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={prevImage}
+                        className="bg-white/80 hover:bg-white rounded-full w-10 h-10 p-0"
+                      >
                         <ChevronLeft className="w-4 h-4" />
                       </Button>
-                      <Button variant="secondary" size="sm" onClick={nextImage} className="bg-white/80 hover:bg-white">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={nextImage}
+                        className="bg-white/80 hover:bg-white rounded-full w-10 h-10 p-0"
+                      >
                         <ChevronRight className="w-4 h-4" />
                       </Button>
                     </div>
-
-                    {/* Image Label */}
-                    <div className="absolute bottom-4 left-4">
-                      <Badge className="bg-black/70 text-white">{getCurrentImageLabel()}</Badge>
+                    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
+                      <Badge className="bg-white/90 text-gray-800">
+                        {currentImageIndex === 0 ? "Before" : "After"}
+                      </Badge>
                     </div>
                   </div>
 
-                  {/* Image Thumbnails */}
-                  <div className="flex gap-2">
-                    <button
+                  {/* Image Navigation */}
+                  <div className="flex gap-2 justify-center">
+                    <Button
+                      variant={currentImageIndex === 0 ? "default" : "outline"}
+                      size="sm"
                       onClick={() => setCurrentImageIndex(0)}
-                      className={`relative aspect-[4/3] w-20 rounded-lg overflow-hidden border-2 transition-colors ${
-                        currentImageIndex === 0 ? "border-[#d09d80]" : "border-gray-200"
-                      }`}
+                      className={
+                        currentImageIndex === 0
+                          ? "bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] text-white"
+                          : "border-[#fbc6c5]/30"
+                      }
                     >
-                      <Image
-                        src={selectedItem.beforeImage || "/placeholder.svg"}
-                        alt="Before"
-                        fill
-                        className="object-cover"
-                      />
-                      <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                        <span className="text-xs text-white font-medium">Before</span>
-                      </div>
-                    </button>
-                    <button
+                      Before
+                    </Button>
+                    <Button
+                      variant={currentImageIndex === 1 ? "default" : "outline"}
+                      size="sm"
                       onClick={() => setCurrentImageIndex(1)}
-                      className={`relative aspect-[4/3] w-20 rounded-lg overflow-hidden border-2 transition-colors ${
-                        currentImageIndex === 1 ? "border-[#d09d80]" : "border-gray-200"
-                      }`}
+                      className={
+                        currentImageIndex === 1
+                          ? "bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] text-white"
+                          : "border-[#fbc6c5]/30"
+                      }
                     >
-                      <Image
-                        src={selectedItem.afterImage || "/placeholder.svg"}
-                        alt="After"
-                        fill
-                        className="object-cover"
-                      />
-                      <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                        <span className="text-xs text-white font-medium">After</span>
-                      </div>
-                    </button>
+                      After
+                    </Button>
                   </div>
                 </div>
 
-                {/* Details Section */}
+                {/* Details */}
                 <div className="space-y-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700">Category</Label>
+                      <p className="text-lg font-semibold text-gray-900">{selectedItem.category}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700">Subcategory</Label>
+                      <p className="text-lg font-semibold text-gray-900">{selectedItem.subcategory}</p>
+                    </div>
+                  </div>
+
                   <div>
-                    <div className="flex items-center gap-4 mb-4">
-                      <Badge className="bg-[#fbc6c5]/20 text-gray-700">{selectedItem.category}</Badge>
+                    <Label className="text-sm font-medium text-gray-700">Description</Label>
+                    <p className="text-gray-900 leading-relaxed">{selectedItem.description}</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700">Duration</Label>
+                      <p className="text-lg font-semibold text-gray-900">{selectedItem.duration}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700">Investment</Label>
+                      <p className="text-2xl font-bold text-[#d09d80]">{selectedItem.price}</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700">Treatment Date</Label>
+                      <p className="text-lg font-semibold text-gray-900">
+                        {new Date(selectedItem.date).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700">Client Age</Label>
+                      <p className="text-lg font-semibold text-gray-900">{selectedItem.clientAge} years</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700">Rating</Label>
+                    <div className="flex items-center gap-2">
                       <div className="flex items-center gap-1">
                         {[...Array(5)].map((_, i) => (
                           <Star
                             key={i}
-                            className={`w-4 h-4 ${
+                            className={`w-5 h-5 ${
                               i < selectedItem.rating ? "text-yellow-400 fill-current" : "text-gray-300"
                             }`}
                           />
                         ))}
-                        <span className="ml-1 text-sm text-gray-600">({selectedItem.rating}/5)</span>
                       </div>
-                    </div>
-                    <p className="text-gray-700 leading-relaxed">{selectedItem.description}</p>
-                  </div>
-
-                  {/* Treatment Details */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Clock className="w-4 h-4 text-[#d09d80]" />
-                        <span className="font-medium text-gray-700">Duration</span>
-                      </div>
-                      <p className="text-gray-900">{selectedItem.duration}</p>
-                    </div>
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="w-4 h-4 text-[#d09d80] font-bold">₱</span>
-                        <span className="font-medium text-gray-700">Investment</span>
-                      </div>
-                      <p className="text-gray-900 font-semibold">{selectedItem.price}</p>
-                    </div>
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Calendar className="w-4 h-4 text-[#d09d80]" />
-                        <span className="font-medium text-gray-700">Date</span>
-                      </div>
-                      <p className="text-gray-900">{new Date(selectedItem.date).toLocaleDateString()}</p>
-                    </div>
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <User className="w-4 h-4 text-[#d09d80]" />
-                        <span className="font-medium text-gray-700">Client Age</span>
-                      </div>
-                      <p className="text-gray-900">{selectedItem.clientAge} years</p>
+                      <span className="text-lg font-semibold text-gray-900">({selectedItem.rating}/5)</span>
                     </div>
                   </div>
 
-                  {/* Results */}
                   <div>
-                    <h4 className="font-semibold text-gray-800 mb-3">Treatment Results</h4>
-                    <ul className="space-y-2">
-                      {selectedItem.results.map((result, index) => (
-                        <li key={index} className="flex items-center gap-2">
-                          <div className="w-2 h-2 bg-[#d09d80] rounded-full" />
-                          <span className="text-gray-700">{result}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  {/* Tags */}
-                  <div>
-                    <h4 className="font-semibold text-gray-800 mb-3">Treatment Features</h4>
-                    <div className="flex flex-wrap gap-2">
+                    <Label className="text-sm font-medium text-gray-700">Treatment Tags</Label>
+                    <div className="flex flex-wrap gap-2 mt-2">
                       {selectedItem.tags.map((tag, index) => (
-                        <Badge key={index} variant="secondary" className="bg-[#fbc6c5]/20 text-gray-600">
+                        <Badge key={index} variant="secondary" className="bg-[#fbc6c5]/20 text-gray-700">
                           {tag}
                         </Badge>
                       ))}
                     </div>
                   </div>
+                </div>
+              </div>
 
-                  {/* Testimonial */}
-                  {selectedItem.testimonial && (
-                    <div className="bg-gradient-to-r from-[#fbc6c5]/10 to-[#d09d80]/10 rounded-xl p-6">
-                      <h4 className="font-semibold text-gray-800 mb-3">Client Testimonial</h4>
-                      <blockquote className="text-gray-700 italic">"{selectedItem.testimonial}"</blockquote>
+              {/* Results */}
+              <div>
+                <Label className="text-lg font-semibold text-gray-900 mb-3 block">Treatment Results</Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {selectedItem.results.map((result, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-lg"
+                    >
+                      <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0" />
+                      <span className="text-green-800 font-medium">{result}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Testimonial */}
+              {selectedItem.testimonial && (
+                <div className="bg-gradient-to-r from-[#fbc6c5]/10 to-[#d09d80]/10 rounded-2xl p-6 border border-[#fbc6c5]/20">
+                  <div className="flex items-start gap-4">
+                    <Quote className="w-8 h-8 text-[#d09d80] flex-shrink-0 mt-1" />
+                    <div>
+                      <blockquote className="text-lg text-gray-800 italic leading-relaxed mb-3">
+                        "{selectedItem.testimonial}"
+                      </blockquote>
                       {selectedItem.clientInitials && (
-                        <cite className="block text-sm text-gray-600 mt-3 not-italic">
-                          - {selectedItem.clientInitials}
+                        <cite className="text-sm font-semibold text-[#d09d80] not-italic">
+                          — {selectedItem.clientInitials}
                         </cite>
                       )}
                     </div>
-                  )}
+                  </div>
                 </div>
-              </div>
-            </>
+              )}
+            </div>
           )}
         </DialogContent>
       </Dialog>

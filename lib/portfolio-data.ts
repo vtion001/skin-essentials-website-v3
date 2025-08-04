@@ -20,8 +20,8 @@ export interface PortfolioItem {
   updatedAt: string
 }
 
-// Comprehensive portfolio data that both admin and portfolio pages will use
-export const portfolioData: PortfolioItem[] = [
+// Default portfolio data that will be used if localStorage is empty
+const defaultPortfolioData: PortfolioItem[] = [
   {
     id: "1",
     title: "Nose Thread Lift Transformation",
@@ -276,27 +276,83 @@ export const portfolioData: PortfolioItem[] = [
   },
 ]
 
-// Portfolio service class for managing data
+// Portfolio service class for managing data with localStorage persistence
 export class PortfolioService {
-  private static data: PortfolioItem[] = [...portfolioData]
+  private static readonly STORAGE_KEY = "skin_essentials_portfolio_data"
+  private static data: PortfolioItem[] = []
+  private static initialized = false
+
+  // Initialize data from localStorage or use defaults
+  private static initialize() {
+    if (this.initialized) return
+
+    try {
+      if (typeof window !== "undefined") {
+        const stored = localStorage.getItem(this.STORAGE_KEY)
+        if (stored) {
+          this.data = JSON.parse(stored)
+          console.log("Portfolio data loaded from localStorage:", this.data.length, "items")
+        } else {
+          // First time - use default data and save to localStorage
+          this.data = [...defaultPortfolioData]
+          this.saveToStorage()
+          console.log("Portfolio data initialized with defaults:", this.data.length, "items")
+        }
+      } else {
+        // Server-side - use default data
+        this.data = [...defaultPortfolioData]
+      }
+    } catch (error) {
+      console.error("Error loading portfolio data from localStorage:", error)
+      // Fallback to default data
+      this.data = [...defaultPortfolioData]
+    }
+
+    this.initialized = true
+  }
+
+  // Save data to localStorage
+  private static saveToStorage() {
+    try {
+      if (typeof window !== "undefined") {
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.data))
+        console.log("Portfolio data saved to localStorage:", this.data.length, "items")
+
+        // Trigger storage event for cross-tab sync
+        window.dispatchEvent(
+          new StorageEvent("storage", {
+            key: this.STORAGE_KEY,
+            newValue: JSON.stringify(this.data),
+            storageArea: localStorage,
+          }),
+        )
+      }
+    } catch (error) {
+      console.error("Error saving portfolio data to localStorage:", error)
+    }
+  }
 
   // Get all portfolio items
   static getAllItems(): PortfolioItem[] {
+    this.initialize()
     return [...this.data]
   }
 
   // Get published items only (for public portfolio)
   static getPublishedItems(): PortfolioItem[] {
+    this.initialize()
     return this.data.filter((item) => item.status === "published")
   }
 
   // Get item by ID
   static getItemById(id: string): PortfolioItem | undefined {
+    this.initialize()
     return this.data.find((item) => item.id === id)
   }
 
   // Add new item
   static addItem(item: Omit<PortfolioItem, "id" | "createdAt" | "updatedAt">): PortfolioItem {
+    this.initialize()
     const newItem: PortfolioItem = {
       ...item,
       id: Date.now().toString(),
@@ -304,11 +360,14 @@ export class PortfolioService {
       updatedAt: new Date().toISOString(),
     }
     this.data.push(newItem)
+    this.saveToStorage()
+    console.log("Added new portfolio item:", newItem.title)
     return newItem
   }
 
   // Update item
   static updateItem(id: string, updates: Partial<PortfolioItem>): PortfolioItem | null {
+    this.initialize()
     const index = this.data.findIndex((item) => item.id === id)
     if (index === -1) return null
 
@@ -317,15 +376,21 @@ export class PortfolioService {
       ...updates,
       updatedAt: new Date().toISOString(),
     }
+    this.saveToStorage()
+    console.log("Updated portfolio item:", this.data[index].title)
     return this.data[index]
   }
 
   // Delete item
   static deleteItem(id: string): boolean {
+    this.initialize()
     const index = this.data.findIndex((item) => item.id === id)
     if (index === -1) return false
 
+    const deletedItem = this.data[index]
     this.data.splice(index, 1)
+    this.saveToStorage()
+    console.log("Deleted portfolio item:", deletedItem.title)
     return true
   }
 
@@ -335,6 +400,7 @@ export class PortfolioService {
     status?: string
     search?: string
   }): PortfolioItem[] {
+    this.initialize()
     let filtered = [...this.data]
 
     if (filters.category && filters.category !== "all") {
@@ -360,11 +426,56 @@ export class PortfolioService {
 
   // Get statistics
   static getStats() {
+    this.initialize()
     const total = this.data.length
     const published = this.data.filter((item) => item.status === "published").length
     const draft = this.data.filter((item) => item.status === "draft").length
     const archived = this.data.filter((item) => item.status === "archived").length
 
     return { total, published, draft, archived }
+  }
+
+  // Reset to default data (useful for testing)
+  static resetToDefaults() {
+    this.data = [...defaultPortfolioData]
+    this.saveToStorage()
+    console.log("Portfolio data reset to defaults")
+  }
+
+  // Clear all data
+  static clearAll() {
+    this.data = []
+    this.saveToStorage()
+    console.log("Portfolio data cleared")
+  }
+
+  // Export data as JSON
+  static exportData(): string {
+    this.initialize()
+    return JSON.stringify(this.data, null, 2)
+  }
+
+  // Import data from JSON
+  static importData(jsonData: string): boolean {
+    try {
+      const imported = JSON.parse(jsonData) as PortfolioItem[]
+      if (Array.isArray(imported)) {
+        this.data = imported
+        this.saveToStorage()
+        console.log("Portfolio data imported:", imported.length, "items")
+        return true
+      }
+      return false
+    } catch (error) {
+      console.error("Error importing data:", error)
+      return false
+    }
+  }
+
+  // Force refresh from localStorage (useful for debugging)
+  static forceRefresh() {
+    this.initialized = false
+    this.initialize()
+    console.log("Portfolio data force refreshed")
   }
 }
