@@ -282,8 +282,9 @@ export default function AdminPage() {
   const openEditModal = (item: PortfolioItem) => {
     setSelectedItem(item)
     setFormData(item)
-    setBeforeImagePreview(item.beforeImage)
-    setAfterImagePreview(item.afterImage)
+    // Set image previews from the existing item data
+    setBeforeImagePreview(item.beforeImage || "")
+    setAfterImagePreview(item.afterImage || "")
     setIsEditModalOpen(true)
   }
 
@@ -1012,7 +1013,7 @@ export default function AdminPage() {
                     </div>
                     <div>
                       <Label className="text-sm font-medium text-gray-700">Client Age</Label>
-                      <p className="text-gray-900">{selectedItem.clientAge} years</p>
+                      <p className="text-gray-900">{selectedItem.clientAge || 'Not specified'}</p>
                     </div>
                   </div>
 

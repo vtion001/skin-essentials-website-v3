@@ -416,6 +416,10 @@ export function PortfolioGallery() {
                       alt={currentImageIndex === 0 ? "Before" : "After"}
                       fill
                       className="object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = "/placeholder.svg";
+                      }}
                     />
                     <div className="absolute inset-0 flex items-center justify-between p-4">
                       <Button

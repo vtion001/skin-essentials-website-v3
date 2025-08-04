@@ -29,7 +29,7 @@ const defaultPortfolioData: PortfolioItem[] = [
     subcategory: "Nose Enhancement",
     beforeImage: "/placeholder.svg?height=400&width=400",
     afterImage: "/placeholder.svg?height=400&width=400",
-    description: "Complete nose reshaping using PDO threads for natural-looking enhancement",
+    description: "Complete nose reshaping using PDO threads for natural-looking enhancement. Professional treatment with excellent results.",
     duration: "1 hour",
     price: "₱9,999",
     date: "2024-01-15",
@@ -37,7 +37,7 @@ const defaultPortfolioData: PortfolioItem[] = [
     tags: ["Non-surgical", "Instant results", "Natural looking"],
     clientAge: "28",
     results: ["Higher nose bridge", "Defined tip", "Improved profile"],
-    testimonial: "I'm absolutely amazed by the results! My nose looks so much better and natural.",
+    testimonial: "I'm absolutely amazed by the results! My nose looks so much better and natural. The treatment was professional and comfortable.",
     clientInitials: "M.S.",
     status: "published",
     createdAt: "2024-01-15T10:00:00Z",
@@ -474,8 +474,9 @@ export class PortfolioService {
   // Force refresh from localStorage (useful for debugging)
   static forceRefresh() {
     this.initialized = false
+    this.data = []
     this.initialize()
-    console.log("Portfolio data force refreshed")
+    console.log("Portfolio data force refreshed with", this.data.length, "items")
   }
 
   // Subscribe to data updates
