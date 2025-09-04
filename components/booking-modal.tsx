@@ -52,207 +52,47 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
       description: "Personalized assessment and treatment planning",
       popular: true,
     },
-    // Face Enhancement
     {
       id: "nose-thread",
       name: "Nose Thread Lift (Hiko)",
       price: "₱9,999",
       duration: "1 hour",
-      description: "Instantly lifts and defines the nose bridge and tip using dissolvable PDO/PCL threads",
+      description: "Instant nose enhancement with PDO threads",
     },
     {
       id: "face-thread",
       name: "Face Thread Lift",
       price: "₱1,000/thread",
       duration: "1-1.5 hours",
-      description: "Lifts and tightens sagging skin in the cheeks, jowls, and neck for a rejuvenated, V-shaped contour",
+      description: "V-shape contouring and lifting",
+    },
+    {
+      id: "vampire-facial",
+      name: "Vampire Facial",
+      price: "₱3,500",
+      duration: "1 hour",
+      description: "PRP + Microneedling for skin rejuvenation",
     },
     {
       id: "botox",
-      name: "Botox",
+      name: "Botox Treatment",
       price: "₱150/unit",
-      duration: "15-30 minutes",
-      description: "A neuromodulator injection that temporarily relaxes facial muscles to smooth dynamic wrinkles",
+      duration: "30 mins",
+      description: "Wrinkle reduction and prevention",
     },
-    // Dermal Fillers
     {
       id: "face-fillers",
       name: "Face Fillers",
       price: "₱6,000/1mL",
-      duration: "45 minutes - 1.5 hours",
-      description: "Injectable hyaluronic acid (HA) gels for eyes, lips, cheeks, chin, and nose enhancement",
+      duration: "45 mins - 1.5 hours",
+      description: "Volume enhancement and contouring",
     },
     {
-      id: "butt-hip-fillers",
-      name: "Butt/Hip Fillers",
-      price: "₱27,000/500cc",
-      duration: "45 minutes - 1.5 hours",
-      description: "Injectable HA gels to enhance curves and add volume to buttocks and hips",
-    },
-    {
-      id: "breast-fillers",
-      name: "Breast Fillers",
-      price: "₱31,500/500cc",
-      duration: "45 minutes - 1.5 hours",
-      description: "Injectable HA gels for subtle breast enhancement",
-    },
-    // Skin Treatments
-    {
-      id: "vampire-facial",
-      name: "Vampire Facial (PRP + Microneedling)",
-      price: "₱3,500",
-      duration: "1 hour",
-      description: "A powerful anti-aging treatment that combines microneedling with Platelet-Rich Plasma (PRP)",
-    },
-    {
-      id: "thermage",
-      name: "Thermage (RF Skin Tightening)",
-      price: "₱3,500/area",
-      duration: "45-90 minutes",
-      description: "A non-invasive treatment that uses radiofrequency (RF) energy to stimulate collagen",
-    },
-    {
-      id: "face-stemcell",
-      name: "Face Stemcell Boosters",
-      price: "₱2,500-₱6,000",
-      duration: "1 hour",
-      description: "A rejuvenating treatment infusing skin with growth factors to repair damage and boost collagen",
-    },
-    {
-      id: "luthillo",
-      name: "Luthillo (Skin Booster)",
-      price: "₱10,000/syringe",
-      duration: "45-60 minutes",
-      description: "An advanced injectable skin booster with hyaluronic acid that deeply hydrates and stimulates collagen",
-    },
-    // Laser Treatments
-    {
-      id: "diode-laser",
+      id: "laser-hair",
       name: "Diode Laser Hair Removal",
-      price: "₱1,000-₱5,000",
+      price: "From ₱1,000",
       duration: "Varies",
-      description: "Permanently reduces unwanted hair by targeting the hair follicle with concentrated light energy",
-    },
-    {
-      id: "pico-laser",
-      name: "Pico Laser",
-      price: "₱1,000",
-      duration: "30-45 minutes",
-      description: "An advanced laser that delivers ultra-short energy pulses to shatter pigment",
-    },
-    {
-      id: "tattoo-removal",
-      name: "Tattoo Removal",
-      price: "₱4,000-₱15,000",
-      duration: "15-45 minutes",
-      description: "Laser technology breaks down ink particles in the skin, allowing your body to naturally clear them",
-    },
-    {
-      id: "melasma-removal",
-      name: "Melasma Removal",
-      price: "₱4,500",
-      duration: "30-60 minutes",
-      description: "Targeted treatments like Pico Laser or specialized chemical peels to reduce the appearance of melasma",
-    },
-    // Specialized Treatments
-    {
-      id: "orgasm-shot",
-      name: "Orgasm Shot for Women",
-      price: "₱5,000",
-      duration: "45 minutes",
-      description: "A treatment that uses PRP injected into specific areas to enhance sexual arousal, pleasure, and orgasm",
-    },
-    {
-      id: "hair-growth",
-      name: "Hair Growth Treatment",
-      price: "₱4,500",
-      duration: "1 hour",
-      description: "A non-surgical treatment using growth factor serums with microneedling on the scalp",
-    },
-    {
-      id: "nad-drip",
-      name: "NAD+ Drip",
-      price: "₱8,000",
-      duration: "1-2 hours",
-      description: "An IV therapy delivering Nicotinamide Adenine Dinucleotide (NAD+) to boost cellular metabolism",
-    },
-    {
-      id: "glp1-shot",
-      name: "GLP-1 (Weight Loss Shot)",
-      price: "₱2,500",
-      duration: "15-30 minutes",
-      description: "Medically supervised injections of a GLP-1 receptor agonist that aids in weight loss",
-    },
-    // Additional Services (to reach 28 total)
-    {
-      id: "underarm-laser",
-      name: "Underarm Laser Hair Removal",
-      price: "₱1,000",
-      duration: "15-30 minutes",
-      description: "Permanent hair reduction for underarm area",
-    },
-    {
-      id: "face-laser",
-      name: "Face Laser Hair Removal",
-      price: "₱2,500",
-      duration: "30-45 minutes",
-      description: "Permanent hair reduction for facial areas",
-    },
-    {
-      id: "arm-laser",
-      name: "Arm Laser Hair Removal",
-      price: "₱3,000",
-      duration: "45-60 minutes",
-      description: "Permanent hair reduction for full arms",
-    },
-    {
-      id: "legs-laser",
-      name: "Legs Laser Hair Removal",
-      price: "₱5,000",
-      duration: "60-90 minutes",
-      description: "Permanent hair reduction for full legs",
-    },
-    {
-      id: "bikini-laser",
-      name: "Bikini Laser Hair Removal",
-      price: "₱5,000",
-      duration: "30-45 minutes",
-      description: "Permanent hair reduction for bikini area",
-    },
-    {
-      id: "lip-fillers",
-      name: "Lip Fillers",
-      price: "₱6,000/1mL",
-      duration: "30-45 minutes",
-      description: "Injectable hyaluronic acid for lip enhancement and definition",
-    },
-    {
-      id: "cheek-fillers",
-      name: "Cheek Fillers",
-      price: "₱6,000/1mL",
-      duration: "45-60 minutes",
-      description: "Injectable hyaluronic acid for cheek volume and contouring",
-    },
-    {
-      id: "chin-fillers",
-      name: "Chin Fillers",
-      price: "₱6,000/1mL",
-      duration: "30-45 minutes",
-      description: "Injectable hyaluronic acid for chin enhancement and definition",
-    },
-    {
-      id: "eye-fillers",
-      name: "Eye/Under Eye Fillers",
-      price: "₱6,000/1mL",
-      duration: "30-45 minutes",
-      description: "Injectable hyaluronic acid for under-eye hollows and tear troughs",
-    },
-    {
-      id: "jawline-fillers",
-      name: "Jawline Fillers",
-      price: "₱6,000/1mL",
-      duration: "45-60 minutes",
-      description: "Injectable hyaluronic acid for jawline definition and contouring",
+      description: "Permanent hair reduction",
     },
   ]
 
@@ -325,8 +165,8 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden bg-transparent border-none rounded-3xl p-0 shadow-2xl">
-        <div className="bg-[#fffaff] rounded-3xl overflow-hidden flex flex-col max-h-[90vh]">
+      <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto bg-transparent border-none rounded-3xl p-0 shadow-2xl">
+        <div className="bg-[#fffaff] rounded-3xl overflow-hidden">
           {/* Header */}
           <div className="bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] p-6">
             <DialogHeader>
@@ -343,7 +183,7 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
             </DialogHeader>
           </div>
 
-          <div className="p-6 flex-1 overflow-y-auto">
+          <div className="p-6">
             {/* Progress Indicator */}
             <div className="flex items-center justify-center mb-8">
               {[1, 2, 3].map((i) => (
@@ -371,247 +211,48 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
             {/* Step 1: Service Selection */}
             {step === 1 && (
               <div className="space-y-6">
-                {/* Search and Filter */}
-                <div className="mb-6">
-                  <Input
-                    placeholder="Search services..."
-                    className="border-[#fbc6c5]/30 focus:border-[#d09d80] focus:ring-[#d09d80]/20 rounded-xl py-3 px-4 bg-white/60 backdrop-blur-sm"
-                    onChange={(e) => {
-                      const searchTerm = e.target.value.toLowerCase()
-                      const filteredServices = services.filter(service => 
-                        service.name.toLowerCase().includes(searchTerm) ||
-                        service.description.toLowerCase().includes(searchTerm)
-                      )
-                      // You can implement search functionality here if needed
-                    }}
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {services.map((service) => (
+                    <Card
+                      key={service.id}
+                      className={`cursor-pointer transition-all duration-300 hover:shadow-xl transform hover:scale-105 ${
+                        selectedService === service.id
+                          ? "border-[#fbc6c5] bg-gradient-to-br from-[#fbc6c5]/10 to-[#d09d80]/10 shadow-xl scale-105"
+                          : "border-gray-200 hover:border-[#fbc6c5]/50 bg-white/60 backdrop-blur-sm"
+                      } rounded-2xl overflow-hidden`}
+                      onClick={() => setSelectedService(service.id)}
+                    >
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-lg font-bold text-gray-800">{service.name}</CardTitle>
+                          <div className="flex gap-2">
+                            {service.popular && (
+                              <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white">
+                                Popular
+                              </Badge>
+                            )}
+                            {service.price === "Free" && (
+                              <Badge className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white">Free</Badge>
+                            )}
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <p className="text-gray-600 text-sm mb-3 leading-relaxed">{service.description}</p>
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-xl bg-gradient-to-r from-[#d09d80] to-[#fbc6c5] bg-clip-text text-transparent">
+                            {service.price}
+                          </span>
+                          <span className="flex items-center text-sm text-gray-500">
+                            <Clock className="w-4 h-4 mr-1" />
+                            {service.duration}
+                          </span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
-
-                {/* Services Grid with optimized scrolling */}
-                <div className="max-h-[55vh] overflow-y-auto scroll-smooth" style={{ scrollbarWidth: 'thin', scrollbarColor: '#fbc6c5 transparent' }}>
-                  <div className="space-y-6 pb-4">
-                    {/* Popular Services First */}
-                    <div className="space-y-4">
-                      <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center sticky top-0 bg-[#fffaff]/95 backdrop-blur-sm py-2 z-10">
-                        <Star className="w-5 h-5 mr-2 text-yellow-500" />
-                        Popular Services
-                      </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {services.filter(service => service.popular).map((service) => (
-                          <Card
-                            key={service.id}
-                            className={`cursor-pointer transition-all duration-200 ease-out will-change-transform ${
-                              selectedService === service.id
-                                ? "border-[#fbc6c5] bg-gradient-to-br from-[#fbc6c5]/10 to-[#d09d80]/10 shadow-lg transform scale-[1.02]"
-                                : "border-gray-200 hover:border-[#fbc6c5]/50 bg-white/60 backdrop-blur-sm hover:shadow-md hover:transform hover:scale-[1.01]"
-                            } rounded-xl overflow-hidden`}
-                            onClick={() => setSelectedService(service.id)}
-                          >
-                            <CardHeader className="pb-2">
-                              <div className="flex items-start justify-between">
-                                <CardTitle className="text-base font-bold text-gray-800 leading-tight">{service.name}</CardTitle>
-                                <div className="flex gap-1 ml-2 flex-shrink-0">
-                                  {service.popular && (
-                                    <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs">
-                                      Popular
-                                    </Badge>
-                                  )}
-                                  {service.price === "Free" && (
-                                    <Badge className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-xs">Free</Badge>
-                                  )}
-                                </div>
-                              </div>
-                            </CardHeader>
-                            <CardContent className="pt-0">
-                              <p className="text-gray-600 text-xs mb-2 leading-relaxed line-clamp-2">{service.description}</p>
-                              <div className="flex items-center justify-between">
-                                <span className="font-bold text-lg bg-gradient-to-r from-[#d09d80] to-[#fbc6c5] bg-clip-text text-transparent">
-                                  {service.price}
-                                </span>
-                                <span className="flex items-center text-xs text-gray-500">
-                                  <Clock className="w-3 h-3 mr-1" />
-                                  {service.duration}
-                                </span>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Face Enhancement */}
-                    <div className="space-y-4">
-                      <h4 className="text-lg font-semibold text-gray-800 mb-4 sticky top-0 bg-[#fffaff]/95 backdrop-blur-sm py-2 z-10">Face Enhancement</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {services.filter(service => ['nose-thread', 'face-thread', 'botox'].includes(service.id)).map((service) => (
-                          <Card
-                            key={service.id}
-                            className={`cursor-pointer transition-all duration-200 ease-out will-change-transform ${
-                              selectedService === service.id
-                                ? "border-[#fbc6c5] bg-gradient-to-br from-[#fbc6c5]/10 to-[#d09d80]/10 shadow-lg transform scale-[1.02]"
-                                : "border-gray-200 hover:border-[#fbc6c5]/50 bg-white/60 backdrop-blur-sm hover:shadow-md hover:transform hover:scale-[1.01]"
-                            } rounded-xl overflow-hidden`}
-                            onClick={() => setSelectedService(service.id)}
-                          >
-                            <CardHeader className="pb-2">
-                              <CardTitle className="text-base font-bold text-gray-800 leading-tight">{service.name}</CardTitle>
-                            </CardHeader>
-                            <CardContent className="pt-0">
-                              <p className="text-gray-600 text-xs mb-2 leading-relaxed line-clamp-2">{service.description}</p>
-                              <div className="flex items-center justify-between">
-                                <span className="font-bold text-lg bg-gradient-to-r from-[#d09d80] to-[#fbc6c5] bg-clip-text text-transparent">
-                                  {service.price}
-                                </span>
-                                <span className="flex items-center text-xs text-gray-500">
-                                  <Clock className="w-3 h-3 mr-1" />
-                                  {service.duration}
-                                </span>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Dermal Fillers */}
-                    <div className="space-y-4">
-                      <h4 className="text-lg font-semibold text-gray-800 mb-4 sticky top-0 bg-[#fffaff]/95 backdrop-blur-sm py-2 z-10">Dermal Fillers</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {services.filter(service => service.id.includes('fillers')).map((service) => (
-                          <Card
-                            key={service.id}
-                            className={`cursor-pointer transition-all duration-200 ease-out will-change-transform ${
-                              selectedService === service.id
-                                ? "border-[#fbc6c5] bg-gradient-to-br from-[#fbc6c5]/10 to-[#d09d80]/10 shadow-lg transform scale-[1.02]"
-                                : "border-gray-200 hover:border-[#fbc6c5]/50 bg-white/60 backdrop-blur-sm hover:shadow-md hover:transform hover:scale-[1.01]"
-                            } rounded-xl overflow-hidden`}
-                            onClick={() => setSelectedService(service.id)}
-                          >
-                            <CardHeader className="pb-2">
-                              <CardTitle className="text-base font-bold text-gray-800 leading-tight">{service.name}</CardTitle>
-                            </CardHeader>
-                            <CardContent className="pt-0">
-                              <p className="text-gray-600 text-xs mb-2 leading-relaxed line-clamp-2">{service.description}</p>
-                              <div className="flex items-center justify-between">
-                                <span className="font-bold text-lg bg-gradient-to-r from-[#d09d80] to-[#fbc6c5] bg-clip-text text-transparent">
-                                  {service.price}
-                                </span>
-                                <span className="flex items-center text-xs text-gray-500">
-                                  <Clock className="w-3 h-3 mr-1" />
-                                  {service.duration}
-                                </span>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Skin Treatments */}
-                    <div className="space-y-4">
-                      <h4 className="text-lg font-semibold text-gray-800 mb-4 sticky top-0 bg-[#fffaff]/95 backdrop-blur-sm py-2 z-10">Skin Treatments</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {services.filter(service => ['vampire-facial', 'thermage', 'face-stemcell', 'luthillo'].includes(service.id)).map((service) => (
-                          <Card
-                            key={service.id}
-                            className={`cursor-pointer transition-all duration-200 ease-out will-change-transform ${
-                              selectedService === service.id
-                                ? "border-[#fbc6c5] bg-gradient-to-br from-[#fbc6c5]/10 to-[#d09d80]/10 shadow-lg transform scale-[1.02]"
-                                : "border-gray-200 hover:border-[#fbc6c5]/50 bg-white/60 backdrop-blur-sm hover:shadow-md hover:transform hover:scale-[1.01]"
-                            } rounded-xl overflow-hidden`}
-                            onClick={() => setSelectedService(service.id)}
-                          >
-                            <CardHeader className="pb-2">
-                              <CardTitle className="text-base font-bold text-gray-800 leading-tight">{service.name}</CardTitle>
-                            </CardHeader>
-                            <CardContent className="pt-0">
-                              <p className="text-gray-600 text-xs mb-2 leading-relaxed line-clamp-2">{service.description}</p>
-                              <div className="flex items-center justify-between">
-                                <span className="font-bold text-lg bg-gradient-to-r from-[#d09d80] to-[#fbc6c5] bg-clip-text text-transparent">
-                                  {service.price}
-                                </span>
-                                <span className="flex items-center text-xs text-gray-500">
-                                  <Clock className="w-3 h-3 mr-1" />
-                                  {service.duration}
-                                </span>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Laser Treatments */}
-                    <div className="space-y-4">
-                      <h4 className="text-lg font-semibold text-gray-800 mb-4 sticky top-0 bg-[#fffaff]/95 backdrop-blur-sm py-2 z-10">Laser Treatments</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {services.filter(service => service.id.includes('laser') || ['pico-laser', 'tattoo-removal', 'melasma-removal'].includes(service.id)).map((service) => (
-                          <Card
-                            key={service.id}
-                            className={`cursor-pointer transition-all duration-200 ease-out will-change-transform ${
-                              selectedService === service.id
-                                ? "border-[#fbc6c5] bg-gradient-to-br from-[#fbc6c5]/10 to-[#d09d80]/10 shadow-lg transform scale-[1.02]"
-                                : "border-gray-200 hover:border-[#fbc6c5]/50 bg-white/60 backdrop-blur-sm hover:shadow-md hover:transform hover:scale-[1.01]"
-                            } rounded-xl overflow-hidden`}
-                            onClick={() => setSelectedService(service.id)}
-                          >
-                            <CardHeader className="pb-2">
-                              <CardTitle className="text-base font-bold text-gray-800 leading-tight">{service.name}</CardTitle>
-                            </CardHeader>
-                            <CardContent className="pt-0">
-                              <p className="text-gray-600 text-xs mb-2 leading-relaxed line-clamp-2">{service.description}</p>
-                              <div className="flex items-center justify-between">
-                                <span className="font-bold text-lg bg-gradient-to-r from-[#d09d80] to-[#fbc6c5] bg-clip-text text-transparent">
-                                  {service.price}
-                                </span>
-                                <span className="flex items-center text-xs text-gray-500">
-                                  <Clock className="w-3 h-3 mr-1" />
-                                  {service.duration}
-                                </span>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Specialized Treatments */}
-                    <div className="space-y-4">
-                      <h4 className="text-lg font-semibold text-gray-800 mb-4 sticky top-0 bg-[#fffaff]/95 backdrop-blur-sm py-2 z-10">Specialized Treatments</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {services.filter(service => ['orgasm-shot', 'hair-growth', 'nad-drip', 'glp1-shot'].includes(service.id)).map((service) => (
-                          <Card
-                            key={service.id}
-                            className={`cursor-pointer transition-all duration-200 ease-out will-change-transform ${
-                              selectedService === service.id
-                                ? "border-[#fbc6c5] bg-gradient-to-br from-[#fbc6c5]/10 to-[#d09d80]/10 shadow-lg transform scale-[1.02]"
-                                : "border-gray-200 hover:border-[#fbc6c5]/50 bg-white/60 backdrop-blur-sm hover:shadow-md hover:transform hover:scale-[1.01]"
-                            } rounded-xl overflow-hidden`}
-                            onClick={() => setSelectedService(service.id)}
-                          >
-                            <CardHeader className="pb-2">
-                              <CardTitle className="text-base font-bold text-gray-800 leading-tight">{service.name}</CardTitle>
-                            </CardHeader>
-                            <CardContent className="pt-0">
-                              <p className="text-gray-600 text-xs mb-2 leading-relaxed line-clamp-2">{service.description}</p>
-                              <div className="flex items-center justify-between">
-                                <span className="font-bold text-lg bg-gradient-to-r from-[#d09d80] to-[#fbc6c5] bg-clip-text text-transparent">
-                                  {service.price}
-                                </span>
-                                <span className="flex items-center text-xs text-gray-500">
-                                  <Clock className="w-3 h-3 mr-1" />
-                                  {service.duration}
-                                </span>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex justify-end pt-4 border-t border-[#fbc6c5]/20">
+                <div className="flex justify-end">
                   <Button
                     onClick={() => setStep(2)}
                     disabled={!selectedService}

@@ -2,17 +2,14 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Phone, RefreshCw } from "lucide-react"
+import { Phone } from "lucide-react"
 import { MobileNav } from "@/components/mobile-nav"
 import { PullToRefresh } from "@/components/pull-to-refresh"
 import { PortfolioGallery } from "@/components/portfolio-gallery"
 import { SharedHeader } from "@/components/shared-header"
-import { BookingModal } from "@/components/booking-modal"
 
 export default function PortfolioPage() {
   const [isScrolled, setIsScrolled] = useState(false)
-  const [isRefreshing, setIsRefreshing] = useState(false)
-  const [isBookingOpen, setIsBookingOpen] = useState(false)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -21,29 +18,6 @@ export default function PortfolioPage() {
     window.addEventListener("scroll", handleScroll)
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
-
-  // Ensure portfolio data is fresh when page loads (client-side only)
-  const [mounted, setMounted] = useState(false)
-  
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-  
-  useEffect(() => {
-    // Only run after component is mounted to avoid hydration mismatch
-    if (mounted && typeof window !== "undefined") {
-      const { PortfolioService } = require("@/lib/portfolio-data")
-      PortfolioService.forceRefresh()
-    }
-  }, [mounted])
-
-  const handleRefresh = () => {
-    setIsRefreshing(true)
-    // Force refresh portfolio data
-    if (mounted && typeof window !== "undefined") {
-      window.location.reload()
-    }
-  }
 
   return (
     <PullToRefresh>
@@ -57,19 +31,6 @@ export default function PortfolioPage() {
 
         {/* Shared Header */}
         <SharedHeader showBackButton={true} backHref="/" />
-        
-        {/* Refresh Button */}
-        <div className="fixed top-24 right-4 z-50 md:hidden">
-          <Button
-            onClick={handleRefresh}
-            variant="outline"
-            size="sm"
-            className="bg-white/80 backdrop-blur-sm border-[#fbc6c5]/30 text-gray-700 hover:bg-[#fbc6c5]/10"
-            disabled={isRefreshing}
-          >
-            <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
-          </Button>
-        </div>
 
         {/* Main Content */}
         <main className="pt-24 pb-12 px-4 relative z-10">
@@ -86,11 +47,7 @@ export default function PortfolioPage() {
               Join thousands of satisfied clients who have achieved their beauty goals with our expert treatments.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button 
-                size="lg" 
-                onClick={() => setIsBookingOpen(true)}
-                className="text-[#d09d80] hover:bg-white/90 px-8 py-3 text-lg font-semibold"
-              >
+              <Button size="lg" className="text-[#d09d80] hover:bg-white/90 px-8 py-3 text-lg font-semibold">
                 <Phone className="w-5 h-5 mr-2" />
                 Book Free Consultation
               </Button>
@@ -107,9 +64,6 @@ export default function PortfolioPage() {
 
         {/* Mobile Bottom Navigation */}
         <MobileNav />
-
-        {/* Booking Modal */}
-        <BookingModal isOpen={isBookingOpen} onClose={() => setIsBookingOpen(false)} />
       </div>
     </PullToRefresh>
   )

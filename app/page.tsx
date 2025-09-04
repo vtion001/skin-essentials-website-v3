@@ -1,9 +1,22 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Phone, MapPin, Clock, Star, Shield, Award, Users, Calendar, Sparkles, ArrowRight } from "lucide-react"
+import {
+  Phone,
+  MapPin,
+  Clock,
+  Star,
+  Shield,
+  Award,
+  Users,
+  Calendar,
+  ArrowRight,
+  CheckCircle,
+  Play,
+  Quote,
+} from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { useState, useEffect } from "react"
@@ -24,445 +37,496 @@ export default function HomePage() {
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
-  const featuredServices = [
+  const mainServices = [
     {
-      name: "Nose Thread Lift (Hiko)",
-      price: "₱9,999",
-      description: "Instantly lifts and defines the nose bridge and tip using dissolvable PDO/PCL threads.",
-      duration: "~1 hour",
-      results: "1-2 years",
-      gradient: "from-[#fbc6c5] to-[#d09d80]",
+      name: "Thread Lifts",
+      description: "Non-surgical face and nose lifting using PDO/PCL threads",
+      image: "/placeholder.svg?height=300&width=400&text=Thread+Lift",
+      treatments: ["Hiko Nose Lift", "Face Thread Lift", "Neck Thread Lift"],
+      href: "/services#thread-lifts",
     },
     {
-      name: "Face Thread Lift",
-      price: "₱1,000/thread",
-      description: "Lifts and tightens sagging skin for a rejuvenated, V-shaped contour.",
-      duration: "1-1.5 hours",
-      badge: "PROMO",
-      gradient: "from-[#d09d80] to-[#fbc6c5]",
+      name: "Dermal Fillers",
+      description: "Hyaluronic acid fillers for face, lips, and body enhancement",
+      image: "/placeholder.svg?height=300&width=400&text=Dermal+Fillers",
+      treatments: ["Lip Fillers", "Cheek Fillers", "Butt Fillers"],
+      href: "/services#dermal-fillers",
     },
     {
-      name: "Vampire Facial",
-      price: "₱3,500",
-      description: "PRP + Microneedling for powerful anti-aging skin regeneration.",
-      duration: "~1 hour",
-      sessions: "3-4 sessions",
-      gradient: "from-[#fbc6c5]/80 to-[#d09d80]/80",
+      name: "Laser Treatments",
+      description: "Advanced laser technology for hair removal and skin rejuvenation",
+      image: "/placeholder.svg?height=300&width=400&text=Laser+Treatment",
+      treatments: ["Hair Removal", "Pico Laser", "Tattoo Removal"],
+      href: "/services#laser-treatments",
     },
     {
-      name: "Diode Laser Hair Removal",
-      price: "From ₱1,000",
-      description: "Permanently reduces unwanted hair with comfortable diode laser technology.",
-      duration: "Varies",
-      sessions: "6-8 sessions",
-      gradient: "from-[#d09d80]/70 to-[#fbc6c5]/70",
+      name: "Skin Rejuvenation",
+      description: "Medical-grade treatments for youthful, glowing skin",
+      image: "/placeholder.svg?height=300&width=400&text=Skin+Treatment",
+      treatments: ["Vampire Facial", "Thermage", "Stem Cell Boosters"],
+      href: "/services#skin-treatments",
+    },
+  ]
+
+  const testimonials = [
+    {
+      name: "Maria Santos",
+      treatment: "Hiko Nose Lift",
+      rating: 5,
+      text: "Amazing results! My nose looks so much better and the procedure was comfortable. The team is very professional.",
+      image: "/placeholder.svg?height=60&width=60&text=MS",
+    },
+    {
+      name: "Jessica Cruz",
+      treatment: "Thread Lift",
+      rating: 5,
+      text: "I love my new look! The face thread lift gave me the V-shape I always wanted. Highly recommend!",
+      image: "/placeholder.svg?height=60&width=60&text=JC",
+    },
+    {
+      name: "Ana Rodriguez",
+      treatment: "Vampire Facial",
+      rating: 5,
+      text: "My skin has never looked better. The vampire facial really works! Thank you Skin Essentials!",
+      image: "/placeholder.svg?height=60&width=60&text=AR",
+    },
+  ]
+
+  const whyChooseUs = [
+    {
+      icon: Shield,
+      title: "FDA-Approved Materials",
+      description:
+        "We exclusively use premium, medical-grade products approved by the FDA for your safety and optimal results.",
+    },
+    {
+      icon: Award,
+      title: "Licensed Medical Professionals",
+      description:
+        "Our team consists of licensed medical professionals with extensive experience in aesthetic treatments.",
+    },
+    {
+      icon: Users,
+      title: "10,000+ Satisfied Clients",
+      description: "Join thousands of clients who have achieved their beauty goals with our expert treatments.",
+    },
+    {
+      icon: CheckCircle,
+      title: "Personalized Treatment Plans",
+      description:
+        "Every treatment is customized to your unique needs and aesthetic goals for natural-looking results.",
     },
   ]
 
   return (
     <PullToRefresh>
-      <div className="min-h-screen bg-[#fffaff] pb-20 md:pb-0 relative overflow-hidden">
-        {/* Glassmorphism Header */}
-        <SharedHeader variant="transparent" />
+      <div className="min-h-screen bg-white">
+        {/* Header */}
+        <SharedHeader variant="default" />
 
-        {/* Hero Section - Full Width Video Background */}
-        <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-          {/* Video Background */}
-          <div className="absolute inset-0 w-full h-full">
-            <video
-              autoPlay
-              muted
-              loop
-              playsInline
-              className="w-full h-full object-cover"
-              poster="/placeholder.svg?height=1080&width=1920&text=Hiko+Nose+Lift+Demo"
-            >
-              <source src="https://res.cloudinary.com/dbviya1rj/video/upload/v1753675140/Hiko_Nose_Lift_Video_Ready_xgf2il.mp4" type="video/mp4" />
-              Your browser does not support the video tag.
-            </video>
+        {/* Hero Section */}
+        <section className="relative pt-20 pb-16 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-[#fbc6c5]/5 to-[#d09d80]/5"></div>
+          <div className="container mx-auto px-4 relative z-10">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center min-h-[600px]">
+              {/* Left Content */}
+              <div className="space-y-8">
+                <div className="space-y-6">
+                  <Badge className="bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] text-white px-4 py-2">
+                    Trusted by 10,000+ Clients
+                  </Badge>
 
-            {/* Enhanced Overlay for Better Text Visibility */}
-            <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/30"></div>
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20"></div>
-          </div>
+                  <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
+                    <span className="text-gray-900">Transform Your Beauty</span>
+                    <br />
+                    <span className="bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] bg-clip-text text-transparent">
+                      Naturally & Safely
+                    </span>
+                  </h1>
 
-          {/* Video Badge */}
-          <div className="absolute top-24 right-6 z-20 md:top-32 md:right-12">
-            <Badge className="bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] text-white px-4 py-2 text-sm font-semibold shadow-lg backdrop-blur-sm">
-              Hiko Nose Lift Demo
-            </Badge>
-          </div>
+                  <p className="text-xl text-gray-600 leading-relaxed max-w-lg">
+                    Experience world-class non-surgical beauty enhancements with our team of licensed medical
+                    professionals using FDA-approved materials.
+                  </p>
+                </div>
 
-          {/* Content Overlay */}
-          <div className="relative z-10 container mx-auto px-4 py-32">
-            <div className="max-w-4xl">
-              {/* Floating Badge */}
-              <div className="inline-flex items-center px-4 py-2 bg-white/20 backdrop-blur-md rounded-full border border-white/30 mb-8 animate-fadeInUp">
-                <Sparkles className="w-4 h-4 text-white mr-2" />
-                <span className="text-sm font-medium text-white">Trusted by 10,000+ clients</span>
-              </div>
-
-              <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-8 leading-tight">
-                <span className="text-white drop-shadow-2xl">Transform Your Beauty</span>
-                <br />
-                <span className="bg-gradient-to-r from-[#fbc6c5] via-[#d09d80] to-[#fbc6c5] bg-clip-text text-transparent drop-shadow-2xl">
-                  Naturally & Safely
-                </span>
-              </h1>
-
-              <p className="text-xl md:text-2xl text-white/95 mb-12 leading-relaxed max-w-3xl drop-shadow-lg">
-                Experience world-class non-surgical beauty enhancements with our team of licensed professionals using{" "}
-                <span className="font-bold text-[#fbc6c5] drop-shadow-md">FDA-approved materials</span> and cutting-edge
-                techniques.
-              </p>
-
-              <div className="flex flex-col sm:flex-row gap-6 mb-16">
-                <Button
-                  size="lg"
-                  onClick={() => setIsBookingOpen(true)}
-                  className="bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] hover:from-[#d09d80] hover:to-[#fbc6c5] text-white shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all duration-500 rounded-2xl px-8 py-4 text-lg font-semibold group border-2 border-white/20"
-                >
-                  <Calendar className="w-5 h-5 mr-3 group-hover:rotate-12 transition-transform duration-300" />
-                  Book Free Consultation
-                  <ArrowRight className="w-5 h-5 ml-3 group-hover:translate-x-1 transition-transform duration-300" />
-                </Button>
-                <Link href="/portfolio">
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Button
+                    size="lg"
+                    className="bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] hover:from-[#d09d80] hover:to-[#fbc6c5] text-white px-8 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+                  >
+                    <Calendar className="w-5 h-5 mr-2" />
+                    Book Free Consultation
+                  </Button>
                   <Button
                     size="lg"
                     variant="outline"
-                    className="border-2 border-white/80 text-white hover:bg-white hover:text-[#d09d80] backdrop-blur-sm rounded-2xl px-8 py-4 text-lg font-semibold transform hover:scale-105 transition-all duration-300 bg-white/10 hover:bg-white shadow-lg"
+                    className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 px-8 py-4 text-lg font-semibold rounded-xl bg-transparent"
                   >
-                    View Our Portfolio
+                    <Play className="w-5 h-5 mr-2" />
+                    Watch Our Story
                   </Button>
-                </Link>
+                </div>
+
+                {/* Trust Indicators */}
+                <div className="flex items-center space-x-8 pt-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-gray-900">10,000+</div>
+                    <div className="text-sm text-gray-600">Happy Clients</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-gray-900">28</div>
+                    <div className="text-sm text-gray-600">Treatments</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-gray-900">5+</div>
+                    <div className="text-sm text-gray-600">Years Experience</div>
+                  </div>
+                </div>
               </div>
 
-              {/* Trust Indicators - Enhanced for Video Background */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {[
-                  {
-                    icon: Shield,
-                    title: "FDA-Approved Materials",
-                    description: "Only premium, medical-grade products",
-                    color: "from-[#fbc6c5] to-[#d09d80]",
-                  },
-                  {
-                    icon: Award,
-                    title: "Licensed Professionals",
-                    description: "Expert medical team you can trust",
-                    color: "from-[#d09d80] to-[#fbc6c5]",
-                  },
-                  {
-                    icon: Users,
-                    title: "Personalized Care",
-                    description: "Tailored treatments for your goals",
-                    color: "from-[#fbc6c5]/80 to-[#d09d80]/80",
-                  },
-                ].map((item, index) => (
-                  <div key={index} className="group cursor-pointer">
-                    <div className="bg-white/15 backdrop-blur-md rounded-3xl p-6 border border-white/20 shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all duration-500 hover:bg-white/25">
-                      <div
-                        className={`w-12 h-12 bg-gradient-to-br ${item.color} rounded-2xl flex items-center justify-center mb-4 mx-auto group-hover:rotate-6 transition-transform duration-300 shadow-lg`}
-                      >
-                        <item.icon className="w-6 h-6 text-white" />
-                      </div>
-                      <h3 className="font-bold text-white mb-2 text-lg drop-shadow-md">{item.title}</h3>
-                      <p className="text-white/90 leading-relaxed text-sm drop-shadow-sm">{item.description}</p>
+              {/* Right Content - Hero Image */}
+              <div className="relative">
+                <div className="relative rounded-3xl overflow-hidden shadow-2xl">
+                  <Image
+                    src="https://res.cloudinary.com/dbviya1rj/image/upload/v1754329770/820be4e7-a6c7-46d4-b522-c9dc3e39f194.png"
+                    alt="Skin Essentials Clinic Interior"
+                    width={600}
+                    height={700}
+                    className="w-full h-[600px] object-cover"
+                    priority
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                </div>
+
+                {/* Floating Elements */}
+                <div className="absolute -top-6 -right-6 bg-white rounded-2xl p-4 shadow-xl">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] rounded-full flex items-center justify-center">
+                      <Star className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <div className="font-bold text-gray-900">4.9/5</div>
+                      <div className="text-sm text-gray-600">Client Rating</div>
                     </div>
                   </div>
-                ))}
+                </div>
+
+                <div className="absolute -bottom-6 -left-6 bg-white rounded-2xl p-4 shadow-xl">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
+                      <Shield className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <div className="font-bold text-gray-900">FDA Approved</div>
+                      <div className="text-sm text-gray-600">Materials Only</div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-
-          {/* Floating Elements */}
-          <div className="absolute top-1/4 right-12 w-16 h-16 bg-gradient-to-br from-[#fbc6c5]/30 to-[#d09d80]/30 rounded-full blur-xl animate-pulse hidden lg:block"></div>
-          <div className="absolute bottom-1/4 left-12 w-20 h-20 bg-gradient-to-br from-[#d09d80]/20 to-[#fbc6c5]/20 rounded-full blur-2xl animate-bounce hidden lg:block"></div>
         </section>
 
-        {/* Featured Services - Redesigned */}
-        <section id="services" className="py-20 relative bg-[#fffaff]">
+        {/* Services Overview */}
+        <section className="py-20 bg-gray-50">
           <div className="container mx-auto px-4">
             <div className="text-center mb-16">
-              <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-[#fbc6c5]/20 to-[#d09d80]/20 backdrop-blur-sm rounded-full border border-[#fbc6c5]/30 mb-6">
-                <Star className="w-4 h-4 text-[#d09d80] mr-2" />
-                <span className="text-sm font-medium text-gray-700">Most Popular Treatments</span>
-              </div>
-              <h2 className="text-4xl md:text-5xl font-bold mb-6">
-                <span className="bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-                  Featured Services
-                </span>
-              </h2>
+              <Badge className="bg-[#fbc6c5]/10 text-[#d09d80] px-4 py-2 mb-4">Our Specialties</Badge>
+              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">Comprehensive Beauty Solutions</h2>
               <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                Discover our signature treatments designed to enhance your natural beauty with stunning results
+                From non-surgical face lifts to advanced laser treatments, we offer a complete range of medical-grade
+                aesthetic services.
               </p>
             </div>
 
-            {/* Mobile: Horizontal Scroll, Desktop: Grid */}
-            <div className="md:hidden">
-              <div className="flex space-x-6 overflow-x-auto pb-6 px-4 -mx-4 scrollbar-hide">
-                {featuredServices.map((service, index) => (
-                  <Card
-                    key={index}
-                    className="flex-shrink-0 w-80 bg-white/60 backdrop-blur-sm border border-[#fbc6c5]/20 shadow-lg hover:shadow-2xl transition-all duration-500 rounded-3xl overflow-hidden group"
-                  >
-                    <div className={`h-2 bg-gradient-to-r ${service.gradient}`}></div>
-                    <CardHeader className="pb-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <CardTitle className="text-lg font-bold text-gray-800 leading-tight">{service.name}</CardTitle>
-                        {service.badge && (
-                          <Badge className="bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] text-white text-xs px-3 py-1 rounded-full">
-                            {service.badge}
-                          </Badge>
-                        )}
-                      </div>
-                      <CardDescription className="text-2xl font-bold bg-gradient-to-r from-[#d09d80] to-[#fbc6c5] bg-clip-text text-transparent">
-                        {service.price}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <p className="text-gray-600 mb-4 leading-relaxed">{service.description}</p>
-                      <div className="space-y-2 text-sm text-gray-500">
-                        <div className="flex items-center">
-                          <Clock className="w-4 h-4 mr-2 text-[#d09d80]" />
-                          {service.duration}
-                        </div>
-                        {service.results && (
-                          <div className="flex items-center">
-                            <Star className="w-4 h-4 mr-2 text-[#d09d80]" />
-                            Results: {service.results}
-                          </div>
-                        )}
-                        {service.sessions && (
-                          <div className="flex items-center">
-                            <Star className="w-4 h-4 mr-2 text-[#d09d80]" />
-                            {service.sessions}
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-
-            {/* Desktop Grid */}
-            <div className="hidden md:grid grid-cols-2 lg:grid-cols-4 gap-8">
-              {featuredServices.map((service, index) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+              {mainServices.map((service, index) => (
                 <Card
                   key={index}
-                  className="bg-white/60 backdrop-blur-sm border border-[#fbc6c5]/20 shadow-lg hover:shadow-2xl transition-all duration-500 rounded-3xl overflow-hidden group hover:scale-105"
+                  className="group hover:shadow-xl transition-all duration-300 border-0 bg-white rounded-2xl overflow-hidden"
                 >
-                  <div className={`h-2 bg-gradient-to-r ${service.gradient}`}></div>
-                  <CardHeader className="pb-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <CardTitle className="text-lg font-bold text-gray-800">{service.name}</CardTitle>
-                      {service.badge && (
-                        <Badge className="bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] text-white">
-                          {service.badge}
-                        </Badge>
-                      )}
-                    </div>
-                    <CardDescription className="text-2xl font-bold bg-gradient-to-r from-[#d09d80] to-[#fbc6c5] bg-clip-text text-transparent">
-                      {service.price}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="pt-0">
+                  <div className="relative overflow-hidden">
+                    <Image
+                      src={service.image || "/placeholder.svg"}
+                      alt={service.name}
+                      width={400}
+                      height={300}
+                      className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  </div>
+                  <CardContent className="p-6">
+                    <h3 className="text-xl font-bold text-gray-900 mb-3">{service.name}</h3>
                     <p className="text-gray-600 mb-4 leading-relaxed">{service.description}</p>
-                    <div className="space-y-2 text-sm text-gray-500">
-                      <div className="flex items-center">
-                        <Clock className="w-4 h-4 mr-2 text-[#d09d80]" />
-                        {service.duration}
-                      </div>
-                      {service.results && (
-                        <div className="flex items-center">
-                          <Star className="w-4 h-4 mr-2 text-[#d09d80]" />
-                          Results: {service.results}
+                    <div className="space-y-2 mb-4">
+                      {service.treatments.map((treatment, idx) => (
+                        <div key={idx} className="flex items-center text-sm text-gray-500">
+                          <CheckCircle className="w-4 h-4 text-[#d09d80] mr-2" />
+                          {treatment}
                         </div>
-                      )}
-                      {service.sessions && (
-                        <div className="flex items-center">
-                          <Star className="w-4 h-4 mr-2 text-[#d09d80]" />
-                          {service.sessions}
-                        </div>
-                      )}
+                      ))}
                     </div>
+                    <Link href={service.href}>
+                      <Button
+                        variant="outline"
+                        className="w-full group-hover:bg-[#fbc6c5] group-hover:text-white group-hover:border-[#fbc6c5] transition-all duration-300 bg-transparent"
+                      >
+                        Learn More
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </Button>
+                    </Link>
                   </CardContent>
                 </Card>
               ))}
             </div>
+          </div>
+        </section>
 
-            <div className="text-center mt-12">
-              <Link href="/services">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="border-2 border-[#fbc6c5] text-[#d09d80] hover:bg-gradient-to-r hover:from-[#fbc6c5]/10 hover:to-[#d09d80]/10 backdrop-blur-sm rounded-2xl px-8 py-3 font-semibold transform hover:scale-105 transition-all duration-300 bg-transparent"
-                >
-                  View All 28 Services
-                  <ArrowRight className="w-4 h-4 ml-2" />
+        {/* About Section */}
+        <section className="py-20">
+          <div className="container mx-auto px-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+              <div className="space-y-8">
+                <div>
+                  <Badge className="bg-[#fbc6c5]/10 text-[#d09d80] px-4 py-2 mb-4">About Skin Essentials</Badge>
+                  <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+                    Your Trusted Partner in Beauty Enhancement
+                  </h2>
+                  <p className="text-xl text-gray-600 leading-relaxed mb-8">
+                    At Skin Essentials by HER, we combine medical expertise with artistic vision to deliver
+                    natural-looking results that enhance your unique beauty. Our state-of-the-art facility and
+                    experienced team ensure the highest standards of safety and care.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {whyChooseUs.map((item, index) => (
+                    <div key={index} className="flex items-start space-x-4">
+                      <div className="w-12 h-12 bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] rounded-xl flex items-center justify-center flex-shrink-0">
+                        <item.icon className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-gray-900 mb-2">{item.title}</h3>
+                        <p className="text-gray-600 text-sm leading-relaxed">{item.description}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Link href="/about">
+                    <Button className="bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] hover:from-[#d09d80] hover:to-[#fbc6c5] text-white px-8 py-3 rounded-xl">
+                      Learn More About Us
+                    </Button>
+                  </Link>
+                  <Link href="/portfolio">
+                    <Button
+                      variant="outline"
+                      className="border-gray-300 text-gray-700 hover:bg-gray-50 px-8 py-3 rounded-xl bg-transparent"
+                    >
+                      View Our Work
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+
+              <div className="relative">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-4">
+                    <Image
+                      src="/placeholder.svg?height=250&width=300&text=Clinic+1"
+                      alt="Clinic Interior 1"
+                      width={300}
+                      height={250}
+                      className="rounded-2xl shadow-lg"
+                    />
+                    <Image
+                      src="/placeholder.svg?height=200&width=300&text=Team"
+                      alt="Medical Team"
+                      width={300}
+                      height={200}
+                      className="rounded-2xl shadow-lg"
+                    />
+                  </div>
+                  <div className="space-y-4 pt-8">
+                    <Image
+                      src="/placeholder.svg?height=200&width=300&text=Clinic+2"
+                      alt="Clinic Interior 2"
+                      width={300}
+                      height={200}
+                      className="rounded-2xl shadow-lg"
+                    />
+                    <Image
+                      src="/placeholder.svg?height=250&width=300&text=Equipment"
+                      alt="Medical Equipment"
+                      width={300}
+                      height={250}
+                      className="rounded-2xl shadow-lg"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Testimonials */}
+        <section className="py-20 bg-gray-50">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-16">
+              <Badge className="bg-[#fbc6c5]/10 text-[#d09d80] px-4 py-2 mb-4">Client Stories</Badge>
+              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">What Our Clients Say</h2>
+              <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+                Real stories from real clients who have transformed their confidence with our treatments.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {testimonials.map((testimonial, index) => (
+                <Card key={index} className="bg-white border-0 shadow-lg rounded-2xl p-6 relative">
+                  <Quote className="w-8 h-8 text-[#fbc6c5] mb-4" />
+                  <div className="flex items-center mb-4">
+                    {[...Array(testimonial.rating)].map((_, i) => (
+                      <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
+                    ))}
+                  </div>
+                  <p className="text-gray-600 mb-6 leading-relaxed">"{testimonial.text}"</p>
+                  <div className="flex items-center">
+                    <Image
+                      src={testimonial.image || "/placeholder.svg"}
+                      alt={testimonial.name}
+                      width={60}
+                      height={60}
+                      className="rounded-full mr-4"
+                    />
+                    <div>
+                      <div className="font-bold text-gray-900">{testimonial.name}</div>
+                      <div className="text-sm text-gray-500">{testimonial.treatment}</div>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Before/After Gallery Preview */}
+        <section className="py-20">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-16">
+              <Badge className="bg-[#fbc6c5]/10 text-[#d09d80] px-4 py-2 mb-4">Real Results</Badge>
+              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">See the Transformation</h2>
+              <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
+                Browse our extensive portfolio of before and after photos showcasing natural, beautiful results.
+              </p>
+              <Link href="/portfolio">
+                <Button className="bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] hover:from-[#d09d80] hover:to-[#fbc6c5] text-white px-8 py-4 text-lg rounded-xl">
+                  View Full Portfolio
+                  <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               </Link>
             </div>
           </div>
         </section>
 
-        {/* About Section - Enhanced */}
-        <section
-          id="about"
-          className="py-20 bg-gradient-to-br from-[#fbc6c5]/10 via-[#fffaff] to-[#d09d80]/10 relative"
-        >
+        {/* Contact Section */}
+        <section className="py-20 bg-gradient-to-br from-[#fbc6c5] to-[#d09d80] text-white">
           <div className="container mx-auto px-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-              <div className="order-2 lg:order-1">
-                <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-[#fbc6c5]/20 to-[#d09d80]/20 backdrop-blur-sm rounded-full border border-[#fbc6c5]/30 mb-6">
-                  <Award className="w-4 h-4 text-[#d09d80] mr-2" />
-                  <span className="text-sm font-medium text-gray-700">Why Choose Us</span>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+              <div>
+                <h2 className="text-4xl md:text-5xl font-bold mb-6">Ready to Begin Your Beauty Journey?</h2>
+                <p className="text-xl mb-8 opacity-90 leading-relaxed">
+                  Schedule your complimentary consultation today and discover how we can help you achieve your aesthetic
+                  goals safely and naturally.
+                </p>
+
+                <div className="space-y-4 mb-8">
+                  <div className="flex items-center">
+                    <Phone className="w-6 h-6 mr-4" />
+                    <span className="text-lg">0995-260-3451</span>
+                  </div>
+                  <div className="flex items-center">
+                    <MapPin className="w-6 h-6 mr-4" />
+                    <span className="text-lg">Granda Building, Road 8, Project 6, Quezon City</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Clock className="w-6 h-6 mr-4" />
+                    <span className="text-lg">Monday - Sunday: 10:00 AM - 6:00 PM</span>
+                  </div>
                 </div>
-                <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-8 leading-tight">
-                  Your Beauty Journey
-                  <br />
-                  <span className="bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] bg-clip-text text-transparent">
-                    Starts Here
-                  </span>
-                </h2>
-                <div className="space-y-8">
-                  {[
-                    {
-                      icon: Shield,
-                      title: "Safety First",
-                      description:
-                        "All procedures performed by licensed medical professionals in sterile environments using FDA-approved materials and strict hygiene protocols.",
-                      color: "from-[#fbc6c5] to-[#d09d80]",
-                    },
-                    {
-                      icon: Award,
-                      title: "Expert Team",
-                      description:
-                        "Our licensed professionals have extensive experience in non-surgical beauty enhancements and medical-grade treatments.",
-                      color: "from-[#d09d80] to-[#fbc6c5]",
-                    },
-                    {
-                      icon: Star,
-                      title: "Premium Quality",
-                      description:
-                        "We exclusively use high-quality, medical-grade materials and products approved by the FDA for optimal safety and results.",
-                      color: "from-[#fbc6c5]/80 to-[#d09d80]/80",
-                    },
-                  ].map((item, index) => (
-                    <div key={index} className="flex items-start space-x-4 group">
-                      <div
-                        className={`w-12 h-12 bg-gradient-to-br ${item.color} rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300`}
-                      >
-                        <item.icon className="w-6 h-6 text-white" />
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-gray-900 mb-2 text-lg">{item.title}</h3>
-                        <p className="text-gray-600 leading-relaxed">{item.description}</p>
-                      </div>
+
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Button
+                    size="lg"
+                    variant="secondary"
+                    className="text-[#d09d80] hover:bg-white/90 px-8 py-4 text-lg font-semibold rounded-xl"
+                  >
+                    <Calendar className="w-5 h-5 mr-2" />
+                    Book Consultation
+                  </Button>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="border-2 border-white text-white hover:bg-white hover:text-[#d09d80] bg-transparent px-8 py-4 text-lg font-semibold rounded-xl"
+                  >
+                    <Phone className="w-5 h-5 mr-2" />
+                    Call Now
+                  </Button>
+                </div>
+              </div>
+
+              <div className="relative">
+                <div className="bg-white/10 backdrop-blur-sm rounded-3xl p-8 border border-white/20">
+                  <h3 className="text-2xl font-bold mb-6">Quick Contact Form</h3>
+                  <form className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <input
+                        type="text"
+                        placeholder="First Name"
+                        className="w-full px-4 py-3 rounded-xl bg-white/20 border border-white/30 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/50"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Last Name"
+                        className="w-full px-4 py-3 rounded-xl bg-white/20 border border-white/30 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/50"
+                      />
                     </div>
-                  ))}
-                </div>
-              </div>
-              <div className="relative order-1 lg:order-2">
-                <div className="relative rounded-3xl overflow-hidden shadow-2xl transform hover:scale-105 transition-all duration-500">
-                  <Image
-                    src="https://res.cloudinary.com/dbviya1rj/image/upload/v1754329770/820be4e7-a6c7-46d4-b522-c9dc3e39f194.png?height=600&width=500"
-                    alt="Modern medical spa interior"
-                    width={500}
-                    height={600}
-                    className="w-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#fbc6c5]/20 to-transparent"></div>
-                </div>
-                {/* Floating Elements */}
-                <div className="absolute -top-6 -right-6 w-24 h-24 bg-gradient-to-br from-[#fbc6c5] to-[#d09d80] rounded-full flex items-center justify-center shadow-xl animate-bounce">
-                  <Sparkles className="w-8 h-8 text-white" />
-                </div>
-                <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-gradient-to-br from-[#d09d80]/20 to-[#fbc6c5]/20 rounded-full blur-xl"></div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Contact Section - Enhanced */}
-        <section id="contact" className="py-20 relative">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-16">
-              <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-[#fbc6c5]/20 to-[#d09d80]/20 backdrop-blur-sm rounded-full border border-[#fbc6c5]/30 mb-6">
-                <Phone className="w-4 h-4 text-[#d09d80] mr-2" />
-                <span className="text-sm font-medium text-gray-700">Get In Touch</span>
-              </div>
-              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">Ready to Get Started?</h2>
-              <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                Book your consultation today and take the first step towards your beauty transformation
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto mb-12">
-              {[
-                {
-                  icon: Phone,
-                  title: "Call or Message",
-                  subtitle: "Viber and WhatsApp available",
-                  content: "0995-260-3451",
-                  color: "from-[#fbc6c5] to-[#d09d80]",
-                },
-                {
-                  icon: MapPin,
-                  title: "Visit Our Clinic",
-                  subtitle: "Modern, comfortable facility",
-                  content: "Granda Building, Road 8\nProject 6, Quezon City",
-                  color: "from-[#d09d80] to-[#fbc6c5]",
-                },
-                {
-                  icon: Clock,
-                  title: "Business Hours",
-                  subtitle: "7 days a week",
-                  content: "Monday – Sunday\n10:00 AM – 6:00 PM",
-                  color: "from-[#fbc6c5]/80 to-[#d09d80]/80",
-                },
-              ].map((item, index) => (
-                <Card
-                  key={index}
-                  className="text-center bg-white/60 backdrop-blur-sm border border-[#fbc6c5]/20 shadow-lg hover:shadow-2xl transition-all duration-500 rounded-3xl overflow-hidden group hover:scale-105"
-                >
-                  <CardHeader className="pb-4">
-                    <div
-                      className={`w-16 h-16 bg-gradient-to-br ${item.color} rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:rotate-6 transition-transform duration-300`}
+                    <input
+                      type="email"
+                      placeholder="Email Address"
+                      className="w-full px-4 py-3 rounded-xl bg-white/20 border border-white/30 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/50"
+                    />
+                    <input
+                      type="tel"
+                      placeholder="Phone Number"
+                      className="w-full px-4 py-3 rounded-xl bg-white/20 border border-white/30 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/50"
+                    />
+                    <select className="w-full px-4 py-3 rounded-xl bg-white/20 border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-white/50">
+                      <option value="">Select Treatment Interest</option>
+                      <option value="thread-lift">Thread Lift</option>
+                      <option value="dermal-fillers">Dermal Fillers</option>
+                      <option value="laser-treatment">Laser Treatment</option>
+                      <option value="skin-rejuvenation">Skin Rejuvenation</option>
+                    </select>
+                    <Button
+                      type="submit"
+                      className="w-full bg-white text-[#d09d80] hover:bg-white/90 py-3 text-lg font-semibold rounded-xl"
                     >
-                      <item.icon className="w-8 h-8 text-white" />
-                    </div>
-                    <CardTitle className="text-xl font-bold text-gray-900">{item.title}</CardTitle>
-                    <p className="text-sm text-gray-500">{item.subtitle}</p>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="font-semibold text-lg text-gray-800 whitespace-pre-line">{item.content}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-            <div className="text-center">
-              <Button
-                size="lg"
-                onClick={() => setIsBookingOpen(true)}
-                className="bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] hover:from-[#d09d80] hover:to-[#fbc6c5] text-white shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all duration-500 rounded-2xl px-12 py-4 text-lg font-semibold group"
-              >
-                <Calendar className="w-5 h-5 mr-3 group-hover:rotate-12 transition-transform duration-300" />
-                Book Your Consultation Now
-                <ArrowRight className="w-5 h-5 ml-3 group-hover:translate-x-1 transition-transform duration-300" />
-              </Button>
+                      Send Message
+                    </Button>
+                  </form>
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* Footer - Enhanced */}
-        <footer className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white py-16 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#fbc6c5]/5 to-[#d09d80]/5"></div>
-          <div className="container mx-auto px-4 relative z-10">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-              <div className="sm:col-span-2 lg:col-span-1">
+        {/* Footer */}
+        <footer className="bg-gray-900 text-white py-16">
+          <div className="container mx-auto px-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+              <div className="lg:col-span-2">
                 <div className="flex items-center space-x-3 mb-6">
                   <Image
                     src="/images/skinessentials-logo.png"
@@ -472,10 +536,29 @@ export default function HomePage() {
                     className="h-10 w-auto object-contain brightness-0 invert"
                   />
                 </div>
-                <p className="text-gray-300 leading-relaxed mb-6">
-                  Your trusted partner for non-surgical beauty enhancements and medical-grade skin solutions.
+                <p className="text-gray-300 leading-relaxed mb-6 max-w-md">
+                  Your trusted partner for non-surgical beauty enhancements and medical-grade skin solutions. Licensed
+                  professionals, FDA-approved materials, personalized care.
                 </p>
-                <div className="flex space-x-4">{/* Social Media Icons would go here */}</div>
+                <div className="flex space-x-4">{/* Social Media Icons */}</div>
+              </div>
+
+              <div>
+                <h3 className="font-bold mb-6 text-lg">Services</h3>
+                <div className="space-y-3 text-gray-300">
+                  <Link href="/services#thread-lifts" className="block hover:text-white transition-colors">
+                    Thread Lifts
+                  </Link>
+                  <Link href="/services#dermal-fillers" className="block hover:text-white transition-colors">
+                    Dermal Fillers
+                  </Link>
+                  <Link href="/services#laser-treatments" className="block hover:text-white transition-colors">
+                    Laser Treatments
+                  </Link>
+                  <Link href="/services#skin-treatments" className="block hover:text-white transition-colors">
+                    Skin Rejuvenation
+                  </Link>
+                </div>
               </div>
 
               <div>
@@ -485,36 +568,31 @@ export default function HomePage() {
                     <Phone className="w-4 h-4 mr-2 text-[#fbc6c5]" />
                     0995-260-3451
                   </p>
-                  <p className="flex items-center">
-                    <MapPin className="w-4 h-4 mr-2 text-[#fbc6c5]" />
+                  <p className="flex items-start">
+                    <MapPin className="w-4 h-4 mr-2 text-[#fbc6c5] mt-1" />
                     Granda Building, Road 8<br />
                     Project 6, Quezon City
                   </p>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="font-bold mb-6 text-lg">Popular Services</h3>
-                <div className="space-y-3 text-gray-300">
-                  <p>Thread Lifts</p>
-                  <p>Dermal Fillers</p>
-                  <p>Laser Treatments</p>
-                  <p>Skin Boosters</p>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="font-bold mb-6 text-lg">Payment Methods</h3>
-                <div className="space-y-3 text-gray-300">
-                  <p>GCash</p>
-                  <p>Bank Transfers</p>
-                  <p>Cash Payments</p>
+                  <p className="flex items-center">
+                    <Clock className="w-4 h-4 mr-2 text-[#fbc6c5]" />
+                    Mon-Sun: 10AM-6PM
+                  </p>
                 </div>
               </div>
             </div>
 
-            <div className="border-t border-gray-700 mt-12 pt-8 text-center text-gray-400">
-              <p>&copy; {new Date().getFullYear()} Skin Essentials by HER. All rights reserved.</p>
+            <div className="border-t border-gray-700 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
+              <p className="text-gray-400 mb-4 md:mb-0">
+                &copy; {new Date().getFullYear()} Skin Essentials by HER. All rights reserved.
+              </p>
+              <div className="flex space-x-6 text-gray-400">
+                <Link href="/privacy" className="hover:text-white transition-colors">
+                  Privacy Policy
+                </Link>
+                <Link href="/terms" className="hover:text-white transition-colors">
+                  Terms of Service
+                </Link>
+              </div>
             </div>
           </div>
         </footer>
