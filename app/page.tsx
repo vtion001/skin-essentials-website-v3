@@ -1,5 +1,6 @@
 "use client"
 
+import type { Metadata } from "next"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -43,7 +44,7 @@ export default function HomePage() {
       description: "Non-surgical face and nose lifting using PDO/PCL threads",
       image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1758859267/bbecd5de-3bea-4490-8fef-144ca997ed41.png?height=300&width=400&text=Thread+Lift",
       treatments: ["Hiko Nose Lift", "Face Thread Lift", "Neck Thread Lift"],
-      href: "/services#thread-lifts",
+      href: "/hiko-nose-lift",
     },
     {
       name: "Dermal Fillers",
@@ -134,35 +135,38 @@ export default function HomePage() {
                   </Badge>
 
                   <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-                    <span className="text-gray-900">Transform Your Beauty</span>
+                    <span className="text-gray-900">Quezon City's Premier</span>
                     <br />
                     <span className="bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] bg-clip-text text-transparent">
-                      Naturally & Safely
+                      Aesthetic Clinic
                     </span>
                   </h1>
 
                   <p className="text-lg md:text-xl text-gray-600 leading-relaxed max-w-lg">
-                    Experience world-class non-surgical beauty enhancements with our team of licensed medical
-                    professionals using FDA-approved materials.
+                    Experience world-class non-surgical beauty enhancements at the leading aesthetic clinic near Quezon City. Our team of licensed medical professionals uses FDA-approved materials for safe, natural results.
                   </p>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-4">
-                  <Button
-                    size="lg"
-                    className="bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] hover:from-[#d09d80] hover:to-[#fbc6c5] text-white px-6 md:px-8 py-3 md:py-4 text-base md:text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
-                  >
-                    <Calendar className="w-4 md:w-5 h-4 md:h-5 mr-2" />
-                    Book Free Consultation
-                  </Button>
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 px-6 md:px-8 py-3 md:py-4 text-base md:text-lg font-semibold rounded-xl bg-transparent"
-                  >
-                    <Play className="w-4 md:w-5 h-4 md:h-5 mr-2" />
-                    Watch Our Story
-                  </Button>
+                  <Link href="/contact">
+                    <Button
+                      size="lg"
+                      className="bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] hover:from-[#d09d80] hover:to-[#fbc6c5] text-white px-6 md:px-8 py-3 md:py-4 text-base md:text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 w-full sm:w-auto"
+                    >
+                      <Calendar className="w-4 md:w-5 h-4 md:h-5 mr-2" />
+                      Book Free Consultation
+                    </Button>
+                  </Link>
+                  <Link href="/hiko-nose-lift">
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 px-6 md:px-8 py-3 md:py-4 text-base md:text-lg font-semibold rounded-xl bg-transparent w-full sm:w-auto"
+                    >
+                      <ArrowRight className="w-4 md:w-5 h-4 md:h-5 mr-2" />
+                      Hiko Nose Lift
+                    </Button>
+                  </Link>
                 </div>
 
                 {/* Trust Indicators */}
@@ -188,7 +192,7 @@ export default function HomePage() {
                   <div className="aspect-[4/5] relative">
                     <Image
                       src="https://res.cloudinary.com/dbviya1rj/image/upload/v1758858583/n5uaxwv6udqpnut6fmot.jpg"
-                      alt="Skin Essentials Clinic Interior"
+                      alt="Skin Essentials by HER Aesthetic Clinic Interior in Quezon City - Premier Hiko Nose Thread Lift and Beauty Treatments"
                       fill
                       className="object-cover"
                       priority
@@ -231,11 +235,10 @@ export default function HomePage() {
         <section className="py-20 bg-gray-50">
           <div className="container mx-auto px-4">
             <div className="text-center mb-16">
-              <Badge className="bg-[#fbc6c5]/10 text-[#d09d80] px-4 py-2 mb-4">Our Specialties</Badge>
-              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">Comprehensive Beauty Solutions</h2>
+              <Badge className="bg-[#fbc6c5]/10 text-[#d09d80] px-4 py-2 mb-4">Quezon City's Top Aesthetic Services</Badge>
+              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">Comprehensive Beauty Solutions in Quezon City</h2>
               <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                From non-surgical face lifts to advanced laser treatments, we offer a complete range of medical-grade
-                aesthetic services.
+                From Hiko nose thread lifts to advanced laser treatments, our Quezon City aesthetic clinic offers a complete range of medical-grade beauty services. Trusted by thousands for safe, natural results.
               </p>
             </div>
 
@@ -288,14 +291,12 @@ export default function HomePage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
               <div className="space-y-8">
                 <div>
-                  <Badge className="bg-[#fbc6c5]/10 text-[#d09d80] px-4 py-2 mb-4">About Skin Essentials</Badge>
+                  <Badge className="bg-[#fbc6c5]/10 text-[#d09d80] px-4 py-2 mb-4">Quezon City's Trusted Aesthetic Clinic</Badge>
                   <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-                    Your Trusted Partner in Beauty Enhancement
+                    Quezon City's Premier Beauty Enhancement Destination
                   </h2>
                   <p className="text-xl text-gray-600 leading-relaxed mb-8">
-                    At Skin Essentials by HER, we combine medical expertise with artistic vision to deliver
-                    natural-looking results that enhance your unique beauty. Our state-of-the-art facility and
-                    experienced team ensure the highest standards of safety and care.
+                    Located in the heart of Quezon City, Skin Essentials by HER combines medical expertise with artistic vision to deliver natural-looking results. Our state-of-the-art aesthetic clinic serves clients throughout Metro Manila with the highest standards of safety and care, specializing in Hiko nose procedures and advanced beauty treatments.
                   </p>
                 </div>
 
@@ -335,14 +336,14 @@ export default function HomePage() {
                   <div className="space-y-4">
                     <Image
                       src="https://res.cloudinary.com/dbviya1rj/image/upload/v1758858851/zwivugqje2ejllji1xcn.jpg?height=250&width=300&text=Clinic+1"
-                      alt="Clinic Interior 1"
+                      alt="Modern Aesthetic Treatment Room at Skin Essentials Quezon City Clinic"
                       width={300}
                       height={250}
                       className="rounded-2xl shadow-lg"
                     />
                     <Image
                       src="https://res.cloudinary.com/dbviya1rj/image/upload/v1758858517/hk0fop3vbxemv9wqcdxl.jpg"
-                      alt="Medical Team"
+                      alt="Licensed Medical Team at Skin Essentials by HER Quezon City - Hiko Nose Thread Lift Specialists"
                       width={300}
                       height={200}
                       className="rounded-2xl shadow-lg"
@@ -351,14 +352,14 @@ export default function HomePage() {
                   <div className="space-y-4 pt-8">
                     <Image
                       src="https://res.cloudinary.com/dbviya1rj/image/upload/v1758858850/bbqjc0cv7ha2vt2lo4vv.jpg?height=200&width=300&text=Clinic+2"
-                      alt="Clinic Interior 2"
+                      alt="Skin Essentials by HER Reception Area - Premier Aesthetic Clinic in Quezon City"
                       width={300}
                       height={200}
                       className="rounded-2xl shadow-lg"
                     />
                     <Image
                       src="https://res.cloudinary.com/dbviya1rj/image/upload/v1758858852/tlcvgu1xfqv6mmfcivre.jpg?height=250&width=300&text=Equipment"
-                      alt="Medical Equipment"
+                      alt="FDA-Approved Medical Equipment for Hiko Nose Thread Lifts and Aesthetic Treatments in Quezon City"
                       width={300}
                       height={250}
                       className="rounded-2xl shadow-lg"

@@ -34,6 +34,7 @@ export function SharedHeader({ showBackButton = false, backHref = "/", variant =
     { href: "/", label: "Home" },
     { href: "/about", label: "About" },
     { href: "/services", label: "Services" },
+    { href: "/hiko-nose-lift", label: "Hiko Nose Lift" },
     { href: "/portfolio", label: "Portfolio" },
     { href: "/faq", label: "FAQ" },
     { href: "/contact", label: "Contact" },
@@ -61,7 +62,7 @@ export function SharedHeader({ showBackButton = false, backHref = "/", variant =
               <Link href="/" className="flex items-center">
                 <Image
                   src="/images/skinessentials-logo.png"
-                  alt="Skin Essentials by HER"
+                  alt="Skin Essentials by HER - Premier Aesthetic Clinic in Quezon City specializing in Hiko Nose Thread Lifts"
                   width={120}
                   height={60}
                   className="h-12 w-auto object-contain"

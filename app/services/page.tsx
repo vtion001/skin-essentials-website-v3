@@ -488,19 +488,19 @@ export default function ServicesPage() {
         <section className="pt-24 pb-16 bg-gradient-to-br from-gray-50 to-white">
           <div className="container mx-auto px-4">
             <div className="text-center max-w-4xl mx-auto">
-              <Badge className="bg-[#fbc6c5]/10 text-[#d09d80] px-4 py-2 mb-6">28 Professional Treatments</Badge>
+              <Badge className="bg-[#fbc6c5]/10 text-[#d09d80] px-4 py-2 mb-6">Quezon City's Premier Aesthetic Clinic</Badge>
 
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-                Complete Range of
+                Quezon City's Complete Range of
                 <span className="bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] bg-clip-text text-transparent block">
-                  Beauty Services
+                  Aesthetic Services
                 </span>
               </h1>
 
               <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-                Discover our comprehensive collection of medical-grade aesthetic treatments designed to enhance your
-                natural beauty with
-                <span className="font-semibold text-[#d09d80]"> FDA-approved materials</span> and expert care.
+                Discover Quezon City's most comprehensive collection of medical-grade aesthetic treatments, including our signature 
+                <span className="font-semibold text-[#d09d80]"> Hiko Nose Thread Lifts</span>, designed to enhance your
+                natural beauty with <span className="font-semibold text-[#d09d80]">FDA-approved materials</span> and expert care.
               </p>
 
               {/* Trust Indicators */}
@@ -651,10 +651,21 @@ export default function ServicesPage() {
                         </Accordion>
                       )}
 
-                      <Button className="w-full bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] hover:from-[#d09d80] hover:to-[#fbc6c5] text-white rounded-xl py-3 font-semibold group-hover:shadow-lg transition-all duration-300">
-                        Book This Treatment
-                        <ArrowRight className="w-4 h-4 ml-2" />
-                      </Button>
+                      {service.name === "Hiko Nose Thread Lift" ? (
+                        <Link href="/hiko-nose-lift">
+                          <Button className="w-full bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] hover:from-[#d09d80] hover:to-[#fbc6c5] text-white rounded-xl py-3 font-semibold group-hover:shadow-lg transition-all duration-300">
+                            Learn More About Hiko
+                            <ArrowRight className="w-4 h-4 ml-2" />
+                          </Button>
+                        </Link>
+                      ) : (
+                        <Link href="/contact">
+                          <Button className="w-full bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] hover:from-[#d09d80] hover:to-[#fbc6c5] text-white rounded-xl py-3 font-semibold group-hover:shadow-lg transition-all duration-300">
+                            Book This Treatment
+                            <ArrowRight className="w-4 h-4 ml-2" />
+                          </Button>
+                        </Link>
+                      )}
                     </CardContent>
                   </Card>
                 ))}

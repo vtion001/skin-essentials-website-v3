@@ -4,15 +4,58 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import { SmoothScroll } from "@/components/smooth-scroll"
 import { PerformanceMonitor } from "@/components/performance-monitor"
+import { StructuredData } from "@/components/structured-data"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Skin Essentials by HER - Non-Surgical Beauty Enhancements",
+  title: "Skin Essentials by HER - Premier Aesthetic Clinic in Quezon City | Hiko Nose Lift & Thread Lifts",
   description:
-    "Your trusted partner for non-surgical beauty enhancements and medical-grade skin solutions. Licensed professionals, FDA-approved materials, personalized treatments.",
-  keywords: "beauty treatments, non-surgical, thread lift, fillers, laser treatments, Quezon City, medical aesthetics",
-    generator: 'v0.dev'
+    "Leading aesthetic clinic in Quezon City specializing in Hiko nose lifts, thread lifts, dermal fillers & laser treatments. Licensed professionals, FDA-approved materials. Book your consultation today!",
+  keywords: "aesthetic clinic Quezon City, Hiko nose lift Quezon City, thread lift Philippines, dermal fillers QC, laser hair removal Quezon City, aesthetic clinic near me, non-surgical beauty treatments, medical aesthetics Philippines, vampire facial QC, skin rejuvenation Quezon City",
+  authors: [{ name: "Skin Essentials by HER" }],
+  creator: "Skin Essentials by HER",
+  publisher: "Skin Essentials by HER",
+  robots: "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1",
+  verification: {
+    google: "your-google-verification-code",
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_PH",
+    url: "https://www.skinessentialsbyher.com",
+    siteName: "Skin Essentials by HER",
+    title: "Premier Aesthetic Clinic in Quezon City | Skin Essentials by HER",
+    description: "Leading aesthetic clinic in Quezon City specializing in Hiko nose lifts, thread lifts, dermal fillers & laser treatments. Licensed professionals, FDA-approved materials.",
+    images: [
+      {
+        url: "https://www.skinessentialsbyher.com/images/skinessentials-logo.png",
+        width: 1200,
+        height: 630,
+        alt: "Skin Essentials by HER - Aesthetic Clinic Quezon City",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Premier Aesthetic Clinic in Quezon City | Skin Essentials by HER",
+    description: "Leading aesthetic clinic in Quezon City specializing in Hiko nose lifts, thread lifts, dermal fillers & laser treatments.",
+    images: ["https://www.skinessentialsbyher.com/images/skinessentials-logo.png"],
+    creator: "@skinessentialsher",
+  },
+  alternates: {
+    canonical: "https://www.skinessentialsbyher.com",
+  },
+  other: {
+    "geo.region": "PH-00",
+    "geo.placename": "Quezon City",
+    "geo.position": "14.6760;121.0437",
+    "ICBM": "14.6760, 121.0437",
+    "format-detection": "telephone=no",
+    "mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-status-bar-style": "default",
+  },
 }
 
 export default function RootLayout({
@@ -31,6 +74,7 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="//fonts.gstatic.com" />
       </head>
       <body className={`${inter.className} antialiased`}>
+        <StructuredData />
         <PerformanceMonitor />
         <SmoothScroll>
           {children}

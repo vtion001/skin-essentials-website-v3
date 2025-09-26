@@ -25,6 +25,11 @@ export function MobileNav() {
       label: "Services",
     },
     {
+      href: "/hiko-nose-lift",
+      icon: User,
+      label: "Hiko Nose",
+    },
+    {
       href: "/portfolio",
       icon: Camera,
       label: "Portfolio",
@@ -33,11 +38,6 @@ export function MobileNav() {
       href: "/contact",
       icon: Phone,
       label: "Contact",
-    },
-    {
-      href: "/faq",
-      icon: User,
-      label: "FAQ",
     },
   ]
 
