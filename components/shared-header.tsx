@@ -1,12 +1,13 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Menu, X, Calendar, ArrowLeft, ChevronDown } from "lucide-react"
+import { Menu, X, Calendar, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
-import { useState, useEffect } from "react"
+import { useState, useCallback } from "react"
 import { BookingModal } from "@/components/booking-modal"
 import { usePathname } from "next/navigation"
+import { useOptimizedScroll } from "@/lib/use-performance"
 
 interface SharedHeaderProps {
   showBackButton?: boolean
@@ -18,58 +19,24 @@ export function SharedHeader({ showBackButton = false, backHref = "/", variant =
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
   const [isBookingOpen, setIsBookingOpen] = useState(false)
-  const [isServicesOpen, setIsServicesOpen] = useState(false)
+
   const pathname = usePathname()
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10)
-    }
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
+  const handleScroll = useCallback((scrollY: number) => {
+    setIsScrolled(scrollY > 10)
   }, [])
 
-  const serviceCategories = [
-    {
-      title: "Face Enhancement",
-      items: [
-        { name: "Hiko Nose Lift", href: "/services#nose-thread-lift" },
-        { name: "Face Thread Lift", href: "/services#face-thread-lift" },
-        { name: "Botox", href: "/services#botox" },
-      ],
-    },
-    {
-      title: "Dermal Fillers",
-      items: [
-        { name: "Face Fillers", href: "/services#face-fillers" },
-        { name: "Lip Fillers", href: "/services#lip-fillers" },
-        { name: "Body Fillers", href: "/services#body-fillers" },
-      ],
-    },
-    {
-      title: "Laser Treatments",
-      items: [
-        { name: "Hair Removal", href: "/services#hair-removal" },
-        { name: "Pico Laser", href: "/services#pico-laser" },
-        { name: "Tattoo Removal", href: "/services#tattoo-removal" },
-      ],
-    },
-    {
-      title: "Skin Care",
-      items: [
-        { name: "Vampire Facial", href: "/services#vampire-facial" },
-        { name: "Thermage", href: "/services#thermage" },
-        { name: "Stem Cell Boosters", href: "/services#stem-cell" },
-      ],
-    },
-  ]
+  useOptimizedScroll(handleScroll)
+
+
 
   const navItems = [
     { href: "/", label: "Home" },
     { href: "/about", label: "About" },
+    { href: "/services", label: "Services" },
     { href: "/portfolio", label: "Portfolio" },
     { href: "/faq", label: "FAQ" },
-    { href: "/#contact", label: "Contact" },
+    { href: "/contact", label: "Contact" },
   ]
 
   const headerClasses = `fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
@@ -110,7 +77,7 @@ export function SharedHeader({ showBackButton = false, backHref = "/", variant =
                   key={item.href}
                   href={item.href}
                   className={`transition-all duration-300 font-medium relative group ${
-                    pathname === item.href || (item.href === "/#contact" && pathname === "/")
+                    pathname === item.href
                       ? "text-[#d09d80]"
                       : "text-gray-700 hover:text-[#d09d80]"
                   }`}
@@ -120,40 +87,7 @@ export function SharedHeader({ showBackButton = false, backHref = "/", variant =
                 </Link>
               ))}
 
-              {/* Services Dropdown */}
-              <div
-                className="relative group"
-                onMouseEnter={() => setIsServicesOpen(true)}
-                onMouseLeave={() => setIsServicesOpen(false)}
-              >
-                <button className="flex items-center text-gray-700 hover:text-[#d09d80] font-medium transition-colors duration-300">
-                  Services
-                  <ChevronDown className="w-4 h-4 ml-1" />
-                </button>
 
-                {isServicesOpen && (
-                  <div className="absolute top-full left-0 mt-2 w-[800px] bg-white rounded-2xl shadow-2xl border border-gray-100 p-8 grid grid-cols-4 gap-6">
-                    {serviceCategories.map((category, index) => (
-                      <div key={index}>
-                        <h3 className="font-bold text-gray-900 mb-4 text-sm uppercase tracking-wide">
-                          {category.title}
-                        </h3>
-                        <div className="space-y-3">
-                          {category.items.map((item, itemIndex) => (
-                            <Link
-                              key={itemIndex}
-                              href={item.href}
-                              className="block text-gray-600 hover:text-[#d09d80] transition-colors duration-200 text-sm"
-                            >
-                              {item.name}
-                            </Link>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
 
               <Button
                 onClick={() => setIsBookingOpen(true)}
@@ -182,7 +116,7 @@ export function SharedHeader({ showBackButton = false, backHref = "/", variant =
                     key={item.href}
                     href={item.href}
                     className={`transition-all duration-300 py-3 font-medium ${
-                      pathname === item.href || (item.href === "/#contact" && pathname === "/")
+                      pathname === item.href
                         ? "text-[#d09d80]"
                         : "text-gray-700 hover:text-[#d09d80]"
                     }`}
@@ -191,13 +125,6 @@ export function SharedHeader({ showBackButton = false, backHref = "/", variant =
                     {item.label}
                   </Link>
                 ))}
-                <Link
-                  href="/services"
-                  className="text-gray-700 hover:text-[#d09d80] py-3 font-medium transition-colors duration-300"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Services
-                </Link>
                 <Button
                   onClick={() => {
                     setIsBookingOpen(true)

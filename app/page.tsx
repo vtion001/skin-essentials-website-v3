@@ -41,28 +41,28 @@ export default function HomePage() {
     {
       name: "Thread Lifts",
       description: "Non-surgical face and nose lifting using PDO/PCL threads",
-      image: "/placeholder.svg?height=300&width=400&text=Thread+Lift",
+      image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1758859267/bbecd5de-3bea-4490-8fef-144ca997ed41.png?height=300&width=400&text=Thread+Lift",
       treatments: ["Hiko Nose Lift", "Face Thread Lift", "Neck Thread Lift"],
       href: "/services#thread-lifts",
     },
     {
       name: "Dermal Fillers",
       description: "Hyaluronic acid fillers for face, lips, and body enhancement",
-      image: "/placeholder.svg?height=300&width=400&text=Dermal+Fillers",
+      image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1758859335/f380e512-53bd-4501-81e3-685818b51001.png?height=300&width=400&text=Dermal+Fillers",
       treatments: ["Lip Fillers", "Cheek Fillers", "Butt Fillers"],
       href: "/services#dermal-fillers",
     },
     {
       name: "Laser Treatments",
       description: "Advanced laser technology for hair removal and skin rejuvenation",
-      image: "/placeholder.svg?height=300&width=400&text=Laser+Treatment",
+      image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1758859399/31549a56-c2be-4517-81e3-9b866a9a1a23.png?height=300&width=400&text=Laser+Treatment",
       treatments: ["Hair Removal", "Pico Laser", "Tattoo Removal"],
       href: "/services#laser-treatments",
     },
     {
       name: "Skin Rejuvenation",
       description: "Medical-grade treatments for youthful, glowing skin",
-      image: "/placeholder.svg?height=300&width=400&text=Skin+Treatment",
+      image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1758859466/3ae3dd78-09b7-474a-86af-6ff7df610626.png?height=300&width=400&text=Skin+Treatment",
       treatments: ["Vampire Facial", "Thermage", "Stem Cell Boosters"],
       href: "/services#skin-treatments",
     },
@@ -74,21 +74,18 @@ export default function HomePage() {
       treatment: "Hiko Nose Lift",
       rating: 5,
       text: "Amazing results! My nose looks so much better and the procedure was comfortable. The team is very professional.",
-      image: "/placeholder.svg?height=60&width=60&text=MS",
     },
     {
       name: "Jessica Cruz",
       treatment: "Thread Lift",
       rating: 5,
       text: "I love my new look! The face thread lift gave me the V-shape I always wanted. Highly recommend!",
-      image: "/placeholder.svg?height=60&width=60&text=JC",
     },
     {
       name: "Ana Rodriguez",
       treatment: "Vampire Facial",
       rating: 5,
       text: "My skin has never looked better. The vampire facial really works! Thank you Skin Essentials!",
-      image: "/placeholder.svg?height=60&width=60&text=AR",
     },
   ]
 
@@ -125,18 +122,18 @@ export default function HomePage() {
         <SharedHeader variant="default" />
 
         {/* Hero Section */}
-        <section className="relative pt-20 pb-16 overflow-hidden">
+        <section className="relative pt-24 md:pt-28 lg:pt-32 pb-16 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-[#fbc6c5]/5 to-[#d09d80]/5"></div>
-          <div className="container mx-auto px-4 relative z-10">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center min-h-[600px]">
+          <div className="container mx-auto px-4 relative z-20">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center min-h-[calc(100vh-8rem)]">
               {/* Left Content */}
-              <div className="space-y-8">
-                <div className="space-y-6">
-                  <Badge className="bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] text-white px-4 py-2">
+              <div className="space-y-6 lg:space-y-8 order-2 lg:order-1">
+                <div className="space-y-4 lg:space-y-6">
+                  <Badge className="bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] text-white px-4 py-2 text-sm">
                     Trusted by 10,000+ Clients
                   </Badge>
 
-                  <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
+                  <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
                     <span className="text-gray-900">Transform Your Beauty</span>
                     <br />
                     <span className="bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] bg-clip-text text-transparent">
@@ -144,7 +141,7 @@ export default function HomePage() {
                     </span>
                   </h1>
 
-                  <p className="text-xl text-gray-600 leading-relaxed max-w-lg">
+                  <p className="text-lg md:text-xl text-gray-600 leading-relaxed max-w-lg">
                     Experience world-class non-surgical beauty enhancements with our team of licensed medical
                     professionals using FDA-approved materials.
                   </p>
@@ -153,73 +150,75 @@ export default function HomePage() {
                 <div className="flex flex-col sm:flex-row gap-4">
                   <Button
                     size="lg"
-                    className="bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] hover:from-[#d09d80] hover:to-[#fbc6c5] text-white px-8 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+                    className="bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] hover:from-[#d09d80] hover:to-[#fbc6c5] text-white px-6 md:px-8 py-3 md:py-4 text-base md:text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
                   >
-                    <Calendar className="w-5 h-5 mr-2" />
+                    <Calendar className="w-4 md:w-5 h-4 md:h-5 mr-2" />
                     Book Free Consultation
                   </Button>
                   <Button
                     size="lg"
                     variant="outline"
-                    className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 px-8 py-4 text-lg font-semibold rounded-xl bg-transparent"
+                    className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 px-6 md:px-8 py-3 md:py-4 text-base md:text-lg font-semibold rounded-xl bg-transparent"
                   >
-                    <Play className="w-5 h-5 mr-2" />
+                    <Play className="w-4 md:w-5 h-4 md:h-5 mr-2" />
                     Watch Our Story
                   </Button>
                 </div>
 
                 {/* Trust Indicators */}
-                <div className="flex items-center space-x-8 pt-4">
+                <div className="flex items-center justify-center sm:justify-start space-x-6 lg:space-x-8 pt-4">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-gray-900">10,000+</div>
-                    <div className="text-sm text-gray-600">Happy Clients</div>
+                    <div className="text-xl md:text-2xl font-bold text-gray-900">10,000+</div>
+                    <div className="text-xs md:text-sm text-gray-600">Happy Clients</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-gray-900">28</div>
-                    <div className="text-sm text-gray-600">Treatments</div>
+                    <div className="text-xl md:text-2xl font-bold text-gray-900">28</div>
+                    <div className="text-xs md:text-sm text-gray-600">Treatments</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-gray-900">5+</div>
-                    <div className="text-sm text-gray-600">Years Experience</div>
+                    <div className="text-xl md:text-2xl font-bold text-gray-900">5+</div>
+                    <div className="text-xs md:text-sm text-gray-600">Years Experience</div>
                   </div>
                 </div>
               </div>
 
               {/* Right Content - Hero Image */}
-              <div className="relative">
-                <div className="relative rounded-3xl overflow-hidden shadow-2xl">
-                  <Image
-                    src="https://res.cloudinary.com/dbviya1rj/image/upload/v1754329770/820be4e7-a6c7-46d4-b522-c9dc3e39f194.png"
-                    alt="Skin Essentials Clinic Interior"
-                    width={600}
-                    height={700}
-                    className="w-full h-[600px] object-cover"
-                    priority
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+              <div className="relative order-1 lg:order-2">
+                <div className="relative rounded-2xl lg:rounded-3xl overflow-hidden shadow-xl lg:shadow-2xl">
+                  <div className="aspect-[4/5] relative">
+                    <Image
+                      src="https://res.cloudinary.com/dbviya1rj/image/upload/v1758858583/n5uaxwv6udqpnut6fmot.jpg"
+                      alt="Skin Essentials Clinic Interior"
+                      fill
+                      className="object-cover"
+                      priority
+                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 600px"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                  </div>
                 </div>
 
-                {/* Floating Elements */}
-                <div className="absolute -top-6 -right-6 bg-white rounded-2xl p-4 shadow-xl">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] rounded-full flex items-center justify-center">
-                      <Star className="w-6 h-6 text-white" />
+                {/* Floating Elements - Hidden on mobile, visible on larger screens */}
+                <div className="hidden md:block absolute -top-4 lg:-top-6 -right-4 lg:-right-6 bg-white rounded-xl lg:rounded-2xl p-3 lg:p-4 shadow-xl z-10">
+                  <div className="flex items-center space-x-2 lg:space-x-3">
+                    <div className="w-10 lg:w-12 h-10 lg:h-12 bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] rounded-full flex items-center justify-center">
+                      <Star className="w-5 lg:w-6 h-5 lg:h-6 text-white" />
                     </div>
                     <div>
-                      <div className="font-bold text-gray-900">4.9/5</div>
-                      <div className="text-sm text-gray-600">Client Rating</div>
+                      <div className="font-bold text-gray-900 text-sm lg:text-base">4.9/5</div>
+                      <div className="text-xs lg:text-sm text-gray-600">Client Rating</div>
                     </div>
                   </div>
                 </div>
 
-                <div className="absolute -bottom-6 -left-6 bg-white rounded-2xl p-4 shadow-xl">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
-                      <Shield className="w-6 h-6 text-white" />
+                <div className="hidden md:block absolute -bottom-4 lg:-bottom-6 -left-4 lg:-left-6 bg-white rounded-xl lg:rounded-2xl p-3 lg:p-4 shadow-xl z-10">
+                  <div className="flex items-center space-x-2 lg:space-x-3">
+                    <div className="w-10 lg:w-12 h-10 lg:h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
+                      <Shield className="w-5 lg:w-6 h-5 lg:h-6 text-white" />
                     </div>
                     <div>
-                      <div className="font-bold text-gray-900">FDA Approved</div>
-                      <div className="text-sm text-gray-600">Materials Only</div>
+                      <div className="font-bold text-gray-900 text-sm lg:text-base">FDA Approved</div>
+                      <div className="text-xs lg:text-sm text-gray-600">Materials Only</div>
                     </div>
                   </div>
                 </div>
@@ -335,14 +334,14 @@ export default function HomePage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-4">
                     <Image
-                      src="/placeholder.svg?height=250&width=300&text=Clinic+1"
+                      src="https://res.cloudinary.com/dbviya1rj/image/upload/v1758858851/zwivugqje2ejllji1xcn.jpg?height=250&width=300&text=Clinic+1"
                       alt="Clinic Interior 1"
                       width={300}
                       height={250}
                       className="rounded-2xl shadow-lg"
                     />
                     <Image
-                      src="/placeholder.svg?height=200&width=300&text=Team"
+                      src="https://res.cloudinary.com/dbviya1rj/image/upload/v1758858517/hk0fop3vbxemv9wqcdxl.jpg"
                       alt="Medical Team"
                       width={300}
                       height={200}
@@ -351,14 +350,14 @@ export default function HomePage() {
                   </div>
                   <div className="space-y-4 pt-8">
                     <Image
-                      src="/placeholder.svg?height=200&width=300&text=Clinic+2"
+                      src="https://res.cloudinary.com/dbviya1rj/image/upload/v1758858850/bbqjc0cv7ha2vt2lo4vv.jpg?height=200&width=300&text=Clinic+2"
                       alt="Clinic Interior 2"
                       width={300}
                       height={200}
                       className="rounded-2xl shadow-lg"
                     />
                     <Image
-                      src="/placeholder.svg?height=250&width=300&text=Equipment"
+                      src="https://res.cloudinary.com/dbviya1rj/image/upload/v1758858852/tlcvgu1xfqv6mmfcivre.jpg?height=250&width=300&text=Equipment"
                       alt="Medical Equipment"
                       width={300}
                       height={250}
@@ -392,18 +391,9 @@ export default function HomePage() {
                     ))}
                   </div>
                   <p className="text-gray-600 mb-6 leading-relaxed">"{testimonial.text}"</p>
-                  <div className="flex items-center">
-                    <Image
-                      src={testimonial.image || "/placeholder.svg"}
-                      alt={testimonial.name}
-                      width={60}
-                      height={60}
-                      className="rounded-full mr-4"
-                    />
-                    <div>
-                      <div className="font-bold text-gray-900">{testimonial.name}</div>
-                      <div className="text-sm text-gray-500">{testimonial.treatment}</div>
-                    </div>
+                  <div>
+                    <div className="font-bold text-gray-900">{testimonial.name}</div>
+                    <div className="text-sm text-gray-500">{testimonial.treatment}</div>
                   </div>
                 </Card>
               ))}

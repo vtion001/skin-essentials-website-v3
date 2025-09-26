@@ -2,6 +2,8 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
+import { SmoothScroll } from "@/components/smooth-scroll"
+import { PerformanceMonitor } from "@/components/performance-monitor"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -20,7 +22,20 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        <meta name="theme-color" content="#fbc6c5" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="//fonts.googleapis.com" />
+        <link rel="dns-prefetch" href="//fonts.gstatic.com" />
+      </head>
+      <body className={`${inter.className} antialiased`}>
+        <PerformanceMonitor />
+        <SmoothScroll>
+          {children}
+        </SmoothScroll>
+      </body>
     </html>
   )
 }

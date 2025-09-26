@@ -1,6 +1,6 @@
 "use client"
 
-import { Home, Calendar, MessageCircle, User, Grid3X3, Camera } from "lucide-react"
+import { Home, Calendar, MessageCircle, User, Grid3X3, Camera, Info, Phone } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
@@ -15,6 +15,11 @@ export function MobileNav() {
       label: "Home",
     },
     {
+      href: "/about",
+      icon: Info,
+      label: "About",
+    },
+    {
       href: "/services",
       icon: Grid3X3,
       label: "Services",
@@ -25,16 +30,9 @@ export function MobileNav() {
       label: "Portfolio",
     },
     {
-      href: "tel:09952603451",
-      icon: Calendar,
-      label: "Book",
-      isExternal: true,
-    },
-    {
-      href: "https://wa.me/639952603451",
-      icon: MessageCircle,
-      label: "Chat",
-      isExternal: true,
+      href: "/contact",
+      icon: Phone,
+      label: "Contact",
     },
     {
       href: "/faq",
@@ -50,29 +48,13 @@ export function MobileNav() {
           const Icon = item.icon
           const isActive = pathname === item.href
 
-          if (item.isExternal) {
-            return (
-              <a
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "flex flex-col items-center justify-center space-y-1 text-xs transition-colors",
-                  item.label === "Book" ? "text-green-600 hover:text-green-700" : "text-blue-600 hover:text-blue-700",
-                )}
-              >
-                <Icon className="w-5 h-5" />
-                <span>{item.label}</span>
-              </a>
-            )
-          }
-
           return (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
                 "flex flex-col items-center justify-center space-y-1 text-xs transition-colors",
-                isActive ? "text-rose-600 bg-rose-50" : "text-gray-600 hover:text-rose-600 hover:bg-rose-50",
+                isActive ? "text-[#d09d80] bg-[#fbc6c5]/10" : "text-gray-600 hover:text-[#d09d80] hover:bg-[#fbc6c5]/10",
               )}
             >
               <Icon className="w-5 h-5" />

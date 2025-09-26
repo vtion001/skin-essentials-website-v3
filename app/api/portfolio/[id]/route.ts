@@ -1,9 +1,9 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { PortfolioService } from "@/lib/portfolio-data"
+import { NextRequest, NextResponse } from "next/server"
+import { portfolioService } from "@/lib/portfolio-data"
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const item = PortfolioService.getItemById(params.id)
+    const item = portfolioService.getItemById(params.id)
 
     if (!item) {
       return NextResponse.json({ error: "Portfolio item not found" }, { status: 404 })
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const body = await request.json()
-    const updatedItem = PortfolioService.updateItem(params.id, body)
+    const updatedItem = portfolioService.updateItem(params.id, body)
 
     if (!updatedItem) {
       return NextResponse.json({ error: "Portfolio item not found" }, { status: 404 })
@@ -34,7 +34,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const success = PortfolioService.deleteItem(params.id)
+    const success = portfolioService.deleteItem(params.id)
 
     if (!success) {
       return NextResponse.json({ error: "Portfolio item not found" }, { status: 404 })
