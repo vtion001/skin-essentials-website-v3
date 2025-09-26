@@ -60,6 +60,7 @@ export interface Client {
   email: string
   phone: string
   dateOfBirth?: string
+  gender?: 'male' | 'female' | 'other' | 'prefer-not-to-say'
   address?: string
   emergencyContact?: {
     name: string

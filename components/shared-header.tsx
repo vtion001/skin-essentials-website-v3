@@ -34,7 +34,6 @@ export function SharedHeader({ showBackButton = false, backHref = "/", variant =
     { href: "/", label: "Home" },
     { href: "/about", label: "About" },
     { href: "/services", label: "Services" },
-    { href: "/hiko-nose-lift", label: "Hiko Nose Lift" },
     { href: "/portfolio", label: "Portfolio" },
     { href: "/faq", label: "FAQ" },
     { href: "/contact", label: "Contact" },

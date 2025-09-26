@@ -25,11 +25,6 @@ export function MobileNav() {
       label: "Services",
     },
     {
-      href: "/hiko-nose-lift",
-      icon: User,
-      label: "Hiko Nose",
-    },
-    {
       href: "/portfolio",
       icon: Camera,
       label: "Portfolio",
@@ -43,7 +38,7 @@ export function MobileNav() {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 md:hidden">
-      <div className="grid grid-cols-6 h-16">
+      <div className="grid grid-cols-5 h-16">
         {navItems.map((item) => {
           const Icon = item.icon
           const isActive = pathname === item.href

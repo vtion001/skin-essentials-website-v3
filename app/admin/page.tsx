@@ -955,10 +955,10 @@ export default function AdminDashboard() {
               </div>
 
               {/* Platform Connections */}
-              <PlatformConnections />
+              <PlatformConnections socialMediaService={socialMediaService} />
 
               {/* Conversation UI */}
-              <SocialConversationUI />
+              <SocialConversationUI socialMediaService={socialMediaService} />
             </TabsContent>
           </Tabs>
         </div>
