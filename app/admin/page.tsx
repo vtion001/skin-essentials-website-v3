@@ -66,6 +66,7 @@ import {
 } from "@/lib/admin-services"
 import { SocialConversationUI } from "@/components/admin/social-conversation-ui"
 import { PlatformConnections } from "@/components/admin/platform-connections"
+import { FacebookConnection } from "@/components/admin/facebook-connection"
 
 const services = [
   "Thread Lifts - Nose Enhancement",
@@ -954,8 +955,12 @@ export default function AdminDashboard() {
                 </Button>
               </div>
 
-              {/* Platform Connections */}
-              <PlatformConnections socialMediaService={socialMediaService} />
+              {/* Facebook Connection */}
+              <FacebookConnection onConnectionChange={(connected) => {
+                if (connected) {
+                  loadAllData() // Refresh data when connection is established
+                }
+              }} />
 
               {/* Conversation UI */}
               <SocialConversationUI socialMediaService={socialMediaService} />

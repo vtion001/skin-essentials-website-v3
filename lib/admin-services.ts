@@ -833,9 +833,56 @@ class SocialMediaService {
     }
   }
 
+  private async refreshFacebookTokenIfNeeded(connection: SocialPlatformConnection): Promise<boolean> {
+    try {
+      // First validate the current token
+      const tokenValidation = await facebookAPI.validateAccessToken(connection.accessToken);
+      
+      if (tokenValidation.isValid) {
+        return true; // Token is still valid
+      }
+
+      console.log(`Attempting to refresh Facebook token for page: ${connection.pageName}`);
+      
+      // Try to refresh the token if it's expired
+      if (tokenValidation.error?.includes('expired')) {
+        const refreshResult = await facebookAPI.refreshLongLivedToken(connection.accessToken);
+        
+        if (refreshResult.accessToken) {
+          // Update the connection with the new token
+          connection.accessToken = refreshResult.accessToken;
+          console.log(`Successfully refreshed Facebook token for page: ${connection.pageName}`);
+          return true;
+        } else {
+          console.error(`Failed to refresh Facebook token for page ${connection.pageName}:`, refreshResult.error);
+        }
+      }
+
+      // If we can't refresh, mark as disconnected
+      connection.isConnected = false;
+      console.error(`Facebook token refresh failed for page ${connection.pageName}, marking as disconnected`);
+      return false;
+    } catch (error) {
+      console.error(`Error refreshing Facebook token for page ${connection.pageName}:`, error);
+      connection.isConnected = false;
+      return false;
+    }
+  }
+
   private async syncFacebookMessages(connection: SocialPlatformConnection): Promise<void> {
     try {
+      console.log(`Starting Facebook message sync for page: ${connection.pageName} (${connection.pageId})`);
+      
+      // Validate and refresh token if needed
+      const tokenIsValid = await this.refreshFacebookTokenIfNeeded(connection);
+      if (!tokenIsValid) {
+        throw new Error(`Invalid Facebook access token for page ${connection.pageName}. Please reconnect the page.`);
+      }
+
+      console.log(`Token validation successful for page: ${connection.pageName}`);
+      
       const conversations = await facebookAPI.getPageConversations(connection.accessToken, connection.pageId)
+      console.log(`Retrieved ${conversations.length} conversations for page: ${connection.pageName}`);
       
       for (const fbConversation of conversations) {
         // Convert Facebook conversation to our format
@@ -860,40 +907,53 @@ class SocialMediaService {
             pageName: connection.pageName
           }
           this.conversations.push(newConversation)
+          console.log(`Created new conversation: ${fbConversation.id} with ${newConversation.participantName}`);
         }
 
-        // Fetch messages for this conversation
-        const fbMessages = await facebookAPI.getConversationMessages(connection.accessToken, fbConversation.id)
-        
-        for (const fbMessage of fbMessages) {
-          const existingMessage = this.messages.find(m => m.id === fbMessage.id)
+        try {
+          // Fetch messages for this conversation
+          const fbMessages = await facebookAPI.getConversationMessages(connection.accessToken, fbConversation.id)
+          console.log(`Retrieved ${fbMessages.length} messages for conversation: ${fbConversation.id}`);
           
-          if (!existingMessage) {
-            const newMessage: SocialMessage = {
-              id: fbMessage.id,
-              platform: 'facebook',
-              senderId: fbMessage.from.id,
-              senderName: fbMessage.from.name,
-              senderProfilePicture: undefined,
-              message: fbMessage.message || '',
-              timestamp: fbMessage.created_time,
-              isRead: false,
-              isReplied: false,
-              attachments: fbMessage.attachments?.data.map(att => att.file_url) || [],
-              conversationId: fbConversation.id,
-              messageType: fbMessage.attachments?.data.length ? 'image' : 'text',
-              isFromPage: fbMessage.from.id === connection.pageId
+          for (const fbMessage of fbMessages) {
+            const existingMessage = this.messages.find(m => m.id === fbMessage.id)
+            
+            if (!existingMessage) {
+              const newMessage: SocialMessage = {
+                id: fbMessage.id,
+                platform: 'facebook',
+                senderId: fbMessage.from.id,
+                senderName: fbMessage.from.name,
+                senderProfilePicture: undefined,
+                message: fbMessage.message || '',
+                timestamp: fbMessage.created_time,
+                isRead: false,
+                isReplied: false,
+                attachments: fbMessage.attachments?.data.map(att => att.file_url) || [],
+                conversationId: fbConversation.id,
+                messageType: fbMessage.attachments?.data.length ? 'image' : 'text',
+                isFromPage: fbMessage.from.id === connection.pageId
+              }
+              this.messages.push(newMessage)
             }
-            this.messages.push(newMessage)
           }
+        } catch (messageError) {
+          console.error(`Error fetching messages for conversation ${fbConversation.id}:`, messageError);
+          // Continue with other conversations even if one fails
         }
       }
 
       // Update last sync timestamp
       connection.lastSyncTimestamp = new Date().toISOString()
+      console.log(`Facebook message sync completed successfully for page: ${connection.pageName}`);
     } catch (error) {
-      console.error('Error syncing Facebook messages:', error)
-      throw error
+      console.error(`Error syncing Facebook messages for page ${connection.pageName}:`, {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        pageId: connection.pageId,
+        pageName: connection.pageName,
+        timestamp: new Date().toISOString()
+      });
+      throw error;
     }
   }
 

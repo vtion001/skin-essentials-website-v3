@@ -84,62 +84,415 @@ export interface FacebookWebhookEntry {
   }>;
 }
 
+// Facebook OAuth Configuration
+export interface FacebookOAuthConfig {
+  appId: string
+  appSecret: string
+  redirectUri: string
+  scope: string[]
+  responseType: 'code'
+  state?: string
+}
+
+// Facebook Permission Definitions
+export const FACEBOOK_PERMISSIONS = {
+  // Basic permissions
+  PUBLIC_PROFILE: 'public_profile',
+  EMAIL: 'email',
+  
+  // Page permissions
+  PAGES_SHOW_LIST: 'pages_show_list',
+  PAGES_READ_ENGAGEMENT: 'pages_read_engagement',
+  PAGES_MANAGE_METADATA: 'pages_manage_metadata',
+  PAGES_MANAGE_POSTS: 'pages_manage_posts',
+  PAGES_MESSAGING: 'pages_messaging',
+  
+  // Business permissions
+  BUSINESS_MANAGEMENT: 'business_management',
+  PAGES_READ_USER_CONTENT: 'pages_read_user_content',
+  
+  // Instagram permissions (if needed)
+  INSTAGRAM_BASIC: 'instagram_basic',
+  INSTAGRAM_MANAGE_MESSAGES: 'instagram_manage_messages'
+} as const
+
+export const REQUIRED_PERMISSIONS = [
+  FACEBOOK_PERMISSIONS.PUBLIC_PROFILE,
+  FACEBOOK_PERMISSIONS.EMAIL,
+  FACEBOOK_PERMISSIONS.PAGES_SHOW_LIST,
+  FACEBOOK_PERMISSIONS.PAGES_READ_ENGAGEMENT,
+  FACEBOOK_PERMISSIONS.PAGES_MANAGE_METADATA,
+  FACEBOOK_PERMISSIONS.PAGES_MESSAGING
+]
+
+export const OPTIONAL_PERMISSIONS = [
+  FACEBOOK_PERMISSIONS.PAGES_MANAGE_POSTS,
+  FACEBOOK_PERMISSIONS.BUSINESS_MANAGEMENT,
+  FACEBOOK_PERMISSIONS.PAGES_READ_USER_CONTENT
+]
+
+// Permission descriptions for UI display
+export const PERMISSION_DESCRIPTIONS = {
+  [FACEBOOK_PERMISSIONS.PUBLIC_PROFILE]: {
+    title: 'Public Profile',
+    description: 'Access your basic profile information',
+    required: true
+  },
+  [FACEBOOK_PERMISSIONS.EMAIL]: {
+    title: 'Email Address',
+    description: 'Access your email address for account linking',
+    required: true
+  },
+  [FACEBOOK_PERMISSIONS.PAGES_SHOW_LIST]: {
+    title: 'Page List Access',
+    description: 'View the list of pages you manage',
+    required: true
+  },
+  [FACEBOOK_PERMISSIONS.PAGES_READ_ENGAGEMENT]: {
+    title: 'Page Engagement',
+    description: 'Read engagement data from your pages',
+    required: true
+  },
+  [FACEBOOK_PERMISSIONS.PAGES_MANAGE_METADATA]: {
+    title: 'Page Metadata',
+    description: 'Manage basic page information and settings',
+    required: true
+  },
+  [FACEBOOK_PERMISSIONS.PAGES_MESSAGING]: {
+    title: 'Page Messaging',
+    description: 'Send and receive messages on behalf of your pages',
+    required: true
+  },
+  [FACEBOOK_PERMISSIONS.PAGES_MANAGE_POSTS]: {
+    title: 'Manage Posts',
+    description: 'Create, edit, and delete posts on your pages',
+    required: false
+  },
+  [FACEBOOK_PERMISSIONS.BUSINESS_MANAGEMENT]: {
+    title: 'Business Management',
+    description: 'Access business account information',
+    required: false
+  },
+  [FACEBOOK_PERMISSIONS.PAGES_READ_USER_CONTENT]: {
+    title: 'User Content',
+    description: 'Read content posted by users on your pages',
+    required: false
+  }
+}
+
 class FacebookAPIService {
   private readonly baseUrl = 'https://graph.facebook.com/v18.0';
   private readonly appId: string;
   private readonly appSecret: string;
+  private readonly redirectUri: string;
 
   constructor() {
     // In production, these should come from environment variables
     this.appId = process.env.FACEBOOK_APP_ID || 'your_app_id';
     this.appSecret = process.env.FACEBOOK_APP_SECRET || 'your_app_secret';
+    this.redirectUri = process.env.FACEBOOK_REDIRECT_URI || `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/facebook/callback`;
+    
+    if (!this.appId || !this.appSecret) {
+      console.warn('Facebook API credentials not configured. Please set FACEBOOK_APP_ID and FACEBOOK_APP_SECRET environment variables.');
+    }
   }
 
   /**
-   * Generate Facebook Login URL for page access
+   * Validate if an access token is still valid
    */
-  getLoginUrl(redirectUri: string): string {
-    const permissions = [
-      'pages_manage_metadata',
-      'pages_read_engagement',
-      'pages_messaging',
-      'pages_show_list'
-    ].join(',');
-
-    const params = new URLSearchParams({
-      client_id: this.appId,
-      redirect_uri: redirectUri,
-      scope: permissions,
-      response_type: 'code',
-      state: 'facebook_auth'
-    });
-
-    return `https://www.facebook.com/v18.0/dialog/oauth?${params.toString()}`;
-  }
-
-  /**
-   * Exchange authorization code for access token
-   */
-  async exchangeCodeForToken(code: string, redirectUri: string): Promise<string> {
+  async validateAccessToken(accessToken: string): Promise<{ isValid: boolean; error?: string; expiresAt?: number }> {
     try {
-      const params = new URLSearchParams({
-        client_id: this.appId,
-        client_secret: this.appSecret,
-        redirect_uri: redirectUri,
-        code: code
-      });
+      if (!accessToken || accessToken.trim() === '' || accessToken === 'your_access_token') {
+        return { isValid: false, error: 'Token is empty or placeholder' };
+      }
 
-      const response = await fetch(`${this.baseUrl}/oauth/access_token?${params.toString()}`);
+      const response = await fetch(
+        `${this.baseUrl}/me?access_token=${accessToken}&fields=id,name`
+      );
+      
       const data = await response.json();
 
       if (data.error) {
-        throw new Error(`Facebook API Error: ${data.error.message}`);
+        console.error('Token validation failed:', data.error);
+        return { 
+          isValid: false, 
+          error: `${data.error.type}: ${data.error.message}` 
+        };
       }
 
-      return data.access_token;
+      // Check token expiration
+      const debugResponse = await fetch(
+        `${this.baseUrl}/debug_token?input_token=${accessToken}&access_token=${this.appId}|${this.appSecret}`
+      );
+      
+      const debugData = await debugResponse.json();
+      
+      if (debugData.data && debugData.data.is_valid) {
+        return { 
+          isValid: true, 
+          expiresAt: debugData.data.expires_at 
+        };
+      } else {
+        return { 
+          isValid: false, 
+          error: 'Token is not valid according to debug endpoint' 
+        };
+      }
     } catch (error) {
-      console.error('Error exchanging code for token:', error);
-      throw error;
+      console.error('Error validating access token:', error);
+      return { 
+        isValid: false, 
+        error: `Validation request failed: ${error instanceof Error ? error.message : 'Unknown error'}` 
+      };
+    }
+  }
+
+  /**
+   * Refresh a short-lived token to get a long-lived token
+   */
+  async refreshLongLivedToken(shortLivedToken: string): Promise<{ accessToken?: string; error?: string }> {
+    try {
+      const response = await fetch(
+        `${this.baseUrl}/oauth/access_token?` +
+        `grant_type=fb_exchange_token&` +
+        `client_id=${this.appId}&` +
+        `client_secret=${this.appSecret}&` +
+        `fb_exchange_token=${shortLivedToken}`
+      );
+
+      const data = await response.json();
+
+      if (data.error) {
+        return {
+          error: data.error.message || 'Failed to refresh token'
+        };
+      }
+
+      return {
+        accessToken: data.access_token
+      };
+    } catch (error) {
+      return {
+        error: error instanceof Error ? error.message : 'Unknown refresh error'
+      };
+    }
+  }
+
+  /**
+   * Get page access token from user access token
+   */
+  async getPageAccessToken(userAccessToken: string, pageId: string): Promise<{ accessToken?: string; error?: string }> {
+    try {
+      const response = await fetch(`${this.baseUrl}/${pageId}?fields=access_token&access_token=${userAccessToken}`);
+      
+      const data = await response.json();
+
+      if (data.error) {
+        return {
+          error: data.error.message || 'Failed to get page access token'
+        };
+      }
+
+      return {
+        accessToken: data.access_token
+      };
+    } catch (error) {
+      return {
+        error: error instanceof Error ? error.message : 'Unknown error getting page token'
+      };
+    }
+  }
+
+  /**
+   * Enhanced error handling for API responses
+   */
+  private handleAPIError(data: any, context: string): never {
+    if (data.error) {
+      const errorType = data.error.type || 'Unknown';
+      const errorMessage = data.error.message || 'Unknown error';
+      const errorCode = data.error.code || 'N/A';
+      
+      console.error(`Facebook API Error in ${context}:`, {
+        type: errorType,
+        message: errorMessage,
+        code: errorCode,
+        subcode: data.error.error_subcode,
+        userTitle: data.error.error_user_title,
+        userMessage: data.error.error_user_msg
+      });
+
+      // Specific handling for token-related errors
+      if (errorType === 'OAuthException' || errorCode === 190) {
+        throw new Error(`Facebook API Error: Invalid OAuth access token - ${errorMessage}`);
+      }
+      
+      throw new Error(`Facebook API Error: ${errorMessage} (Type: ${errorType}, Code: ${errorCode})`);
+    }
+    
+    throw new Error(`Facebook API Error: Unexpected response format in ${context}`);
+  }
+
+  /**
+   * Generate secure Facebook login URL for OAuth flow with comprehensive permissions
+   */
+  generateLoginUrl(options: {
+    state?: string
+    includeOptionalPermissions?: boolean
+    customRedirectUri?: string
+  } = {}): string {
+    const { state, includeOptionalPermissions = false, customRedirectUri } = options
+    
+    // Generate secure state parameter if not provided
+    const secureState = state || this.generateSecureState()
+    
+    // Combine required and optional permissions based on user choice
+    const permissions = includeOptionalPermissions 
+      ? [...REQUIRED_PERMISSIONS, ...OPTIONAL_PERMISSIONS]
+      : REQUIRED_PERMISSIONS
+    
+    const params = new URLSearchParams({
+      client_id: this.appId,
+      redirect_uri: customRedirectUri || this.redirectUri,
+      scope: permissions.join(','),
+      response_type: 'code',
+      state: secureState,
+      auth_type: 'rerequest', // Force permission dialog even if previously authorized
+      display: 'popup' // Better UX for web applications
+    })
+
+    console.log(`Generated Facebook OAuth URL with permissions: ${permissions.join(', ')}`)
+    return `https://www.facebook.com/v18.0/dialog/oauth?${params.toString()}`
+  }
+
+  /**
+   * Generate secure state parameter for OAuth flow
+   */
+  private generateSecureState(): string {
+    const timestamp = Date.now().toString()
+    const random = Math.random().toString(36).substring(2)
+    return Buffer.from(`${timestamp}-${random}`).toString('base64')
+  }
+
+  /**
+   * Validate OAuth state parameter
+   */
+  validateOAuthState(state: string): boolean {
+    try {
+      const decoded = Buffer.from(state, 'base64').toString()
+      const [timestamp] = decoded.split('-')
+      const stateAge = Date.now() - parseInt(timestamp)
+      
+      // State should be used within 10 minutes
+      return stateAge < 10 * 60 * 1000
+    } catch {
+      return false
+    }
+  }
+
+  /**
+   * Generate Facebook Login URL for page access (legacy method)
+   */
+  getLoginUrl(redirectUri: string): string {
+    return this.generateLoginUrl({ customRedirectUri: redirectUri })
+  }
+
+  /**
+   * Exchange authorization code for access token with comprehensive validation
+   */
+  async exchangeCodeForToken(
+    code: string, 
+    state: string,
+    redirectUri?: string
+  ): Promise<{ 
+    accessToken?: string
+    userInfo?: any
+    grantedPermissions?: string[]
+    error?: string 
+  }> {
+    try {
+      // Validate state parameter for security
+      if (!this.validateOAuthState(state)) {
+        return { error: 'Invalid or expired state parameter. Please try again.' }
+      }
+
+      console.log('Exchanging authorization code for access token...')
+
+      const response = await fetch(`${this.baseUrl}/oauth/access_token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          client_id: this.appId,
+          client_secret: this.appSecret,
+          redirect_uri: redirectUri || this.redirectUri,
+          code: code,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (data.error) {
+        console.error('Facebook token exchange error:', data.error)
+        return { error: `Facebook authentication failed: ${data.error.message}` }
+      }
+
+      const accessToken = data.access_token
+
+      // Verify token and get user information
+      const userInfoResult = await this.getUserInfo(accessToken)
+      if (userInfoResult.error) {
+        return { error: `Failed to verify user information: ${userInfoResult.error}` }
+      }
+
+      // Get granted permissions
+      const permissionsResult = await this.getGrantedPermissions(accessToken)
+      const grantedPermissions = permissionsResult.permissions || []
+
+      // Verify required permissions are granted
+      const missingPermissions = REQUIRED_PERMISSIONS.filter(
+        permission => !grantedPermissions.includes(permission)
+      )
+
+      if (missingPermissions.length > 0) {
+        console.warn('Missing required permissions:', missingPermissions)
+        return { 
+          error: `Missing required permissions: ${missingPermissions.join(', ')}. Please grant all required permissions and try again.` 
+        }
+      }
+
+      console.log('Facebook authentication successful with permissions:', grantedPermissions)
+
+      return { 
+        accessToken,
+        userInfo: userInfoResult.user,
+        grantedPermissions
+      }
+    } catch (error) {
+      console.error('Token exchange error:', error)
+      return { error: error instanceof Error ? error.message : 'Unknown authentication error' }
+    }
+  }
+
+  /**
+   * Get granted permissions for a user access token
+   */
+  async getGrantedPermissions(accessToken: string): Promise<{ permissions?: string[]; error?: string }> {
+    try {
+      const response = await fetch(`${this.baseUrl}/me/permissions?access_token=${accessToken}`)
+      const data = await response.json()
+
+      if (data.error) {
+        return { error: data.error.message }
+      }
+
+      const grantedPermissions = data.data
+        .filter((perm: any) => perm.status === 'granted')
+        .map((perm: any) => perm.permission)
+
+      return { permissions: grantedPermissions }
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : 'Failed to get permissions' }
     }
   }
 
@@ -148,13 +501,19 @@ class FacebookAPIService {
    */
   async getUserPages(userAccessToken: string): Promise<FacebookPage[]> {
     try {
+      // Validate token first
+      const validation = await this.validateAccessToken(userAccessToken);
+      if (!validation.isValid) {
+        throw new Error(`Invalid access token: ${validation.error}`);
+      }
+
       const response = await fetch(
         `${this.baseUrl}/me/accounts?access_token=${userAccessToken}&fields=id,name,access_token,category,tasks`
       );
       const data = await response.json();
 
       if (data.error) {
-        throw new Error(`Facebook API Error: ${data.error.message}`);
+        this.handleAPIError(data, 'getUserPages');
       }
 
       return data.data || [];
@@ -169,13 +528,19 @@ class FacebookAPIService {
    */
   async getPageConversations(pageAccessToken: string, pageId: string): Promise<FacebookConversation[]> {
     try {
+      // Validate token first
+      const validation = await this.validateAccessToken(pageAccessToken);
+      if (!validation.isValid) {
+        throw new Error(`Invalid page access token: ${validation.error}`);
+      }
+
       const response = await fetch(
         `${this.baseUrl}/${pageId}/conversations?access_token=${pageAccessToken}&fields=id,participants,updated_time,message_count,unread_count,can_reply&limit=50`
       );
       const data = await response.json();
 
       if (data.error) {
-        throw new Error(`Facebook API Error: ${data.error.message}`);
+        this.handleAPIError(data, 'getPageConversations');
       }
 
       return data.data || [];
@@ -190,13 +555,19 @@ class FacebookAPIService {
    */
   async getConversationMessages(pageAccessToken: string, conversationId: string): Promise<FacebookMessage[]> {
     try {
+      // Validate token first
+      const validation = await this.validateAccessToken(pageAccessToken);
+      if (!validation.isValid) {
+        throw new Error(`Invalid page access token: ${validation.error}`);
+      }
+
       const response = await fetch(
         `${this.baseUrl}/${conversationId}/messages?access_token=${pageAccessToken}&fields=id,created_time,from,to,message,attachments&limit=50`
       );
       const data = await response.json();
 
       if (data.error) {
-        throw new Error(`Facebook API Error: ${data.error.message}`);
+        this.handleAPIError(data, 'getConversationMessages');
       }
 
       return data.data || [];
@@ -207,23 +578,31 @@ class FacebookAPIService {
   }
 
   /**
-   * Get user info by user ID
+   * Get user info by user ID or current user
    */
-  async getUserInfo(userId: string, accessToken: string): Promise<{ id: string; name: string; profile_pic?: string }> {
+  async getUserInfo(accessTokenOrUserId: string, accessToken?: string): Promise<{ user?: { id: string; name: string; email?: string; profile_pic?: string }; error?: string }> {
     try {
-      const response = await fetch(
-        `${this.baseUrl}/${userId}?access_token=${accessToken}&fields=id,name,profile_pic`
-      );
+      let url: string;
+      
+      if (accessToken) {
+        // Legacy usage: getUserInfo(userId, accessToken)
+        url = `${this.baseUrl}/${accessTokenOrUserId}?access_token=${accessToken}&fields=id,name,email,profile_pic`;
+      } else {
+        // New usage: getUserInfo(accessToken) - gets current user
+        url = `${this.baseUrl}/me?access_token=${accessTokenOrUserId}&fields=id,name,email,profile_pic`;
+      }
+      
+      const response = await fetch(url);
       const data = await response.json();
 
       if (data.error) {
-        throw new Error(`Facebook API Error: ${data.error.message}`);
+        return { error: data.error.message };
       }
 
-      return data;
+      return { user: data };
     } catch (error) {
       console.error('Error fetching user info:', error);
-      throw error;
+      return { error: error instanceof Error ? error.message : 'Failed to get user info' };
     }
   }
 
@@ -232,6 +611,12 @@ class FacebookAPIService {
    */
   async sendMessage(pageAccessToken: string, recipientId: string, message: string): Promise<{ message_id: string }> {
     try {
+      // Validate token first
+      const validation = await this.validateAccessToken(pageAccessToken);
+      if (!validation.isValid) {
+        throw new Error(`Invalid page access token: ${validation.error}`);
+      }
+
       const response = await fetch(
         `${this.baseUrl}/me/messages?access_token=${pageAccessToken}`,
         {
@@ -250,7 +635,7 @@ class FacebookAPIService {
       const data = await response.json();
 
       if (data.error) {
-        throw new Error(`Facebook API Error: ${data.error.message}`);
+        this.handleAPIError(data, 'sendMessage');
       }
 
       return data;
