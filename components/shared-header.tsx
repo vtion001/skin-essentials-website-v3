@@ -37,6 +37,7 @@ export function SharedHeader({ showBackButton = false, backHref = "/", variant =
     { href: "/portfolio", label: "Portfolio" },
     { href: "/faq", label: "FAQ" },
     { href: "/contact", label: "Contact" },
+    { href: "/privacy", label: "Privacy" },
   ]
 
   const headerClasses = `fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
