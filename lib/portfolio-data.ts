@@ -10,7 +10,7 @@ export interface PortfolioItem {
   results: string
 }
 
-const PORTFOLIO_DATA_VERSION = 2
+const PORTFOLIO_DATA_VERSION = 3
 
 class PortfolioService {
   private items: PortfolioItem[] = []
