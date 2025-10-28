@@ -10,10 +10,14 @@ export interface PortfolioItem {
   results: string
 }
 
+const PORTFOLIO_DATA_VERSION = 2
+
 class PortfolioService {
   private items: PortfolioItem[] = []
   private initialized = false
   private subscribers: ((items: PortfolioItem[]) => void)[] = []
+  private storageKey = "portfolio_data"
+  private versionKey = "portfolio_data_version"
 
   constructor() {
     if (typeof window !== "undefined") {
@@ -23,14 +27,25 @@ class PortfolioService {
 
   private loadFromStorage() {
     try {
-      const stored = localStorage.getItem("portfolio_data")
-      if (stored) {
+      const storedVersion = localStorage.getItem(this.versionKey)
+      const stored = localStorage.getItem(this.storageKey)
+
+      const versionMismatch = storedVersion !== String(PORTFOLIO_DATA_VERSION)
+
+      if (stored && !versionMismatch) {
         this.items = JSON.parse(stored)
         console.log("Portfolio data loaded from localStorage:", this.items.length, "items")
       } else {
+        // Initialize defaults when first load or version changes
         this.items = this.getDefaultItems()
         this.saveToStorage()
-        console.log("Default portfolio data initialized:", this.items.length, "items")
+        console.log(
+          versionMismatch
+            ? "Portfolio data version changed; defaults reinitialized"
+            : "Default portfolio data initialized:",
+          this.items.length,
+          "items",
+        )
       }
       // Ensure IDs are unique to avoid React key collisions
       this.ensureUniqueIds()
@@ -45,7 +60,8 @@ class PortfolioService {
 
   private saveToStorage() {
     try {
-      localStorage.setItem("portfolio_data", JSON.stringify(this.items))
+      localStorage.setItem(this.storageKey, JSON.stringify(this.items))
+      localStorage.setItem(this.versionKey, String(PORTFOLIO_DATA_VERSION))
       console.log("Portfolio data saved to localStorage:", this.items.length, "items")
 
       // Notify subscribers with custom event for same-tab updates
@@ -155,7 +171,8 @@ class PortfolioService {
 
   resetToDefaults(): void {
     try {
-      localStorage.removeItem("portfolio_data")
+      localStorage.removeItem(this.storageKey)
+      localStorage.setItem(this.versionKey, String(PORTFOLIO_DATA_VERSION))
       this.items = this.getDefaultItems()
       this.saveToStorage()
       console.log("Portfolio data reset to defaults:", this.items.length, "items")
