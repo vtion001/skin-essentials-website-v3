@@ -32,10 +32,13 @@ class PortfolioService {
         this.saveToStorage()
         console.log("Default portfolio data initialized:", this.items.length, "items")
       }
+      // Ensure IDs are unique to avoid React key collisions
+      this.ensureUniqueIds()
       this.initialized = true
     } catch (error) {
       console.error("Error loading portfolio data from localStorage:", error)
       this.items = this.getDefaultItems()
+      this.ensureUniqueIds()
       this.initialized = true
     }
   }
@@ -67,6 +70,33 @@ class PortfolioService {
         console.error("Error notifying subscriber:", error)
       }
     })
+  }
+
+  // Deduplicate IDs to prevent React key warnings
+  private ensureUniqueIds() {
+    const seen = new Set<string>()
+    let changed = false
+    this.items = this.items.map((item) => {
+      if (!seen.has(item.id)) {
+        seen.add(item.id)
+        return item
+      }
+      // Reassign a unique ID for duplicates
+      const newId = `${item.id}-${Date.now().toString().slice(-6)}-${Math.random().toString(36).slice(2,6)}`
+      seen.add(newId)
+      changed = true
+      return { ...item, id: newId }
+    })
+
+    if (changed) {
+      console.warn("Duplicate portfolio IDs detected; reassigned to ensure uniqueness.")
+      // Persist the corrected IDs
+      try {
+        localStorage.setItem("portfolio_data", JSON.stringify(this.items))
+      } catch (e) {
+        console.error("Failed to persist deduplicated portfolio data:", e)
+      }
+    }
   }
 
   subscribe(callback: (items: PortfolioItem[]) => void) {
@@ -213,6 +243,17 @@ class PortfolioService {
         afterImage: "https://res.cloudinary.com/dbviya1rj/image/upload/v1758858581/mobqu7qaiwmnlkh6jtfl.jpg",
         description: "Enhance and lift the buttocks using injectable fillers for a fuller, more contoured shape without surgery.",
         treatment: "Non-Surgical Butt Lift",
+        duration: "1 hour",
+        results: "12-24 months",
+      },
+           {
+        id: "8",
+        title: "Non-Surgical Feminine Area Rejuvenation ",
+        category: "Dermal Fillers & Volume Enhancement",
+        beforeImage: "https://res.cloudinary.com/dbviya1rj/image/upload/v1761623294/upzjclrlkc6xiunxltry.jpg",
+        afterImage: "https://res.cloudinary.com/dbviya1rj/image/upload/v1761623294/trbj5pt5g9h324dsuxax.jpg",
+        description: "Rejuvenates and enhances the feminine area using non-surgical injectable fillers for improved appearance, comfort, and confidence.",
+        treatment: "Non-Surgical Feminine Area Rejuvenation",
         duration: "1 hour",
         results: "12-24 months",
       },
