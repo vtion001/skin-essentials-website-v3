@@ -7,11 +7,25 @@ import { PullToRefresh } from '@/components/pull-to-refresh'
 import { PortfolioGallery } from '@/components/portfolio-gallery'
 import { SharedHeader } from '@/components/shared-header'
 import { portfolioService, PortfolioItem } from '@/lib/portfolio-data'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Shield } from 'lucide-react'
 
 export default function PortfolioPage() {
   const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([])
+  const [ageConfirmed, setAgeConfirmed] = useState<boolean>(false)
+  const [ageGateOpen, setAgeGateOpen] = useState<boolean>(false)
 
   useEffect(() => {
+    try {
+      const stored = localStorage.getItem('age_gate_18_portfolio')
+      const isConfirmed = stored === 'true'
+      setAgeConfirmed(isConfirmed)
+      setAgeGateOpen(!isConfirmed)
+    } catch (e) {
+      setAgeGateOpen(true)
+    }
+
     // Reset to defaults to load updated Cloudinary URLs
     portfolioService.resetToDefaults()
     
@@ -80,7 +94,15 @@ export default function PortfolioPage() {
         {/* Portfolio Gallery Section */}
         <main className="relative z-10 pb-16">
           <div className="max-w-7xl mx-auto px-4">
-            <PortfolioGallery />
+            {ageConfirmed ? (
+              <PortfolioGallery />
+            ) : (
+              <div className="rounded-3xl border border-rose-200 bg-white/80 backdrop-blur-sm p-8 text-center shadow-sm">
+                <Shield className="w-10 h-10 text-rose-500 mx-auto mb-3" />
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">Sensitive Content</h3>
+                <p className="text-gray-600">This gallery contains medical before-and-after images. Please confirm your age to proceed.</p>
+              </div>
+            )}
           </div>
         </main>
 
@@ -130,6 +152,43 @@ export default function PortfolioPage() {
 
         <MobileNav />
       </div>
+
+      {/* Age Gate Modal */}
+      <Dialog open={ageGateOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Are you 18 years or older?</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              The portfolio may include sensitive medical imagery intended for adults. Please confirm your age to continue.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setAgeGateOpen(false)
+                  setAgeConfirmed(false)
+                }}
+              >
+                No
+              </Button>
+              <Button
+                className="bg-gradient-to-r from-rose-500 to-pink-500 text-white"
+                onClick={() => {
+                  try {
+                    localStorage.setItem('age_gate_18_portfolio', 'true')
+                  } catch {}
+                  setAgeConfirmed(true)
+                  setAgeGateOpen(false)
+                }}
+              >
+                Yes, I am 18+
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </PullToRefresh>
   )
 }

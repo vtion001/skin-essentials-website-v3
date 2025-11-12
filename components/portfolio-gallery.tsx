@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Clock, Star, RefreshCw, Filter, Grid, List } from "lucide-react"
+import { Clock, Star, RefreshCw, Filter, Grid, List, Eye, EyeOff } from "lucide-react"
 import { OptimizedImage } from "@/components/optimized-image"
 import { portfolioService, type PortfolioItem } from "@/lib/portfolio-data"
 
@@ -16,6 +16,21 @@ export function PortfolioGallery() {
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [isLoading, setIsLoading] = useState(true)
+  const [revealedMap, setRevealedMap] = useState<Record<string, boolean>>({})
+
+  const isSensitive = (item: PortfolioItem) => {
+    const title = item.title.toLowerCase()
+    return (
+      title.includes("feminine") ||
+      title.includes("intimate") ||
+      title.includes("butt") ||
+      title.includes("breast")
+    )
+  }
+
+  const toggleReveal = (id: string) => {
+    setRevealedMap((prev) => ({ ...prev, [id]: !prev[id] }))
+  }
 
   useEffect(() => {
     // Load initial data
@@ -206,7 +221,9 @@ export function PortfolioGallery() {
                       src={item.beforeImage || "/placeholder.svg"}
                       alt={`Before ${item.title}`}
                       fill
-                      className="object-cover transition-transform duration-500 group-hover:scale-110"
+                      className={`object-cover transition-transform duration-500 group-hover:scale-110 ${
+                        isSensitive(item) && !revealedMap[item.id] ? "filter blur-xl" : ""
+                      }`}
                     />
                     <div className="absolute top-3 left-3">
                       <Badge className="bg-red-500/90 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1 shadow-lg">
@@ -219,7 +236,9 @@ export function PortfolioGallery() {
                       src={item.afterImage || "/placeholder.svg"}
                       alt={`After ${item.title}`}
                       fill
-                      className="object-cover transition-transform duration-500 group-hover:scale-110"
+                      className={`object-cover transition-transform duration-500 group-hover:scale-110 ${
+                        isSensitive(item) && !revealedMap[item.id] ? "filter blur-xl" : ""
+                      }`}
                     />
                     <div className="absolute top-3 right-3">
                       <Badge className="bg-green-500/90 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1 shadow-lg">
@@ -229,8 +248,26 @@ export function PortfolioGallery() {
                   </div>
                 </div>
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                <div className="absolute bottom-4 left-4 right-4 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                <div className="absolute bottom-4 left-4 right-4 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-between">
                   <p className="text-sm font-medium">Click to view details</p>
+                  {isSensitive(item) && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="bg-white/80 text-gray-900 backdrop-blur-sm hover:bg-white"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toggleReveal(item.id)
+                      }}
+                      aria-label={revealedMap[item.id] ? "Hide sensitive content" : "Reveal sensitive content"}
+                    >
+                      {revealedMap[item.id] ? (
+                        <span className="flex items-center gap-2"><EyeOff className="w-4 h-4" /> Hide</span>
+                      ) : (
+                        <span className="flex items-center gap-2"><Eye className="w-4 h-4" /> View</span>
+                      )}
+                    </Button>
+                  )}
                 </div>
               </div>
 
