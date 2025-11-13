@@ -17,6 +17,7 @@ export function PortfolioGallery() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [isLoading, setIsLoading] = useState(true)
   const [revealedMap, setRevealedMap] = useState<Record<string, boolean>>({})
+  const [showSimilar, setShowSimilar] = useState<boolean>(false)
 
   const isSensitive = (item: PortfolioItem) => {
     const title = item.title.toLowerCase()
@@ -315,6 +316,16 @@ export function PortfolioGallery() {
                     {selectedItem.category}
                   </Badge>
                   <span className="text-lg font-semibold text-rose-600">{selectedItem.treatment}</span>
+                  <div className="ml-auto">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-gray-300 bg-white/80 backdrop-blur-sm hover:bg-rose-50 hover:border-rose-300"
+                      onClick={() => setShowSimilar((v) => !v)}
+                    >
+                      {showSimilar ? "Hide More Results" : "View More Results"}
+                    </Button>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -381,6 +392,76 @@ export function PortfolioGallery() {
                     </div>
                   </div>
                 </div>
+
+                {/* Similar Results Gallery */}
+                {showSimilar && (
+                  <div className="space-y-6">
+                    <h4 className="font-bold text-gray-900 text-xl">More Results: {selectedItem.treatment}</h4>
+                    {portfolioItems.filter(i => i.treatment === selectedItem.treatment && i.id !== selectedItem.id).length === 0 ? (
+                      <div className="text-center py-10 bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200">
+                        <p className="text-gray-600">No additional results available for this treatment yet.</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {portfolioItems
+                          .filter(i => i.treatment === selectedItem.treatment && i.id !== selectedItem.id)
+                          .map((i) => (
+                            <div
+                              key={i.id}
+                              className="group rounded-2xl overflow-hidden border border-gray-200 bg-white/90 backdrop-blur-sm shadow-sm cursor-pointer"
+                              onClick={() => setSelectedItem(i)}
+                            >
+                              <div className="grid grid-cols-2 h-52">
+                                <div className="relative">
+                                  <OptimizedImage
+                                    src={i.beforeImage || "/placeholder.svg"}
+                                    alt={`Before ${i.title}`}
+                                    fill
+                                    className={`object-cover transition-transform duration-500 group-hover:scale-110 ${
+                                      isSensitive(i) && !revealedMap[i.id] ? "filter blur-xl" : ""
+                                    }`}
+                                  />
+                                  <div className="absolute top-2 left-2">
+                                    <Badge className="bg-red-500/90 text-white text-[10px] font-semibold px-2 py-0.5">Before</Badge>
+                                  </div>
+                                </div>
+                                <div className="relative">
+                                  <OptimizedImage
+                                    src={i.afterImage || "/placeholder.svg"}
+                                    alt={`After ${i.title}`}
+                                    fill
+                                    className={`object-cover transition-transform duration-500 group-hover:scale-110 ${
+                                      isSensitive(i) && !revealedMap[i.id] ? "filter blur-xl" : ""
+                                    }`}
+                                  />
+                                  <div className="absolute top-2 right-2">
+                                    <Badge className="bg-green-500/90 text-white text-[10px] font-semibold px-2 py-0.5">After</Badge>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="p-4 flex items-center justify-between">
+                                <p className="text-sm font-medium text-gray-800 line-clamp-1">{i.title}</p>
+                                {isSensitive(i) && (
+                                  <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    className="bg-white/80 text-gray-900 hover:bg-white"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setRevealedMap((prev) => ({ ...prev, [i.id]: !prev[i.id] }))
+                                    }}
+                                    aria-label={revealedMap[i.id] ? "Hide sensitive content" : "Reveal sensitive content"}
+                                  >
+                                    {revealedMap[i.id] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="pt-6 border-t border-gray-200">
                   <p className="text-center text-gray-500 text-sm leading-relaxed">

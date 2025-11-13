@@ -10,7 +10,7 @@ export interface PortfolioItem {
   results: string
 }
 
-const PORTFOLIO_DATA_VERSION = 3
+const PORTFOLIO_DATA_VERSION = 4
 
 class PortfolioService {
   private items: PortfolioItem[] = []
@@ -224,6 +224,17 @@ class PortfolioService {
         beforeImage: "https://res.cloudinary.com/dbviya1rj/image/upload/v1758863739/yykngt3pibrggnitiuo7.jpg",
         afterImage: "https://res.cloudinary.com/dbviya1rj/image/upload/v1758863740/t48wqd7cxwp32r2vqpej.jpg",
         description: "Lifts and firms the breasts using absorbable PDO/PCL threads for a perkier, more youthful contour without surgery.",
+        treatment: "Non-Surgical Breast Lift",
+        duration: "1 hour",
+        results: "12-18 months",
+      },
+      {
+        id: "breast-2",
+        title: "Non-Surgical Breast Lift – Enhanced Projection",
+        category: "Thread Lifts & Body Contouring",
+        beforeImage: "https://res.cloudinary.com/dbviya1rj/image/upload/v1758858585/i6h19dxxfwemx0bxyd3k.jpg",
+        afterImage: "https://res.cloudinary.com/dbviya1rj/image/upload/v1758858585/leu8l9srbc8oqgtayxuo.jpg",
+        description: "Additional case showing enhanced upper pole projection with absorbable threads.",
         treatment: "Non-Surgical Breast Lift",
         duration: "1 hour",
         results: "12-18 months",
