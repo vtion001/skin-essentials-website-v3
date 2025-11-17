@@ -51,6 +51,7 @@ import {
 } from "lucide-react"
 import Image from "next/image"
 import { SharedHeader } from "@/components/shared-header"
+import { supabaseAvailable } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
 import {
   appointmentService,
@@ -130,6 +131,15 @@ export default function AdminDashboard() {
   const [searchQuery, setSearchQuery] = useState("")
   const [filterStatus, setFilterStatus] = useState("all")
 
+  const [appointmentsSearch, setAppointmentsSearch] = useState("")
+  const [appointmentsStatusFilter, setAppointmentsStatusFilter] = useState<string>("all")
+  const [appointmentsServiceFilter, setAppointmentsServiceFilter] = useState<string>("all")
+  const [appointmentsDateFrom, setAppointmentsDateFrom] = useState<string>("")
+  const [appointmentsDateTo, setAppointmentsDateTo] = useState<string>("")
+  const [appointmentsSort, setAppointmentsSort] = useState<string>("date_desc")
+  const [appointmentsPage, setAppointmentsPage] = useState<number>(1)
+  const [appointmentsPageSize, setAppointmentsPageSize] = useState<number>(10)
+
   // Authentication check
   useEffect(() => {
     const token = document.cookie
@@ -147,7 +157,8 @@ export default function AdminDashboard() {
     loadAllData()
   }, [])
 
-  const loadAllData = () => {
+  const loadAllData = async () => {
+    await appointmentService.fetchFromSupabase?.()
     setAppointments(appointmentService.getAllAppointments())
     setPayments(paymentService.getAllPayments())
     setMedicalRecords(medicalRecordService.getAllRecords())
@@ -168,7 +179,7 @@ export default function AdminDashboard() {
 
   // Dashboard Statistics
   const getDashboardStats = () => {
-    const today = new Date().toISOString().split('T')[0]
+    const today = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' })).toISOString().split('T')[0]
     const thisMonth = new Date().toISOString().slice(0, 7)
     
     return {
@@ -397,7 +408,7 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-[#fffaff] relative">
       {/* Header */}
-      <SharedHeader showBackButton={true} backHref="/" />
+      <SharedHeader showBackButton={false} backHref="/" hideNav={true} />
 
       {/* Notification */}
       {notification && (
@@ -428,6 +439,11 @@ export default function AdminDashboard() {
               <p className="text-gray-600">Comprehensive management system for Skin Essentials</p>
             </div>
             <div className="flex items-center space-x-4">
+              {supabaseAvailable() ? (
+                <Badge className="bg-green-500 text-white">Supabase Connected</Badge>
+              ) : (
+                <Badge className="bg-red-500 text-white">Supabase Not Configured</Badge>
+              )}
               <Button
                 onClick={loadAllData}
                 variant="outline"
@@ -642,7 +658,7 @@ export default function AdminDashboard() {
                     <Calendar
                       selectedDate={selectedDate}
                       onDateSelect={setSelectedDate}
-                      bookedDates={appointments.map(apt => new Date(apt.date))}
+                      bookedDates={appointments.map(apt => new Date(new Date(apt.date).toLocaleString('en-US', { timeZone: 'Asia/Manila' })))}
                     />
                   </CardContent>
                 </Card>
@@ -652,13 +668,13 @@ export default function AdminDashboard() {
                   <Card className="bg-white/60 backdrop-blur-sm border border-[#fbc6c5]/20">
                     <CardHeader>
                       <CardTitle>
-                        Appointments for {selectedDate.toLocaleDateString()}
+                        Appointments for {new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Manila', year: 'numeric', month: 'numeric', day: 'numeric' }).format(selectedDate)}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4">
                         {appointments
-                          .filter(apt => apt.date === selectedDate.toISOString().split('T')[0])
+                          .filter(apt => apt.date === new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit' }).format(selectedDate))
                           .map((appointment) => (
                             <div key={appointment.id} className="flex items-center justify-between p-4 bg-white/50 rounded-lg border">
                               <div className="flex-1">
@@ -701,7 +717,7 @@ export default function AdminDashboard() {
                               </div>
                             </div>
                           ))}
-                        {appointments.filter(apt => apt.date === selectedDate.toISOString().split('T')[0]).length === 0 && (
+                        {appointments.filter(apt => apt.date === new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit' }).format(selectedDate)).length === 0 && (
                           <div className="text-center py-8 text-gray-500">
                             No appointments scheduled for this date
                           </div>
@@ -711,6 +727,188 @@ export default function AdminDashboard() {
                   </Card>
                 </div>
               </div>
+
+              <Card className="bg-white/60 backdrop-blur-sm border border-[#fbc6c5]/20">
+                <CardHeader>
+                  <CardTitle>All Appointments</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3 mb-4">
+                    <div className="lg:col-span-2">
+                      <Input
+                        placeholder="Search by client or service"
+                        value={appointmentsSearch}
+                        onChange={(e) => { setAppointmentsSearch(e.target.value); setAppointmentsPage(1) }}
+                      />
+                    </div>
+                    <div>
+                      <Select value={appointmentsStatusFilter} onValueChange={(v) => { setAppointmentsStatusFilter(v); setAppointmentsPage(1) }}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Statuses</SelectItem>
+                          <SelectItem value="scheduled">Scheduled</SelectItem>
+                          <SelectItem value="confirmed">Confirmed</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                          <SelectItem value="cancelled">Cancelled</SelectItem>
+                          <SelectItem value="no-show">No Show</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Select value={appointmentsServiceFilter} onValueChange={(v) => { setAppointmentsServiceFilter(v); setAppointmentsPage(1) }}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Service" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Services</SelectItem>
+                          {services.map((s) => (
+                            <SelectItem key={s} value={s}>{s}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Input type="date" value={appointmentsDateFrom} onChange={(e) => { setAppointmentsDateFrom(e.target.value); setAppointmentsPage(1) }} />
+                    </div>
+                    <div>
+                      <Input type="date" value={appointmentsDateTo} onChange={(e) => { setAppointmentsDateTo(e.target.value); setAppointmentsPage(1) }} />
+                    </div>
+                    <div>
+                      <Select value={appointmentsSort} onValueChange={setAppointmentsSort}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sort" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="date_desc">Date ↓</SelectItem>
+                          <SelectItem value="date_asc">Date ↑</SelectItem>
+                          <SelectItem value="price_desc">Price ↓</SelectItem>
+                          <SelectItem value="price_asc">Price ↑</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {(() => {
+                    const inRange = (d: string) => {
+                      if (!appointmentsDateFrom && !appointmentsDateTo) return true
+                      const t = new Date(d).getTime()
+                      const from = appointmentsDateFrom ? new Date(appointmentsDateFrom).getTime() : -Infinity
+                      const to = appointmentsDateTo ? new Date(appointmentsDateTo).getTime() : Infinity
+                      return t >= from && t <= to
+                    }
+                    const filtered = appointments
+                      .filter(a => inRange(a.date))
+                      .filter(a => appointmentsStatusFilter === 'all' ? true : a.status === appointmentsStatusFilter)
+                      .filter(a => appointmentsServiceFilter === 'all' ? true : a.service === appointmentsServiceFilter)
+                      .filter(a => {
+                        if (!appointmentsSearch.trim()) return true
+                        const q = appointmentsSearch.toLowerCase()
+                        return (
+                          a.clientName.toLowerCase().includes(q) ||
+                          a.clientEmail.toLowerCase().includes(q) ||
+                          a.clientPhone.toLowerCase().includes(q) ||
+                          a.service.toLowerCase().includes(q)
+                        )
+                      })
+                      .sort((x, y) => {
+                        if (appointmentsSort === 'date_desc') return new Date(y.date).getTime() - new Date(x.date).getTime()
+                        if (appointmentsSort === 'date_asc') return new Date(x.date).getTime() - new Date(y.date).getTime()
+                        if (appointmentsSort === 'price_desc') return y.price - x.price
+                        if (appointmentsSort === 'price_asc') return x.price - y.price
+                        return 0
+                      })
+
+                    const totalPages = Math.max(1, Math.ceil(filtered.length / appointmentsPageSize))
+                    const page = Math.min(appointmentsPage, totalPages)
+                    const start = (page - 1) * appointmentsPageSize
+                    const pageItems = filtered.slice(start, start + appointmentsPageSize)
+
+                    return (
+                      <div className="space-y-3">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Client</TableHead>
+                              <TableHead>Service</TableHead>
+                              <TableHead>Date</TableHead>
+                              <TableHead>Time</TableHead>
+                              <TableHead>Status</TableHead>
+                              <TableHead>Duration</TableHead>
+                              <TableHead>Price</TableHead>
+                              <TableHead>Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {pageItems.map(a => (
+                              <TableRow key={a.id} className="cursor-pointer" onClick={() => setSelectedDate(new Date(a.date + 'T00:00:00'))}>
+                                <TableCell>
+                                  <div className="font-medium">{a.clientName}</div>
+                                  <div className="text-xs text-gray-500">{a.clientEmail} • {a.clientPhone}</div>
+                                </TableCell>
+                                <TableCell className="max-w-xs truncate">{a.service}</TableCell>
+                                <TableCell>{new Date(a.date).toLocaleDateString()}</TableCell>
+                                <TableCell>{a.time}</TableCell>
+                                <TableCell>
+                                  <Select
+                                    value={a.status}
+                                    onValueChange={(value) => {
+                                      appointmentService.updateAppointment(a.id, { status: value as any })
+                                      setAppointments(appointmentService.getAllAppointments())
+                                    }}
+                                  >
+                                    <SelectTrigger onClick={(e) => e.stopPropagation()} className="w-40">
+                                      <SelectValue placeholder="Status" />
+                                    </SelectTrigger>
+                                    <SelectContent onClick={(e) => e.stopPropagation()}>
+                                      <SelectItem value="scheduled">Scheduled</SelectItem>
+                                      <SelectItem value="confirmed">Confirmed</SelectItem>
+                                      <SelectItem value="completed">Completed</SelectItem>
+                                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                                      <SelectItem value="no-show">No Show</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </TableCell>
+                                <TableCell>{a.duration} min</TableCell>
+                                <TableCell>₱{a.price.toLocaleString()}</TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-2">
+                                    <Button size="sm" variant="outline" onClick={() => openAppointmentModal(a)}>
+                                      <Edit className="w-4 h-4" />
+                                    </Button>
+                                    <Button size="sm" variant="outline" onClick={() => appointmentService.deleteAppointment(a.id) && loadAllData()}>
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm text-gray-600">Page {page} of {totalPages}</div>
+                          <div className="flex items-center gap-2">
+                            <Select value={String(appointmentsPageSize)} onValueChange={(v) => { setAppointmentsPageSize(parseInt(v)); setAppointmentsPage(1) }}>
+                              <SelectTrigger className="w-24">
+                                <SelectValue placeholder="Rows" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="10">10</SelectItem>
+                                <SelectItem value="25">25</SelectItem>
+                                <SelectItem value="50">50</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Button variant="outline" onClick={() => setAppointmentsPage(Math.max(1, page - 1))}>Prev</Button>
+                            <Button variant="outline" onClick={() => setAppointmentsPage(Math.min(totalPages, page + 1))}>Next</Button>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })()}
+                </CardContent>
+              </Card>
             </TabsContent>
 
             {/* Payment Processing */}

@@ -4,12 +4,13 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { Clock, Star, Phone, Award, Shield, Users, CheckCircle, ArrowRight } from "lucide-react"
+import { Clock, Star, Phone, Award, Shield, Users, CheckCircle, ArrowRight, Calendar, Search, ChevronDown, ChevronUp } from "lucide-react"
 import Link from "next/link"
 import { useState, useEffect } from "react"
 import { MobileNav } from "@/components/mobile-nav"
 import { PullToRefresh } from "@/components/pull-to-refresh"
 import { SharedHeader } from "@/components/shared-header"
+import { BookingModal } from "@/components/booking-modal"
 
 interface ServiceFAQ {
   q: string
@@ -43,6 +44,10 @@ interface ServiceCategory {
 export default function ServicesPage() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isBookingOpen, setIsBookingOpen] = useState(false)
+  const [selectedServiceId, setSelectedServiceId] = useState<string>("")
+  const [activeCategoryId, setActiveCategoryId] = useState<string>("")
+  const [query, setQuery] = useState<string>("")
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
     const handleScroll = () => {
@@ -51,6 +56,8 @@ export default function ServicesPage() {
     window.addEventListener("scroll", handleScroll)
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
+
+  const toId = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
 
   const serviceCategories: ServiceCategory[] = [
     {
@@ -478,6 +485,40 @@ export default function ServicesPage() {
     },
   ]
 
+  useEffect(() => {
+    if (serviceCategories.length && !activeCategoryId) setActiveCategoryId(serviceCategories[0].id)
+    const observers: IntersectionObserver[] = []
+    serviceCategories.forEach((cat) => {
+      const el = document.getElementById(cat.id)
+      if (!el) return
+      const obs = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) setActiveCategoryId(cat.id)
+          })
+        },
+        { rootMargin: "-40% 0px -50% 0px", threshold: 0.1 }
+      )
+      obs.observe(el)
+      observers.push(obs)
+    })
+    return () => observers.forEach((o) => o.disconnect())
+  }, [])
+
+  const matchesQuery = (s: Service) => {
+    if (!query.trim()) return true
+    const q = query.toLowerCase()
+    return (
+      s.name.toLowerCase().includes(q) ||
+      s.description.toLowerCase().includes(q) ||
+      (s.benefits || []).some((b) => b.toLowerCase().includes(q))
+    )
+  }
+
+  const toggleCategory = (id: string) => {
+    setExpandedCategories((prev) => ({ ...prev, [id]: !prev[id] }))
+  }
+
   return (
     <PullToRefresh>
       <div className="min-h-screen bg-white pb-20 md:pb-0">
@@ -535,6 +576,59 @@ export default function ServicesPage() {
           </div>
         </section>
 
+        {/* Services Navigator */}
+        <section className="sticky top-16 z-40 bg-white/80 backdrop-blur-xl border-b border-gray-100">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-between py-4 gap-4">
+              <div className="flex-1">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
+                  {serviceCategories.map((cat) => (
+                    <a
+                      key={cat.id}
+                      href={`#${cat.id}`}
+                      className={`px-4 py-2 rounded-xl transition-all duration-300 text-center ${
+                        activeCategoryId === cat.id
+                          ? "bg-white/70 shadow-sm text-brand-tan"
+                          : "bg-white/40 hover:bg-white/60 text-gray-700"
+                      }`}
+                    >
+                      {cat.category}
+                    </a>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <select
+                  aria-label="Jump to category"
+                  value={activeCategoryId}
+                  onChange={(e) => {
+                    const id = e.target.value
+                    setActiveCategoryId(id)
+                    const el = document.getElementById(id)
+                    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" })
+                  }}
+                  className="bg-white/70 backdrop-blur-sm rounded-xl px-3 py-2 shadow-sm border border-white/30 text-sm text-gray-700"
+                >
+                  {serviceCategories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.category}
+                    </option>
+                  ))}
+                </select>
+                <div className="flex items-center bg-white/70 backdrop-blur-sm rounded-xl px-3 py-2 shadow-sm border border-white/30">
+                  <Search className="w-4 h-4 text-gray-500 mr-2" />
+                  <input
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Search services..."
+                    className="bg-transparent outline-none text-sm text-gray-700 placeholder:text-gray-400"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Services by Category */}
         {serviceCategories.map((category, categoryIndex) => (
           <section
@@ -544,20 +638,42 @@ export default function ServicesPage() {
           >
             <div className="container mx-auto px-4">
               {/* Category Header */}
-              <div className="text-center mb-16">
-                <Badge className="bg-[#fbc6c5]/10 text-[#d09d80] px-4 py-2 mb-4">Category {categoryIndex + 1}</Badge>
+              <div className="text-center mb-12">
+                <Badge className="bg-brand-gradient text-white px-4 py-2 mb-4 hover-lift">Category {categoryIndex + 1}</Badge>
                 <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">{category.category}</h2>
                 <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">{category.description}</p>
+                <div className="flex items-center justify-center gap-3">
+                  <Button
+                    variant="brand-outline"
+                    className="rounded-xl"
+                    onClick={() => toggleCategory(category.id)}
+                  >
+                    {expandedCategories[category.id] ? (
+                      <>
+                        Show Less
+                        <ChevronUp className="w-4 h-4 ml-2" />
+                      </>
+                    ) : (
+                      <>
+                        View All Services
+                        <ChevronDown className="w-4 h-4 ml-2" />
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
 
               {/* Services Grid */}
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 max-w-7xl mx-auto">
-                {category.services.map((service, serviceIndex) => (
+                {category.services
+                  .filter(matchesQuery)
+                  .slice(0, expandedCategories[category.id] ? category.services.length : 6)
+                  .map((service, serviceIndex) => (
                   <Card
                     key={serviceIndex}
-                    className="group hover:shadow-2xl transition-all duration-500 rounded-3xl overflow-hidden border-0 bg-white"
+                    className="group hover-lift transition-optimized rounded-3xl overflow-hidden border-0 bg-white hover:shadow-2xl"
                   >
-                    <div className={`h-2 bg-gradient-to-r ${category.color}`}></div>
+                    <div className="h-2 bg-brand-gradient"></div>
 
                     <CardHeader className="pb-4">
                       <div className="flex items-start justify-between mb-3">
@@ -653,22 +769,30 @@ export default function ServicesPage() {
 
                       {service.name === "Hiko Nose Thread Lift" ? (
                         <Link href="/hiko-nose-lift">
-                          <Button className="w-full bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] hover:from-[#d09d80] hover:to-[#fbc6c5] text-white rounded-xl py-3 font-semibold group-hover:shadow-lg transition-all duration-300">
+                          <Button variant="brand" className="w-full rounded-xl py-3 hover-scale">
                             Learn More About Hiko
                             <ArrowRight className="w-4 h-4 ml-2" />
                           </Button>
                         </Link>
                       ) : (
-                        <Link href="/contact">
-                          <Button className="w-full bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] hover:from-[#d09d80] hover:to-[#fbc6c5] text-white rounded-xl py-3 font-semibold group-hover:shadow-lg transition-all duration-300">
-                            Book This Treatment
-                            <ArrowRight className="w-4 h-4 ml-2" />
-                          </Button>
-                        </Link>
+                        <Button
+                          onClick={() => {
+                            setSelectedServiceId(toId(service.name))
+                            setIsBookingOpen(true)
+                          }}
+                          variant="brand"
+                          className="w-full rounded-xl py-3 hover-scale"
+                        >
+                          Book {service.name}
+                          <Calendar className="w-4 h-4 ml-2" />
+                        </Button>
                       )}
                     </CardContent>
                   </Card>
                 ))}
+                {category.services.filter(matchesQuery).length === 0 && (
+                  <div className="col-span-full text-center text-gray-600">No services match your search.</div>
+                )}
               </div>
             </div>
           </section>
@@ -684,9 +808,9 @@ export default function ServicesPage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-6 justify-center">
               <Button
-                size="lg"
                 variant="secondary"
-                className="text-[#d09d80] hover:bg-white/90 px-8 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+                size="lg"
+                className="text-brand-tan px-8 py-4 text-lg font-semibold rounded-xl"
               >
                 <Phone className="w-5 h-5 mr-3" />
                 Call 0995-260-3451
@@ -695,7 +819,8 @@ export default function ServicesPage() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="border-2 border-white text-white hover:bg-white hover:text-[#d09d80] bg-transparent px-8 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+                size="lg"
+                className="border-2 border-white text-white hover:bg-white hover:text-brand-tan bg-transparent px-8 py-4 text-lg font-semibold rounded-xl"
                 >
                   View Our Portfolio
                   <ArrowRight className="w-5 h-5 ml-2" />
@@ -708,6 +833,7 @@ export default function ServicesPage() {
         {/* Mobile Bottom Navigation */}
         <MobileNav />
       </div>
+      <BookingModal isOpen={isBookingOpen} onClose={() => setIsBookingOpen(false)} defaultServiceId={selectedServiceId} />
     </PullToRefresh>
   )
 }

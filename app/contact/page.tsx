@@ -9,7 +9,6 @@ import {
   Phone,
   MapPin,
   Clock,
-  Mail,
   MessageCircle,
   Send,
   CheckCircle,
@@ -24,9 +23,11 @@ import { useState, useEffect } from "react"
 import { MobileNav } from "@/components/mobile-nav"
 import { PullToRefresh } from "@/components/pull-to-refresh"
 import { SharedHeader } from "@/components/shared-header"
+import { BookingModal } from "@/components/booking-modal"
 
 export default function ContactPage() {
   const [isScrolled, setIsScrolled] = useState(false)
+  const [isBookingOpen, setIsBookingOpen] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -87,13 +88,7 @@ export default function ContactPage() {
       action: "Book Appointment",
       href: "/services",
     },
-    {
-      icon: <Mail className="w-6 h-6 text-[#d09d80]" />,
-      title: "Email",
-      details: ["info@skinessentialsbyher.com", "appointments@skinessentialsbyher.com"],
-      action: "Send Email",
-      href: "mailto:info@skinessentialsbyher.com",
-    },
+    
   ]
 
   const socialMedia = [
@@ -147,12 +142,12 @@ export default function ContactPage() {
         {/* Hero Section */}
         <section className="pt-24 pb-16 px-4 relative z-10">
           <div className="container mx-auto text-center">
-            <Badge className="bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] text-white mb-6 px-6 py-2 text-sm font-semibold">
+            <Badge className="bg-brand-gradient text-white mb-6 px-6 py-2 text-sm font-semibold hover-lift">
               Contact Us
             </Badge>
             <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
               Get in Touch with
-              <span className="bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] bg-clip-text text-transparent block">
+              <span className="text-brand-gradient block">
                 Our Expert Team
               </span>
             </h1>
@@ -165,7 +160,7 @@ export default function ContactPage() {
         {/* Contact Information Cards */}
         <section className="py-16 px-4">
           <div className="container mx-auto">
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16 justify-items-center">
               {contactInfo.map((info, index) => (
                 <Card key={index} className="border-[#fbc6c5]/20 hover:shadow-lg transition-all duration-300 group">
                   <CardContent className="p-6 text-center">
@@ -304,7 +299,9 @@ export default function ContactPage() {
                       <Button
                         type="submit"
                         disabled={isSubmitting}
-                        className="w-full bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] hover:from-[#d09d80] hover:to-[#fbc6c5] text-white py-3 text-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 rounded-xl"
+                        variant="brand"
+                        size="lg"
+                        className="w-full py-3 text-lg"
                       >
                         {isSubmitting ? (
                           <>
@@ -370,20 +367,22 @@ export default function ContactPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
-                      <Link href="/services">
-                        <Button className="w-full justify-start bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] hover:from-[#d09d80] hover:to-[#fbc6c5] text-white">
-                          <Calendar className="w-4 h-4 mr-3" />
-                          Book Appointment
-                        </Button>
-                      </Link>
+                      <Button
+                        onClick={() => setIsBookingOpen(true)}
+                        variant="brand"
+                        className="w-full justify-start"
+                      >
+                        <Calendar className="w-4 h-4 mr-3" />
+                        Book Appointment
+                      </Button>
                       <Link href="/portfolio">
-                        <Button variant="outline" className="w-full justify-start border-[#d09d80] text-[#d09d80] hover:bg-[#d09d80] hover:text-white">
+                        <Button variant="brand-outline" className="w-full justify-start">
                           <Star className="w-4 h-4 mr-3" />
                           View Portfolio
                         </Button>
                       </Link>
                       <Link href="tel:+639171234567">
-                        <Button variant="outline" className="w-full justify-start border-[#d09d80] text-[#d09d80] hover:bg-[#d09d80] hover:text-white">
+                        <Button variant="brand-outline" className="w-full justify-start">
                           <Phone className="w-4 h-4 mr-3" />
                           Call Now
                         </Button>
@@ -415,6 +414,9 @@ export default function ContactPage() {
             </Card>
           </div>
         </section>
+
+        {/* Booking Modal */}
+        <BookingModal isOpen={isBookingOpen} onClose={() => setIsBookingOpen(false)} />
 
         {/* Mobile Bottom Navigation */}
         <MobileNav />

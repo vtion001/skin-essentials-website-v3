@@ -37,8 +37,8 @@ export function MobileNav() {
   ]
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 md:hidden">
-      <div className="grid grid-cols-5 h-16">
+    <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-t border-gray-200/50 md:hidden safe-area-bottom">
+      <div className="grid grid-cols-5 h-16 max-w-md mx-auto">
         {navItems.map((item) => {
           const Icon = item.icon
           const isActive = pathname === item.href
@@ -48,12 +48,28 @@ export function MobileNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex flex-col items-center justify-center space-y-1 text-xs transition-colors",
-                isActive ? "text-[#d09d80] bg-[#fbc6c5]/10" : "text-gray-600 hover:text-[#d09d80] hover:bg-[#fbc6c5]/10",
+                "flex flex-col items-center justify-center space-y-1 text-xs transition-all duration-300 hover-lift",
+                isActive 
+                  ? "text-brand-rose bg-brand-rose/10" 
+                  : "text-gray-600 hover:text-brand-rose hover:bg-brand-rose/10",
+                "relative"
               )}
             >
-              <Icon className="w-5 h-5" />
-              <span>{item.label}</span>
+              <div className={cn(
+                "p-2 rounded-full transition-all duration-300",
+                isActive && "bg-brand-gradient shadow-lg"
+              )}>
+                <Icon className={cn(
+                  "w-5 h-5 transition-all duration-300",
+                  isActive ? "text-white" : ""
+                )} />
+              </div>
+              <span className={cn(
+                "transition-all duration-300",
+                isActive ? "font-semibold text-brand-rose" : ""
+              )}>
+                {item.label}
+              </span>
             </Link>
           )
         })}

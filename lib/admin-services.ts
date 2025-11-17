@@ -2,6 +2,7 @@
 
 import { facebookAPI, type FacebookPage, type FacebookConversation, type FacebookMessage } from './facebook-api'
 import { instagramAPI, type InstagramUser, type InstagramConversation, type InstagramMessage } from './instagram-api'
+import { supabaseAvailable, supabaseFetchAppointments, supabaseInsertAppointment, supabaseUpdateAppointment, supabaseDeleteAppointment } from './supabase'
 
 export interface Appointment {
   id: string
@@ -154,6 +155,8 @@ class AppointmentService {
       this.appointments = this.getDefaultAppointments()
       this.initialized = true
     }
+    // Try to hydrate from Supabase asynchronously
+    this.fetchFromSupabase().catch(() => {})
   }
 
   private saveToStorage() {
@@ -205,6 +208,54 @@ class AppointmentService {
     return [...this.appointments]
   }
 
+  async fetchFromSupabase() {
+    if (!supabaseAvailable()) return
+    const rows = await supabaseFetchAppointments()
+    if (!rows) return
+    // Normalize rows to Appointment shape
+    const normalized: Appointment[] = rows.map((r: any) => ({
+      id: String(r.id),
+      clientId: String(r.client_id ?? r.clientId ?? ''),
+      clientName: String(r.client_name ?? r.clientName ?? ''),
+      clientEmail: String(r.client_email ?? r.clientEmail ?? ''),
+      clientPhone: String(r.client_phone ?? r.clientPhone ?? ''),
+      service: String(r.service),
+      date: String(r.date),
+      time: String(r.time),
+      status: (r.status ?? 'scheduled') as Appointment['status'],
+      notes: r.notes ?? '',
+      duration: Number(r.duration ?? 60),
+      price: Number(r.price ?? 0),
+      createdAt: String(r.created_at ?? r.createdAt ?? new Date().toISOString()),
+      updatedAt: String(r.updated_at ?? r.updatedAt ?? new Date().toISOString()),
+    }))
+    this.appointments = normalized
+    this.saveToStorage()
+  }
+
+  async syncLocalToSupabaseIfEmpty() {
+    if (!supabaseAvailable()) return
+    const rows = await supabaseFetchAppointments()
+    if (!rows || rows.length > 0) return
+    const payloads = this.appointments.map((a) => ({
+      id: a.id,
+      client_id: a.clientId,
+      client_name: a.clientName,
+      client_email: a.clientEmail,
+      client_phone: a.clientPhone,
+      service: a.service,
+      date: a.date,
+      time: a.time,
+      status: a.status,
+      notes: a.notes,
+      duration: a.duration,
+      price: a.price,
+      created_at: a.createdAt,
+      updated_at: a.updatedAt,
+    }))
+    await Promise.all(payloads.map((p) => supabaseInsertAppointment(p).catch(() => false)))
+  }
+
   getAppointmentsByDate(date: string): Appointment[] {
     return this.appointments.filter(apt => apt.date === date)
   }
@@ -218,6 +269,26 @@ class AppointmentService {
     }
     this.appointments.push(newAppointment)
     this.saveToStorage()
+    // Fire-and-forget insert to Supabase
+    if (supabaseAvailable()) {
+      const row = {
+        id: newAppointment.id,
+        client_id: newAppointment.clientId,
+        client_name: newAppointment.clientName,
+        client_email: newAppointment.clientEmail,
+        client_phone: newAppointment.clientPhone,
+        service: newAppointment.service,
+        date: newAppointment.date,
+        time: newAppointment.time,
+        status: newAppointment.status,
+        notes: newAppointment.notes,
+        duration: newAppointment.duration,
+        price: newAppointment.price,
+        created_at: newAppointment.createdAt,
+        updated_at: newAppointment.updatedAt,
+      }
+      supabaseInsertAppointment(row).catch(() => {})
+    }
     return newAppointment
   }
 
@@ -231,6 +302,11 @@ class AppointmentService {
       updatedAt: new Date().toISOString(),
     }
     this.saveToStorage()
+    if (supabaseAvailable()) {
+      const { clientId, clientName, clientEmail, clientPhone, service, date, time, status, notes, duration, price, updatedAt } = this.appointments[index]
+      const row = { client_id: clientId, client_name: clientName, client_email: clientEmail, client_phone: clientPhone, service, date, time, status, notes, duration, price, updated_at: updatedAt }
+      supabaseUpdateAppointment(id, row).catch(() => {})
+    }
     return true
   }
 
@@ -240,6 +316,9 @@ class AppointmentService {
 
     this.appointments.splice(index, 1)
     this.saveToStorage()
+    if (supabaseAvailable()) {
+      supabaseDeleteAppointment(id).catch(() => {})
+    }
     return true
   }
 
@@ -598,7 +677,7 @@ class SocialMediaService {
         platform: "instagram",
         senderId: "user123",
         senderName: "Emma Wilson",
-        senderProfilePicture: "https://via.placeholder.com/40",
+        senderProfilePicture: AVATAR_PLACEHOLDER,
         message: "Hi! I'm interested in your dermal filler services. Can you provide more information?",
         timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
         isRead: false,
@@ -613,7 +692,7 @@ class SocialMediaService {
         platform: "facebook",
         senderId: "user456",
         senderName: "Jessica Brown",
-        senderProfilePicture: "https://via.placeholder.com/40",
+        senderProfilePicture: AVATAR_PLACEHOLDER,
         message: "What are your available time slots for next week?",
         timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
         isRead: true,
@@ -635,7 +714,7 @@ class SocialMediaService {
         platform: "instagram",
         participantId: "user123",
         participantName: "Emma Wilson",
-        participantProfilePicture: "https://via.placeholder.com/40",
+        participantProfilePicture: AVATAR_PLACEHOLDER,
         lastMessage: "Hi! I'm interested in your dermal filler services. Can you provide more information?",
         lastMessageTimestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
         unreadCount: 1,
@@ -647,7 +726,7 @@ class SocialMediaService {
         platform: "facebook",
         participantId: "user456",
         participantName: "Jessica Brown",
-        participantProfilePicture: "https://via.placeholder.com/40",
+        participantProfilePicture: AVATAR_PLACEHOLDER,
         lastMessage: "What are your available time slots for next week?",
         lastMessageTimestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
         unreadCount: 0,
@@ -1132,3 +1211,4 @@ export const paymentService = new PaymentService()
 export const medicalRecordService = new MedicalRecordService()
 export const clientService = new ClientService()
 export const socialMediaService = new SocialMediaService()
+const AVATAR_PLACEHOLDER = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="40" height="40" rx="8" fill="%23f3f4f6"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%239ca3af" font-family="Arial" font-size="12">IMG</text></svg>'

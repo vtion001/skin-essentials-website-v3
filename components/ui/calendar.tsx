@@ -59,7 +59,9 @@ const Calendar = React.forwardRef<HTMLDivElement, CalendarProps>(
     }
 
     const isPastDate = (date: Date) => {
-      return date < today
+      const d = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+      const t = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+      return d < t
     }
 
     const handleDateClick = (day: number) => {
@@ -139,13 +141,13 @@ const Calendar = React.forwardRef<HTMLDivElement, CalendarProps>(
               <button
                 key={day}
                 onClick={() => handleDateClick(day)}
-                disabled={isPast || isBooked}
+                disabled={isPast}
                 className={cn(
                   "h-10 w-10 text-sm rounded-md transition-colors",
                   "hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500",
                   {
                     "bg-blue-500 text-white hover:bg-blue-600": isSelected,
-                    "bg-red-100 text-red-500 cursor-not-allowed": isBooked,
+                    "bg-red-100 text-red-500": isBooked,
                     "text-gray-400 cursor-not-allowed": isPast,
                     "bg-blue-100 text-blue-600": isToday && !isSelected,
                     "text-gray-900": !isPast && !isBooked && !isSelected && !isToday,

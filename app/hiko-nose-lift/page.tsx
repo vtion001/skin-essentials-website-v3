@@ -99,8 +99,9 @@ export default function HikoNoseLiftPage() {
 
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button
+                  variant="brand"
                   size="lg"
-                  className="bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] hover:from-[#d09d80] hover:to-[#fbc6c5] text-white px-6 md:px-8 py-3 md:py-4 text-base md:text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+                  className="px-6 md:px-8 py-3 md:py-4 text-base md:text-lg font-semibold rounded-xl"
                 >
                   <Calendar className="w-4 md:w-5 h-4 md:h-5 mr-2" />
                   Book Free Consultation

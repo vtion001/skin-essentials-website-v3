@@ -459,7 +459,7 @@ export default function FAQPage() {
                     If you experience any unusual symptoms or complications after your treatment, please contact us
                     immediately. Our team is available to address any concerns and provide appropriate guidance.
                   </p>
-                  <Button className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-orange-500 hover:to-amber-500 text-white w-full py-3 sm:py-4 text-base sm:text-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 rounded-2xl">
+                  <Button variant="brand" size="lg" className="w-full py-3 sm:py-4 text-base sm:text-lg font-semibold rounded-2xl">
                     <Phone className="w-4 h-4 sm:w-5 sm:h-5 mr-2 sm:mr-3 flex-shrink-0" />
                     <span className="break-words">Emergency Contact: 0995-260-3451</span>
                   </Button>
@@ -482,7 +482,8 @@ export default function FAQPage() {
               <Button
                 size="lg"
                 variant="secondary"
-                className="text-[#d09d80] hover:bg-white/90 px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 rounded-2xl w-full sm:w-auto"
+              size="lg"
+              className="text-brand-tan px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold rounded-2xl w-full sm:w-auto"
               >
                 <Phone className="w-4 h-4 sm:w-5 sm:h-5 mr-2 sm:mr-3 flex-shrink-0" />
                 <span className="break-words">Call 0995-260-3451</span>
@@ -490,7 +491,8 @@ export default function FAQPage() {
               <Button
                 size="lg"
                 variant="outline"
-                className="border-2 border-white text-white hover:bg-white hover:text-[#d09d80] bg-transparent px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 rounded-2xl w-full sm:w-auto"
+              size="lg"
+              className="border-2 border-white text-white hover:bg-white hover:text-brand-tan bg-transparent px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold rounded-2xl w-full sm:w-auto"
               >
                 <span className="break-words">Book Free Consultation</span>
               </Button>

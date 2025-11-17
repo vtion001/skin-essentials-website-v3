@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Clock, Star, RefreshCw, Filter, Grid, List, Eye, EyeOff } from "lucide-react"
+import { BookingModal } from "@/components/booking-modal"
+import { Clock, Star, RefreshCw, Filter, Grid, List, Eye, EyeOff, Calendar } from "lucide-react"
 import { OptimizedImage } from "@/components/optimized-image"
 import { portfolioService, type PortfolioItem } from "@/lib/portfolio-data"
 
@@ -18,6 +19,8 @@ export function PortfolioGallery() {
   const [isLoading, setIsLoading] = useState(true)
   const [revealedMap, setRevealedMap] = useState<Record<string, boolean>>({})
   const [showSimilar, setShowSimilar] = useState<boolean>(false)
+  const [isBookingOpen, setIsBookingOpen] = useState(false)
+  const [selectedServiceId, setSelectedServiceId] = useState<string>("")
 
   const isSensitive = (item: PortfolioItem) => {
     const title = item.title.toLowerCase()
@@ -27,6 +30,17 @@ export function PortfolioGallery() {
       title.includes("butt") ||
       title.includes("breast")
     )
+  }
+
+  const toId = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
+
+  const handleBookingClick = (treatmentName: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation()
+    }
+    const serviceId = toId(treatmentName)
+    setSelectedServiceId(serviceId)
+    setIsBookingOpen(true)
   }
 
   const toggleReveal = (id: string) => {
@@ -75,6 +89,12 @@ export function PortfolioGallery() {
 
   const filteredItems =
     selectedCategory === "all" ? portfolioItems : portfolioItems.filter((item) => item.category === selectedCategory)
+
+  const breastItems = filteredItems.filter((i) => i.treatment === "Non-Surgical Breast Lift")
+  const primaryBreastItemId = breastItems.length > 0 ? breastItems[0].id : undefined
+  const displayItems = filteredItems.filter(
+    (i) => i.treatment !== "Non-Surgical Breast Lift" || i.id === primaryBreastItemId
+  )
 
   const handleRefresh = () => {
     setIsLoading(true)
@@ -179,8 +199,8 @@ export function PortfolioGallery() {
       <div className="text-center mb-8">
         <div className="inline-flex items-center px-6 py-3 bg-white/80 backdrop-blur-sm rounded-full border border-gray-200 shadow-sm">
           <p className="text-gray-700 font-medium">
-            Showing <span className="font-bold text-rose-600">{filteredItems.length}</span> 
-            {filteredItems.length === 1 ? ' result' : ' results'}
+            Showing <span className="font-bold text-rose-600">{displayItems.length}</span> 
+            {displayItems.length === 1 ? ' result' : ' results'}
             {selectedCategory !== "all" && (
               <span>
                 {" "}in <span className="font-semibold text-pink-600">{selectedCategory}</span>
@@ -191,7 +211,7 @@ export function PortfolioGallery() {
       </div>
 
       {/* Gallery */}
-      {filteredItems.length === 0 ? (
+      {displayItems.length === 0 ? (
         <div className="text-center py-20">
           <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-12 max-w-md mx-auto border border-gray-200 shadow-sm">
             <Filter className="w-16 h-16 text-gray-300 mx-auto mb-6" />
@@ -207,7 +227,7 @@ export function PortfolioGallery() {
               : "space-y-6"
           }
         >
-          {filteredItems.map((item) => (
+          {displayItems.map((item) => (
             <Card
               key={item.id}
               className={`group cursor-pointer hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 rounded-3xl overflow-hidden border-0 bg-white/90 backdrop-blur-sm shadow-lg ${
@@ -295,6 +315,16 @@ export function PortfolioGallery() {
                     <span className="font-medium">Results: {item.results}</span>
                   </div>
                 </div>
+
+                <Button 
+                  variant="brand" 
+                  size="sm" 
+                  className="w-full mt-4 hover-scale"
+                  onClick={(e) => handleBookingClick(item.treatment, e)}
+                >
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Book Now
+                </Button>
               </CardContent>
             </Card>
           ))}
@@ -302,8 +332,8 @@ export function PortfolioGallery() {
       )}
 
       {/* Detail Modal */}
-      <Dialog open={!!selectedItem} onOpenChange={() => setSelectedItem(null)}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto bg-white/95 backdrop-blur-md border border-white/20 shadow-2xl">
+      <Dialog open={!!selectedItem} onOpenChange={(v) => { if (!v) setSelectedItem(null) }}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto bg-white/95 backdrop-blur-md border border-white/20 shadow-2xl" onInteractOutside={(e) => e.preventDefault()}>
           {selectedItem && (
             <>
               <DialogHeader className="pb-6">
@@ -316,7 +346,16 @@ export function PortfolioGallery() {
                     {selectedItem.category}
                   </Badge>
                   <span className="text-lg font-semibold text-rose-600">{selectedItem.treatment}</span>
-                  <div className="ml-auto">
+                  <div className="ml-auto flex items-center space-x-3">
+                    <Button
+                      variant="brand"
+                      size="sm"
+                      className="hover-scale"
+                      onClick={() => handleBookingClick(selectedItem.treatment)}
+                    >
+                      <Calendar className="w-4 h-4 mr-2" />
+                      Book Now
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
@@ -473,6 +512,9 @@ export function PortfolioGallery() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Booking Modal */}
+      <BookingModal isOpen={isBookingOpen} onClose={() => setIsBookingOpen(false)} defaultServiceId={selectedServiceId} />
     </div>
   )
 }

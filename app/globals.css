@@ -37,6 +37,16 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  
+  /* Brand Colors - Skin Essentials Logo Colors */
+  --brand-rose: #fbc6c5;
+  --brand-tan: #d09d80;
+  --brand-rose-light: #ffd1d0;
+  --brand-tan-light: #e6b18f;
+  --brand-rose-dark: #e8b5b4;
+  --brand-tan-dark: #b88c6f;
+  --brand-rose-pale: #fff5f5;
+  --brand-tan-pale: #faf4f0;
 }
 
 .dark {
@@ -72,6 +82,16 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(0.269 0 0);
   --sidebar-ring: oklch(0.439 0 0);
+  
+  /* Brand Colors - Dark Mode */
+  --brand-rose: #ffd1d0;
+  --brand-tan: #e6b18f;
+  --brand-rose-light: #ffe5e5;
+  --brand-tan-light: #f0d9c8;
+  --brand-rose-dark: #e8b5b4;
+  --brand-tan-dark: #b88c6f;
+  --brand-rose-pale: #2a1a1a;
+  --brand-tan-pale: #1f1a17;
 }
 
 @theme inline {
@@ -215,6 +235,34 @@
   animation: float 3s ease-in-out infinite;
 }
 
+/* Brand Gradient Utilities */
+.bg-brand-gradient {
+  background: linear-gradient(135deg, var(--brand-rose) 0%, var(--brand-tan) 100%);
+}
+
+.bg-brand-gradient-reverse {
+  background: linear-gradient(135deg, var(--brand-tan) 0%, var(--brand-rose) 100%);
+}
+
+.bg-brand-gradient-light {
+  background: linear-gradient(135deg, var(--brand-rose-light) 0%, var(--brand-tan-light) 100%);
+}
+
+.bg-brand-gradient-dark {
+  background: linear-gradient(135deg, var(--brand-rose-dark) 0%, var(--brand-tan-dark) 100%);
+}
+
+.text-brand-gradient {
+  background: linear-gradient(135deg, var(--brand-rose) 0%, var(--brand-tan) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.border-brand-gradient {
+  border-image: linear-gradient(135deg, var(--brand-rose) 0%, var(--brand-tan) 100%) 1;
+}
+
 /* Glassmorphism Effects */
 .glass {
   background: rgba(255, 250, 255, 0.25);
@@ -223,10 +271,27 @@
   border: 1px solid rgba(251, 198, 197, 0.18);
 }
 
+.glass-brand {
+  background: rgba(251, 198, 197, 0.15);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(251, 198, 197, 0.3);
+}
+
 .glass-strong {
   background: rgba(255, 250, 255, 0.4);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(251, 198, 197, 0.3);
+}
+
+.dark .glass {
+  background: rgba(20, 20, 20, 0.7);
+  border: 1px solid rgba(251, 198, 197, 0.2);
+}
+
+.dark .glass-strong {
+  background: rgba(20, 20, 20, 0.85);
   border: 1px solid rgba(251, 198, 197, 0.3);
 }
 
@@ -237,16 +302,16 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #fffaff;
+  background: var(--background);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(45deg, #fbc6c5, #d09d80);
+  background: linear-gradient(135deg, #fbc6c5 0%, #d09d80 100%);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(45deg, #d09d80, #fbc6c5);
+  background: linear-gradient(135deg, #d09d80 0%, #fbc6c5 100%);
 }
 
 /* Hide scrollbar for horizontal scroll on mobile */
@@ -344,9 +409,30 @@ body {
   }
 }
 
+/* Enhanced Micro-interactions */
+.transition-optimized {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.transition-fast {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-glow:hover {
+  box-shadow: 0 0 20px rgba(var(--brand-rose), 0.3);
+}
+
+.hover-scale:hover {
+  transform: scale(1.02);
+}
+
+.hover-brightness:hover {
+  filter: brightness(1.1);
+}
+
 /* Custom gradient text animation */
 .gradient-text {
-  background: linear-gradient(-45deg, #fbc6c5, #d09d80, #fbc6c5, #d09d80);
+  background: linear-gradient(-45deg, var(--brand-rose), var(--brand-tan), var(--brand-rose), var(--brand-tan));
   background-size: 400% 400%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -388,7 +474,7 @@ body {
 
 /* Loading skeleton */
 .skeleton {
-  background: linear-gradient(90deg, #fffaff 25%, #fbc6c5 50%, #fffaff 75%);
+  background: linear-gradient(90deg, var(--brand-rose-pale) 25%, var(--brand-rose) 50%, var(--brand-rose-pale) 75%);
   background-size: 200% 100%;
   animation: loading 1.5s infinite;
 }

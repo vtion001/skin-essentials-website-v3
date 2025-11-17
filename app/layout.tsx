@@ -5,6 +5,8 @@ import "./globals.css"
 import { SmoothScroll } from "@/components/smooth-scroll"
 import { PerformanceMonitor } from "@/components/performance-monitor"
 import { StructuredData } from "@/components/structured-data"
+import { Analytics } from "@vercel/analytics/next"
+import { ThemeProvider } from "@/components/theme-provider"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -64,21 +66,31 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <meta name="theme-color" content="#fbc6c5" />
+        <meta name="msapplication-TileColor" content="#fbc6c5" />
+        <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#fbc6c5" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="//fonts.googleapis.com" />
         <link rel="dns-prefetch" href="//fonts.gstatic.com" />
       </head>
       <body className={`${inter.className} antialiased`}>
-        <StructuredData />
-        <PerformanceMonitor />
-        <SmoothScroll>
-          {children}
-        </SmoothScroll>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <StructuredData />
+          <PerformanceMonitor />
+          <SmoothScroll>
+            {children}
+          </SmoothScroll>
+          {process.env.NODE_ENV === "production" && <Analytics />}
+        </ThemeProvider>
       </body>
     </html>
   )

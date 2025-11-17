@@ -252,17 +252,18 @@ export default function AboutPage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-6 justify-center">
               <Button
+                variant="brand"
                 size="lg"
-                className="bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] hover:from-[#d09d80] hover:to-[#fbc6c5] text-white px-8 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 rounded-2xl"
+                className="px-8 py-4 text-lg font-semibold rounded-2xl"
               >
                 <Phone className="w-5 h-5 mr-3" />
                 Book Free Consultation
               </Button>
               <Link href="/portfolio">
                 <Button
-                  size="lg"
                   variant="outline"
-                  className="border-2 border-[#d09d80] text-[#d09d80] hover:bg-[#d09d80] hover:text-white px-8 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 rounded-2xl"
+                  size="lg"
+                  className="border-2 border-brand-tan text-brand-tan hover:bg-brand-tan hover:text-white px-8 py-4 text-lg font-semibold rounded-2xl"
                 >
                   View Our Portfolio
                   <ArrowRight className="w-5 h-5 ml-2" />
