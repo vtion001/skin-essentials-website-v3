@@ -37,6 +37,7 @@ export default function ContactPage() {
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [errors, setErrors] = useState<{ [k: string]: string }>({})
 
   useEffect(() => {
     const handleScroll = () => {
@@ -54,6 +55,15 @@ export default function ContactPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
+    const newErrors: { [k: string]: string } = {}
+    if (!formData.name.trim()) newErrors.name = "Full name is required"
+    if (!formData.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = "Enter a valid email"
+    if (!formData.message.trim()) newErrors.message = "Message is required"
+    setErrors(newErrors)
+    if (Object.keys(newErrors).length > 0) {
+      setIsSubmitting(false)
+      return
+    }
     
     // Simulate form submission
     await new Promise(resolve => setTimeout(resolve, 2000))
@@ -128,7 +138,7 @@ export default function ContactPage() {
 
   return (
     <PullToRefresh>
-      <div className="min-h-screen bg-[#fffaff] pb-20 md:pb-0 relative overflow-hidden">
+      <div className="min-h-screen bg-[#fffaff] dark:bg-gray-950 pb-20 md:pb-0 relative overflow-hidden">
         {/* Animated Background Elements */}
         <div className="fixed inset-0 pointer-events-none">
           <div className="absolute top-20 left-10 w-32 h-32 bg-gradient-to-br from-[#fbc6c5]/20 to-[#d09d80]/20 rounded-full blur-xl animate-pulse"></div>
@@ -145,13 +155,13 @@ export default function ContactPage() {
             <Badge className="bg-brand-gradient text-white mb-6 px-6 py-2 text-sm font-semibold hover-lift">
               Contact Us
             </Badge>
-            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
+            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
               Get in Touch with
               <span className="text-brand-gradient block">
                 Our Expert Team
               </span>
             </h1>
-            <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
               Ready to start your beauty journey? Contact us today to schedule your complimentary consultation and discover the perfect treatment for your aesthetic goals.
             </p>
           </div>
@@ -162,15 +172,15 @@ export default function ContactPage() {
           <div className="container mx-auto">
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16 justify-items-center">
               {contactInfo.map((info, index) => (
-                <Card key={index} className="border-[#fbc6c5]/20 hover:shadow-lg transition-all duration-300 group">
+                <Card key={index} className="border-[#fbc6c5]/20 hover:shadow-lg transition-all duration-300 group dark:bg-gray-900/60 dark:border-gray-800">
                   <CardContent className="p-6 text-center">
                     <div className="w-16 h-16 bg-gradient-to-br from-[#fbc6c5]/20 to-[#d09d80]/20 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
                       {info.icon}
                     </div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-3">{info.title}</h3>
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3">{info.title}</h3>
                     <div className="space-y-1 mb-4">
                       {info.details.map((detail, detailIndex) => (
-                        <p key={detailIndex} className="text-gray-600 text-sm">{detail}</p>
+                        <p key={detailIndex} className="text-gray-600 dark:text-gray-300 text-sm">{detail}</p>
                       ))}
                     </div>
                     <Link href={info.href}>
@@ -195,28 +205,28 @@ export default function ContactPage() {
               {/* Contact Form */}
               <Card className="border-[#fbc6c5]/20 shadow-lg">
                 <CardHeader>
-                  <CardTitle className="text-2xl font-bold text-gray-900 flex items-center">
+                  <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
                     <Send className="w-6 h-6 text-[#d09d80] mr-3" />
                     Send us a Message
                   </CardTitle>
-                  <p className="text-gray-600">
+                  <p className="text-gray-600 dark:text-gray-300">
                     Fill out the form below and we'll get back to you within 24 hours.
                   </p>
                 </CardHeader>
                 <CardContent>
                   {isSubmitted ? (
-                    <div className="text-center py-8">
+                    <div className="text-center py-8" role="status" aria-live="polite">
                       <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                      <h3 className="text-xl font-bold text-gray-900 mb-2">Message Sent Successfully!</h3>
-                      <p className="text-gray-600">
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Message Sent Successfully!</h3>
+                      <p className="text-gray-600 dark:text-gray-300">
                         Thank you for contacting us. We'll get back to you within 24 hours.
                       </p>
                     </div>
                   ) : (
-                    <form onSubmit={handleSubmit} className="space-y-6">
+                    <form onSubmit={handleSubmit} className="space-y-6" noValidate>
                       <div className="grid md:grid-cols-2 gap-4">
                         <div>
-                          <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                          <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Full Name *
                           </label>
                           <Input
@@ -227,11 +237,16 @@ export default function ContactPage() {
                             value={formData.name}
                             onChange={handleInputChange}
                             placeholder="Enter your full name"
+                            aria-invalid={!!errors.name}
+                            aria-describedby="name-error"
                             className="border-[#fbc6c5]/30 focus:border-[#d09d80]"
                           />
+                          {errors.name && (
+                            <p id="name-error" className="mt-1 text-sm text-red-600">{errors.name}</p>
+                          )}
                         </div>
                         <div>
-                          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                          <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Email Address *
                           </label>
                           <Input
@@ -242,13 +257,18 @@ export default function ContactPage() {
                             value={formData.email}
                             onChange={handleInputChange}
                             placeholder="Enter your email"
+                            aria-invalid={!!errors.email}
+                            aria-describedby="email-error"
                             className="border-[#fbc6c5]/30 focus:border-[#d09d80]"
                           />
+                          {errors.email && (
+                            <p id="email-error" className="mt-1 text-sm text-red-600">{errors.email}</p>
+                          )}
                         </div>
                       </div>
                       <div className="grid md:grid-cols-2 gap-4">
                         <div>
-                          <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+                          <label htmlFor="phone" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Phone Number
                           </label>
                           <Input
@@ -262,7 +282,7 @@ export default function ContactPage() {
                           />
                         </div>
                         <div>
-                          <label htmlFor="service" className="block text-sm font-medium text-gray-700 mb-2">
+                          <label htmlFor="service" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Service of Interest
                           </label>
                           <select
@@ -282,7 +302,7 @@ export default function ContactPage() {
                         </div>
                       </div>
                       <div>
-                        <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
+                        <label htmlFor="message" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Message *
                         </label>
                         <Textarea
@@ -293,8 +313,13 @@ export default function ContactPage() {
                           onChange={handleInputChange}
                           placeholder="Tell us about your aesthetic goals or any questions you have..."
                           rows={5}
+                          aria-invalid={!!errors.message}
+                          aria-describedby="message-error"
                           className="border-[#fbc6c5]/30 focus:border-[#d09d80]"
                         />
+                        {errors.message && (
+                          <p id="message-error" className="mt-1 text-sm text-red-600">{errors.message}</p>
+                        )}
                       </div>
                       <Button
                         type="submit"
@@ -323,23 +348,23 @@ export default function ContactPage() {
               {/* Map and Additional Info */}
               <div className="space-y-6">
                 {/* Map Placeholder */}
-                <Card className="border-[#fbc6c5]/20 shadow-lg">
+                <Card className="border-[#fbc6c5]/20 shadow-lg dark:bg-gray-900/60 dark:border-gray-800">
                   <CardContent className="p-0">
                     <div className="bg-gradient-to-br from-[#fbc6c5]/20 to-[#d09d80]/20 h-64 flex items-center justify-center rounded-lg">
                       <div className="text-center">
                         <MapPin className="w-12 h-12 text-[#d09d80] mx-auto mb-4" />
-                        <h3 className="text-lg font-bold text-gray-900 mb-2">  Clinic</h3>
-                        <p className="text-gray-600 mb-4">Granda Building Road 8 Project 6<br />Quezon City, Metro Manila</p>
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Clinic</h3>
+                        <p className="text-gray-600 dark:text-gray-300 mb-4">Granda Building Road 8 Project 6<br />Quezon City, Metro Manila</p>
 
                       </div>
                     </div>
                   </CardContent>
                 </Card>
                 {/* Social Media */}
-                <Card className="border-[#fbc6c5]/20 shadow-lg">
+                <Card className="border-[#fbc6c5]/20 shadow-lg dark:bg-gray-900/60 dark:border-gray-800">
                   <CardHeader>
-                    <CardTitle className="text-xl font-bold text-gray-900">Follow Us</CardTitle>
-                    <p className="text-gray-600">Stay updated with our latest treatments and results</p>
+                    <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">Follow Us</CardTitle>
+                    <p className="text-gray-600 dark:text-gray-300">Stay updated with our latest treatments and results</p>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
@@ -350,8 +375,8 @@ export default function ContactPage() {
                               {social.icon}
                             </div>
                             <div>
-                              <h4 className="font-semibold text-gray-900">{social.name}</h4>
-                              <p className="text-sm text-gray-600">{social.handle}</p>
+                              <h4 className="font-semibold text-gray-900 dark:text-white">{social.name}</h4>
+                              <p className="text-sm text-gray-600 dark:text-gray-300">{social.handle}</p>
                             </div>
                           </div>
                         </Link>
@@ -361,9 +386,9 @@ export default function ContactPage() {
                 </Card>
 
                 {/* Quick Actions */}
-                <Card className="border-[#fbc6c5]/20 shadow-lg">
+                <Card className="border-[#fbc6c5]/20 shadow-lg dark:bg-gray-900/60 dark:border-gray-800">
                   <CardHeader>
-                    <CardTitle className="text-xl font-bold text-gray-900">Quick Actions</CardTitle>
+                    <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">Quick Actions</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">

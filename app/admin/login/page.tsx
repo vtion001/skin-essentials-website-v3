@@ -23,20 +23,28 @@ export default function AdminLoginPage() {
     setIsLoading(true)
     setError("")
 
-    // Simple authentication check
-    if (username === "admin" && password === "skinessentials2024") {
-      // Set cookie with proper expiration (24 hours)
-      const expirationDate = new Date()
-      expirationDate.setTime(expirationDate.getTime() + 24 * 60 * 60 * 1000) // 24 hours
-      document.cookie = `admin_token=authenticated; path=/; expires=${expirationDate.toUTCString()}`
+    try {
+      const response = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, password }),
+      })
 
-      // Also set localStorage as backup
-      localStorage.setItem("admin_token", "authenticated")
-
-      // Redirect to admin dashboard
-      router.push("/admin")
-    } else {
-      setError("Invalid username or password")
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success) {
+          // Redirect to admin dashboard
+          router.push("/admin")
+        } else {
+          setError("Invalid username or password")
+        }
+      } else {
+        setError("Login failed. Please try again.")
+      }
+    } catch (error) {
+      setError("Network error. Please check your connection.")
     }
 
     setIsLoading(false)

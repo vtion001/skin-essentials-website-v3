@@ -18,7 +18,11 @@ import {
   Play,
   Quote,
   Heart,
+  Facebook,
+  Instagram,
 } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import Link from "next/link"
 import Image from "next/image"
 import { useState, useEffect } from "react"
@@ -581,17 +585,56 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Before/After Gallery Preview */}
-        <section className="py-20">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-16">
-              <Badge className="bg-brand-rose/10 text-brand-tan px-4 py-2 mb-4">Real Results</Badge>
-              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">See the Transformation</h2>
-              <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
-                Browse our extensive portfolio of before and after photos showcasing natural, beautiful results.
+        <section className="relative py-28 overflow-hidden bg-gradient-to-br from-gray-50 via-white to-gray-100">
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute -top-28 -left-20 w-64 h-64 bg-brand-rose/15 rounded-full blur-3xl"></div>
+            <div className="absolute -bottom-32 -right-24 w-72 h-72 bg-brand-tan/15 rounded-full blur-3xl"></div>
+          </div>
+          <div className="container mx-auto px-4 relative z-10">
+            <div className="text-center mb-14">
+              <div className="inline-flex items-center gap-2 mb-4">
+                <Badge className="bg-brand-rose/10 text-brand-tan px-4 py-2">Real Results</Badge>
+                <div className="w-2 h-2 bg-gradient-to-r from-brand-rose to-brand-tan rounded-full animate-ping"></div>
+              </div>
+              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">See the Transformation</h2>
+              <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">
+                Explore before-and-after results from real clients. Natural enhancements with medical-grade precision.
               </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[
+                {
+                  before: "https://res.cloudinary.com/dbviya1rj/image/upload/v1758858517/hk0fop3vbxemv9wqcdxl.jpg",
+                  after: "https://res.cloudinary.com/dbviya1rj/image/upload/v1758859399/31549a56-c2be-4517-81e3-9b866a9a1a23.png",
+                  label: "Thread Lift"
+                },
+                {
+                  before: "https://res.cloudinary.com/dbviya1rj/image/upload/v1758858851/zwivugqje2ejllji1xcn.jpg",
+                  after: "https://res.cloudinary.com/dbviya1rj/image/upload/v1758859466/3ae3dd78-09b7-474a-86af-6ff7df610626.png",
+                  label: "Skin Rejuvenation"
+                },
+                {
+                  before: "https://res.cloudinary.com/dbviya1rj/image/upload/v1758858850/bbqjc0cv7ha2vt2lo4vv.jpg",
+                  after: "https://res.cloudinary.com/dbviya1rj/image/upload/v1758859335/f380e512-53bd-4501-81e3-685818b51001.png",
+                  label: "Dermal Fillers"
+                }
+              ].map((item, i) => (
+                <div key={i} className="group relative rounded-2xl overflow-hidden bg-white/70 backdrop-blur-sm border border-white/40 shadow-xl">
+                  <div className="relative">
+                    <Image src={item.after} alt={`${item.label} after`} width={600} height={400} className="w-full h-64 object-cover" />
+                    <Image src={item.before} alt={`${item.label} before`} width={600} height={400} className="absolute inset-0 w-full h-64 object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-white/90 text-gray-900">{item.label}</span>
+                      <span className="text-xs text-white/90 bg-black/40 px-2 py-1 rounded-md">Hover to compare</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="text-center mt-12">
               <Link href="/portfolio">
-                <Button className="bg-brand-gradient hover:bg-brand-gradient-reverse text-white px-8 py-4 text-lg rounded-xl">
+                <Button className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-semibold transition-all cursor-pointer shadow-xs hover:shadow-lg hover-lift h-11 bg-brand-gradient hover:bg-brand-gradient-reverse text-white px-8 py-4 rounded-xl">
                   View Full Portfolio
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
@@ -601,80 +644,7 @@ export default function HomePage() {
         </section>
 
 
-        {/* Footer */}
-        <footer className="bg-gray-900 text-white py-16">
-          <div className="container mx-auto px-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-              <div className="lg:col-span-2">
-                <div className="flex items-center space-x-3 mb-6">
-                  <Image
-                    src="/images/skinessentials-logo.png"
-                    alt="Skin Essentials by HER"
-                    width={120}
-                    height={60}
-                    className="h-10 w-auto object-contain brightness-0 invert"
-                  />
-                </div>
-                <p className="text-gray-300 leading-relaxed mb-6 max-w-md">
-                  Your trusted partner for non-surgical beauty enhancements and medical-grade skin solutions. Licensed
-                  professionals, FDA-approved materials, personalized care.
-                </p>
-                <div className="flex space-x-4">{/* Social Media Icons */}</div>
-              </div>
-
-              <div>
-                <h3 className="font-bold mb-6 text-lg">Services</h3>
-                <div className="space-y-3 text-gray-300">
-                  <Link href="/services#thread-lifts" className="block hover:text-white transition-colors">
-                    Thread Lifts
-                  </Link>
-                  <Link href="/services#dermal-fillers" className="block hover:text-white transition-colors">
-                    Dermal Fillers
-                  </Link>
-                  <Link href="/services#laser-treatments" className="block hover:text-white transition-colors">
-                    Laser Treatments
-                  </Link>
-                  <Link href="/services#skin-treatments" className="block hover:text-white transition-colors">
-                    Skin Rejuvenation
-                  </Link>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="font-bold mb-6 text-lg">Contact Info</h3>
-                <div className="space-y-3 text-gray-300">
-                  <p className="flex items-center">
-                    <Phone className="w-4 h-4 mr-2 text-brand-rose" />
-                    0995-260-3451
-                  </p>
-                  <p className="flex items-start">
-                    <MapPin className="w-4 h-4 mr-2 text-brand-rose mt-1" />
-                    Granda Building, Road 8<br />
-                    Project 6, Quezon City
-                  </p>
-                  <p className="flex items-center">
-                    <Clock className="w-4 h-4 mr-2 text-brand-rose" />
-                    Mon-Sun: 10AM-6PM
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="border-t border-gray-700 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
-              <p className="text-gray-400 mb-4 md:mb-0">
-                &copy; {new Date().getFullYear()} Skin Essentials by HER. All rights reserved.
-              </p>
-              <div className="flex space-x-6 text-gray-400">
-                <Link href="/privacy" className="hover:text-white transition-colors">
-                  Privacy Policy
-                </Link>
-                <Link href="/terms" className="hover:text-white transition-colors">
-                  Terms of Service
-                </Link>
-              </div>
-            </div>
-          </div>
-        </footer>
+        
 
         {/* Mobile Bottom Navigation */}
         <MobileNav />

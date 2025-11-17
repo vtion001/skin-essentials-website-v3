@@ -46,7 +46,9 @@ export async function GET(request: NextRequest) {
     console.log('Exchanging Facebook authorization code for access token...')
     
     // Exchange code for access token with comprehensive validation
-    const tokenResult = await facebookAPI.exchangeCodeForToken(code, state)
+    const origin = new URL(request.url).origin
+    const callbackRedirectUri = `${origin}/api/auth/facebook`
+    const tokenResult = await facebookAPI.exchangeCodeForToken(code, state, callbackRedirectUri)
     
     if (tokenResult.error) {
       console.error('Facebook token exchange failed:', tokenResult.error)
@@ -85,19 +87,20 @@ export async function GET(request: NextRequest) {
        expiresAt: null // Facebook tokens don't expire by default for pages
      }
 
-     // Store connections for each page in the social media service
-     for (const page of pagesResult) {
-       const pageConnectionData = {
-         ...connectionData,
-         pageInfo: page,
-         pageId: page.id,
-         pageName: page.name,
-         pageAccessToken: page.access_token
-       }
-       
-       // Store the connection (in production, this would be saved to database)
-       socialMediaService.addPlatformConnection(page.id, pageConnectionData)
-     }
+    // Store connections for each page in the social media service
+    for (const page of pagesResult) {
+      const pageConnection = {
+        platform: 'facebook' as const,
+        pageId: page.id,
+        pageName: page.name,
+        accessToken: page.access_token,
+        isConnected: true,
+        lastSyncTimestamp: new Date().toISOString(),
+        webhookVerified: false
+      }
+
+      socialMediaService.addPlatformConnection(pageConnection)
+    }
 
     // Store connection data in a way that the client can access it
     // In production, this should be stored in a secure database and associated with the user session
@@ -172,9 +175,8 @@ export async function POST(request: NextRequest) {
     const { action } = body
 
     if (action === 'get_login_url') {
-      const redirectUri = `${request.nextUrl.origin}/api/auth/facebook`
+      const redirectUri = process.env.FACEBOOK_REDIRECT_URI || `${request.nextUrl.origin}/api/auth/facebook`
       const loginUrl = facebookAPI.getLoginUrl(redirectUri)
-      
       return NextResponse.json({ loginUrl })
     }
 

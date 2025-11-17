@@ -842,16 +842,7 @@ export default function PrivacyPolicyPage() {
           </div>
         </div>
 
-        {/* Footer */}
-        <footer className="bg-gray-900 text-white py-8">
-          <div className="container mx-auto px-4 text-center">
-            <p className="text-sm text-gray-400">
-              © {new Date().getFullYear()} Skin Essentials by HER. All rights reserved. | 
-              <Link href="/privacy" className="text-[#fbc6c5] hover:text-white ml-1">Privacy Policy</Link> | 
-              <Link href="/contact" className="text-[#fbc6c5] hover:text-white ml-1">Contact Us</Link>
-            </p>
-          </div>
-        </footer>
+        
       </div>
     </PullToRefresh>
   )

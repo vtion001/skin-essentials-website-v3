@@ -7,6 +7,7 @@ import { PerformanceMonitor } from "@/components/performance-monitor"
 import { StructuredData } from "@/components/structured-data"
 import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "@/components/theme-provider"
+import SharedFooter from "@/components/shared-footer"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -89,6 +90,7 @@ export default function RootLayout({
           <SmoothScroll>
             {children}
           </SmoothScroll>
+          <SharedFooter />
           {process.env.NODE_ENV === "production" && <Analytics />}
         </ThemeProvider>
       </body>

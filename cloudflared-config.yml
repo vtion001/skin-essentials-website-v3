@@ -1,0 +1,16 @@
+tunnel: skin-essentials-tunnel
+credentials-file: /Users/archerterminez/Desktop/REPOSITORY/Skin Essentials By Her/skin-essentials-website-v3/.cloudflared/skin-essentials-tunnel.json
+
+ingress:
+  - hostname: skin-essentials-admin.loca.lt
+    service: http://localhost:3001
+  - service: http_status:404
+
+# Origin configuration
+originRequest:
+  connectTimeout: 30s
+  tlsTimeout: 10s
+  tcpKeepAlive: 30s
+  noHappyEyeballs: false
+  keepAliveConnections: 5
+  keepAliveTimeout: 30s

@@ -218,14 +218,21 @@ export function FacebookConnection({ onConnectionChange }: FacebookConnectionPro
   const handleConnect = async () => {
     setIsConnecting(true)
     try {
-      // Generate secure OAuth URL
-      const loginUrl = facebookAPI.generateLoginUrl({
-        includeOptionalPermissions,
-        customRedirectUri: `${window.location.origin}/api/auth/facebook`
+      const res = await fetch('/api/auth/facebook', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'get_login_url' })
       })
-      
-      // Redirect to Facebook OAuth
-      window.location.href = loginUrl
+      const data = await res.json()
+      if (data.loginUrl) {
+        window.location.href = data.loginUrl
+      } else {
+        setConnectionStatus({
+          isConnected: false,
+          error: 'Failed to get Facebook login URL'
+        })
+        setIsConnecting(false)
+      }
     } catch (error) {
       console.error('Error initiating Facebook connection:', error)
       setConnectionStatus({

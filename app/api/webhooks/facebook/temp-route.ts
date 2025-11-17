@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { facebookAPI } from '@/lib/facebook-api'
 import { socialMediaService } from '@/lib/admin-services'
 
+// Temporary hardcoded token for testing - REMOVE THIS AFTER SETTING UP VERCEL ENV VARS
+const TEMP_WEBHOOK_VERIFY_TOKEN = 'fb_webhook_2024_a7b3c9d2e8f1g4h5i6j7k8l9m0n1o2p3q4r5s6t7u8v9w0x1y2z3'
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
@@ -14,16 +17,19 @@ export async function GET(request: NextRequest) {
       mode,
       token,
       challenge,
-      expectedToken: process.env.FACEBOOK_WEBHOOK_VERIFY_TOKEN,
+      expectedToken: process.env.FACEBOOK_WEBHOOK_VERIFY_TOKEN || TEMP_WEBHOOK_VERIFY_TOKEN,
       envVars: {
-        hasToken: !!process.env.FACEBOOK_WEBHOOK_VERIFY_TOKEN,
+        hasToken: !!(process.env.FACEBOOK_WEBHOOK_VERIFY_TOKEN || TEMP_WEBHOOK_VERIFY_TOKEN),
         nodeEnv: process.env.NODE_ENV,
         baseUrl: process.env.NEXT_PUBLIC_BASE_URL
       }
     })
 
+    // Use environment variable or temporary hardcoded token
+    const verifyToken = process.env.FACEBOOK_WEBHOOK_VERIFY_TOKEN || TEMP_WEBHOOK_VERIFY_TOKEN
+
     // Verify webhook subscription
-    if (mode === 'subscribe' && token === process.env.FACEBOOK_WEBHOOK_VERIFY_TOKEN) {
+    if (mode === 'subscribe' && token === verifyToken) {
       console.log('Facebook webhook verified successfully')
       return new NextResponse(challenge, { status: 200 })
     }
