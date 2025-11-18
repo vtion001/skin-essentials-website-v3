@@ -14,3 +14,16 @@ export async function GET() {
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })
   }
 }
+
+export async function DELETE(req: Request) {
+  try {
+    const { id } = await req.json()
+    if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
+    const admin = supabaseAdminClient()
+    const { error } = await admin.from('appointments').delete().eq('id', id)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ success: true })
+  } catch (e) {
+    return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
+  }
+}

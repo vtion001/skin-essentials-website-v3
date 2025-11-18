@@ -253,6 +253,13 @@ export default function AdminDashboard() {
     setTimeout(() => setNotification(null), 5000)
   }
 
+  const confirmTwice = (subject: string) => {
+    if (typeof window === 'undefined') return false
+    if (!window.confirm(`Are you sure you want to delete ${subject}?`)) return false
+    if (!window.confirm(`Please confirm deletion of ${subject}. This action cannot be undone.`)) return false
+    return true
+  }
+
   // Dashboard Statistics
   const getDashboardStats = () => {
     const today = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' })).toISOString().split('T')[0]
@@ -270,7 +277,7 @@ export default function AdminDashboard() {
     }
   }
 
-  const stats = getDashboardStats()
+  const stats = useMemo(() => getDashboardStats(), [appointments, clients, payments, socialMessages])
 
   // Appointment Management
   const handleAppointmentSubmit = (e: React.FormEvent) => {
@@ -803,8 +810,8 @@ export default function AdminDashboard() {
               </TabsTrigger>
             </TabsList>
 
-            {/* Dashboard Overview - Premium Animated */}
-            <TabsContent value="dashboard" className="space-y-8 animate-slideInUp">
+            {/* Dashboard Overview */}
+            <TabsContent value="dashboard" className="space-y-8">
               {/* Stats Cards - Premium Glassmorphism */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
             <Card className="bg-gradient-to-br from-blue-50/40 via-white/50 to-cyan-50/30 backdrop-blur-xl border border-blue-200/50 shadow-2xl shadow-blue-500/10 transition-all duration-500 hover:shadow-blue-500/20 hover:scale-[1.03]">
@@ -1003,8 +1010,8 @@ export default function AdminDashboard() {
               </div>
             </TabsContent>
 
-            {/* Appointments/Booking System - Premium Animated */}
-            <TabsContent value="appointments" className="space-y-8 animate-slideInUp">
+            {/* Appointments/Booking System */}
+            <TabsContent value="appointments" className="space-y-8">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-gray-900">Booking Management</h2>
                 <Button
@@ -1267,7 +1274,11 @@ export default function AdminDashboard() {
                                     <Button size="sm" variant="outline" onClick={() => openAppointmentModal(a)}>
                                       <Edit className="w-4 h-4" />
                                     </Button>
-                                    <Button size="sm" variant="outline" onClick={() => appointmentService.deleteAppointment(a.id) && loadAllData()}>
+                                    <Button size="sm" variant="outline" onClick={async () => {
+                                      if (!confirmTwice(a.clientName || 'this appointment')) return
+                                      const res = await fetch('/api/admin/appointments', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: a.id }) })
+                                      if (res.ok) { showNotification('success', 'Appointment deleted'); await loadAllData() } else { showNotification('error', 'Failed to delete appointment') }
+                                    }}>
                                       <Trash2 className="w-4 h-4" />
                                     </Button>
                                   </div>
@@ -1302,7 +1313,7 @@ export default function AdminDashboard() {
             </TabsContent>
 
             {/* Payment Processing - Premium Animated */}
-            <TabsContent value="payments" className="space-y-8 animate-slideInUp">
+            <TabsContent value="payments" className="space-y-8">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-gray-900">Payment Management</h2>
                 <Button
@@ -1372,7 +1383,7 @@ export default function AdminDashboard() {
             </TabsContent>
 
             {/* Electronic Medical Records - Premium Animated */}
-            <TabsContent value="medical" className="space-y-8 animate-slideInUp">
+            <TabsContent value="medical" className="space-y-8">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-gray-900">Electronic Medical Records</h2>
                 <Button
@@ -1432,7 +1443,7 @@ export default function AdminDashboard() {
             </TabsContent>
 
             {/* User Management - Premium Animated */}
-            <TabsContent value="clients" className="space-y-8 animate-slideInUp">
+            <TabsContent value="clients" className="space-y-8">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-gray-900">Client Management</h2>
                 <div className="flex items-center gap-4">
@@ -1529,7 +1540,7 @@ export default function AdminDashboard() {
               </div>
             </TabsContent>
 
-            <TabsContent value="staff" className="space-y-8 animate-slideInUp">
+            <TabsContent value="staff" className="space-y-8">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-gray-900">Staffing Management</h2>
                 <div className="flex items-center gap-4">
@@ -1629,7 +1640,11 @@ export default function AdminDashboard() {
                             <Edit className="w-4 h-4 mr-2" />
                             Edit
                           </Button>
-                          <Button size="sm" variant="outline" onClick={() => staffService.deleteStaff(s.id) && setStaff(staffService.getAllStaff())}>
+                          <Button size="sm" variant="outline" onClick={async () => {
+                            if (!confirmTwice(`${s.firstName} ${s.lastName}`.trim() || 'this staff')) return
+                            const res = await fetch('/api/admin/staff', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: s.id }) })
+                            if (res.ok) { await staffService.fetchFromSupabase?.(); setStaff(staffService.getAllStaff()); showNotification('success', 'Staff deleted') } else { showNotification('error', 'Failed to delete staff') }
+                          }}>
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
@@ -1639,7 +1654,7 @@ export default function AdminDashboard() {
               </div>
             </TabsContent>
 
-            <TabsContent value="influencers" className="space-y-8 animate-slideInUp">
+            <TabsContent value="influencers" className="space-y-8">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-gray-900">Influencers Referral Management</h2>
                 <div className="flex items-center gap-4">
@@ -1737,6 +1752,14 @@ export default function AdminDashboard() {
                               <DollarSign className="w-4 h-4 mr-2" />
                               Pay Commission
                             </Button>
+                            <Button size="sm" variant="outline" onClick={async () => {
+                              if (!confirmTwice(i.name || 'this influencer')) return
+                              const res = await fetch('/api/admin/influencers', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: i.id }) })
+                              if (res.ok) { await influencerService.fetchFromSupabase?.(); setInfluencers(influencerService.getAllInfluencers()); showNotification('success', 'Influencer deleted') } else { showNotification('error', 'Failed to delete influencer') }
+                            }} className="w-full sm:w-auto">
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Delete
+                            </Button>
                           </div>
                           <div className="space-y-2">
                             {influencerService.getReferralsByInfluencer(i.id).slice(0,5).map(ref => (
@@ -1759,7 +1782,7 @@ export default function AdminDashboard() {
               </div>
             </TabsContent>
 
-            <TabsContent value="analytics" className="space-y-8 animate-slideInUp">
+            <TabsContent value="analytics" className="space-y-8">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-gray-900">Analytics</h2>
                 <div className="grid grid-cols-2 gap-3 w-full sm:w-auto sm:flex sm:items-center">
@@ -1975,7 +1998,7 @@ export default function AdminDashboard() {
             </TabsContent>
 
             {/* Social Media Integration - Premium Animated */}
-            <TabsContent value="social" className="space-y-8 animate-slideInUp">
+            <TabsContent value="social" className="space-y-8">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold text-gray-900">Social Media Management</h2>
                 <Button
@@ -2165,7 +2188,7 @@ export default function AdminDashboard() {
                 <Label htmlFor="clientId">Client</Label>
                 <Select
                   value={paymentForm.clientId || ''}
-                  onValueChange={(value) => startTransition(() => setPaymentForm(prev => ({ ...prev, clientId: value })))}
+                  onValueChange={(value) => setPaymentForm(prev => ({ ...prev, clientId: value }))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select client" />
@@ -2185,7 +2208,7 @@ export default function AdminDashboard() {
                   id="amount"
                   type="number"
                   value={paymentForm.amount || ''}
-                  onChange={(e) => startTransition(() => setPaymentForm(prev => ({ ...prev, amount: parseFloat(e.target.value) })))}
+                  onChange={(e) => setPaymentForm(prev => ({ ...prev, amount: parseFloat(e.target.value) }))}
                   required
                 />
               </div>
@@ -2196,7 +2219,7 @@ export default function AdminDashboard() {
                 <Label htmlFor="method">Payment Method</Label>
                 <Select
                   value={paymentForm.method || ''}
-                  onValueChange={(value) => startTransition(() => setPaymentForm(prev => ({ ...prev, method: value as any })))}
+                  onValueChange={(value) => setPaymentForm(prev => ({ ...prev, method: value as any }))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select method" />
@@ -2213,7 +2236,7 @@ export default function AdminDashboard() {
                 <Label htmlFor="status">Status</Label>
                 <Select
                   value={paymentForm.status || ''}
-                  onValueChange={(value) => startTransition(() => setPaymentForm(prev => ({ ...prev, status: value as any })))}
+                  onValueChange={(value) => setPaymentForm(prev => ({ ...prev, status: value as any }))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select status" />
@@ -2233,7 +2256,7 @@ export default function AdminDashboard() {
               <Input
                 id="transactionId"
                 value={paymentForm.transactionId || ''}
-                onChange={(e) => startTransition(() => setPaymentForm(prev => ({ ...prev, transactionId: e.target.value })))}
+                onChange={(e) => setPaymentForm(prev => ({ ...prev, transactionId: e.target.value }))}
               />
             </div>
 
@@ -2242,7 +2265,7 @@ export default function AdminDashboard() {
               <Textarea
                 id="paymentNotes"
                 value={paymentForm.notes || ''}
-                onChange={(e) => startTransition(() => setPaymentForm(prev => ({ ...prev, notes: e.target.value })))}
+                onChange={(e) => setPaymentForm(prev => ({ ...prev, notes: e.target.value }))}
                 rows={3}
               />
             </div>
@@ -2284,17 +2307,17 @@ export default function AdminDashboard() {
              <div className="grid grid-cols-2 gap-4">
                <div>
                  <Label htmlFor="infName">Name</Label>
-                 <Input id="infName" value={influencerForm.name || ''} onChange={(e) => startTransition(() => setInfluencerForm(prev => ({ ...prev, name: e.target.value })))} required />
+                 <Input id="infName" value={influencerForm.name || ''} onChange={(e) => setInfluencerForm(prev => ({ ...prev, name: e.target.value }))} required />
                </div>
                <div>
                  <Label htmlFor="infHandle">Handle</Label>
-                 <Input id="infHandle" value={influencerForm.handle || ''} onChange={(e) => startTransition(() => setInfluencerForm(prev => ({ ...prev, handle: e.target.value })))} />
+                 <Input id="infHandle" value={influencerForm.handle || ''} onChange={(e) => setInfluencerForm(prev => ({ ...prev, handle: e.target.value }))} />
                </div>
              </div>
              <div className="grid grid-cols-2 gap-4">
                <div>
                  <Label htmlFor="infPlatform">Platform</Label>
-                 <Select value={influencerForm.platform || ''} onValueChange={(v) => startTransition(() => setInfluencerForm(prev => ({ ...prev, platform: v as Influencer['platform'] })))}>
+                 <Select value={influencerForm.platform || ''} onValueChange={(v) => setInfluencerForm(prev => ({ ...prev, platform: v as Influencer['platform'] }))}>
                    <SelectTrigger><SelectValue placeholder="Select platform" /></SelectTrigger>
                    <SelectContent>
                      <SelectItem value="instagram">Instagram</SelectItem>
@@ -2307,27 +2330,27 @@ export default function AdminDashboard() {
                </div>
                <div>
                  <Label htmlFor="infReferralCode">Referral Code</Label>
-                 <Input id="infReferralCode" value={influencerForm.referralCode || ''} onChange={(e) => startTransition(() => setInfluencerForm(prev => ({ ...prev, referralCode: e.target.value })))} />
+                 <Input id="infReferralCode" value={influencerForm.referralCode || ''} onChange={(e) => setInfluencerForm(prev => ({ ...prev, referralCode: e.target.value }))} />
                </div>
              </div>
              <div className="grid grid-cols-2 gap-4">
                <div>
                  <Label htmlFor="infEmail">Email</Label>
-                 <Input id="infEmail" type="email" value={influencerForm.email || ''} onChange={(e) => startTransition(() => setInfluencerForm(prev => ({ ...prev, email: e.target.value })))} />
+                 <Input id="infEmail" type="email" value={influencerForm.email || ''} onChange={(e) => setInfluencerForm(prev => ({ ...prev, email: e.target.value }))} />
                </div>
                <div>
                  <Label htmlFor="infPhone">Phone</Label>
-                 <Input id="infPhone" value={influencerForm.phone || ''} onChange={(e) => startTransition(() => setInfluencerForm(prev => ({ ...prev, phone: e.target.value })))} />
+                 <Input id="infPhone" value={influencerForm.phone || ''} onChange={(e) => setInfluencerForm(prev => ({ ...prev, phone: e.target.value }))} />
                </div>
              </div>
              <div className="grid grid-cols-2 gap-4">
                <div>
                  <Label htmlFor="infRate">Commission Rate (%)</Label>
-                 <Input id="infRate" type="number" step="1" value={Math.round((influencerForm.commissionRate || 0.10) * 100)} onChange={(e) => startTransition(() => setInfluencerForm(prev => ({ ...prev, commissionRate: Math.max(0, Math.min(100, Number(e.target.value))) / 100 })))} />
+                 <Input id="infRate" type="number" step="1" value={Math.round((influencerForm.commissionRate || 0.10) * 100)} onChange={(e) => setInfluencerForm(prev => ({ ...prev, commissionRate: Math.max(0, Math.min(100, Number(e.target.value))) / 100 }))} />
                </div>
                <div>
                  <Label htmlFor="infStatus">Status</Label>
-                 <Select value={influencerForm.status || ''} onValueChange={(v) => startTransition(() => setInfluencerForm(prev => ({ ...prev, status: v as Influencer['status'] })))}>
+                 <Select value={influencerForm.status || ''} onValueChange={(v) => setInfluencerForm(prev => ({ ...prev, status: v as Influencer['status'] }))}>
                    <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
                    <SelectContent>
                      <SelectItem value="active">Active</SelectItem>
@@ -2338,7 +2361,7 @@ export default function AdminDashboard() {
              </div>
              <div>
                <Label htmlFor="infNotes">Notes</Label>
-               <Textarea id="infNotes" rows={3} value={influencerForm.notes || ''} onChange={(e) => startTransition(() => setInfluencerForm(prev => ({ ...prev, notes: e.target.value })))} />
+               <Textarea id="infNotes" rows={3} value={influencerForm.notes || ''} onChange={(e) => setInfluencerForm(prev => ({ ...prev, notes: e.target.value }))} />
              </div>
              <div className="flex justify-end gap-2">
                <Button type="button" variant="outline" onClick={() => setIsInfluencerModalOpen(false)}>Cancel</Button>
@@ -2398,7 +2421,7 @@ export default function AdminDashboard() {
                 <Label htmlFor="recordClientId">Client</Label>
                 <Select
                   value={medicalRecordForm.clientId || ''}
-                  onValueChange={(value) => startTransition(() => setMedicalRecordForm(prev => ({ ...prev, clientId: value })))}
+                  onValueChange={(value) => setMedicalRecordForm(prev => ({ ...prev, clientId: value }))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select client" />
@@ -2418,7 +2441,7 @@ export default function AdminDashboard() {
                   id="recordDate"
                   type="date"
                   value={medicalRecordForm.date || ''}
-                  onChange={(e) => startTransition(() => setMedicalRecordForm(prev => ({ ...prev, date: e.target.value })))}
+                  onChange={(e) => setMedicalRecordForm(prev => ({ ...prev, date: e.target.value }))}
                   required
                 />
               </div>
@@ -2429,7 +2452,7 @@ export default function AdminDashboard() {
               <Textarea
                 id="chiefComplaint"
                 value={medicalRecordForm.chiefComplaint || ''}
-                onChange={(e) => startTransition(() => setMedicalRecordForm(prev => ({ ...prev, chiefComplaint: e.target.value })))}
+                onChange={(e) => setMedicalRecordForm(prev => ({ ...prev, chiefComplaint: e.target.value }))}
                 rows={3}
                 required
               />
@@ -2440,10 +2463,10 @@ export default function AdminDashboard() {
               <Textarea
                 id="medicalHistory"
                 value={Array.isArray(medicalRecordForm.medicalHistory) ? medicalRecordForm.medicalHistory.join('\n') : ''}
-                onChange={(e) => startTransition(() => setMedicalRecordForm(prev => ({ 
+                onChange={(e) => setMedicalRecordForm(prev => ({ 
                   ...prev, 
                   medicalHistory: e.target.value.split('\n').filter(item => item.trim()) 
-                })))}
+                }))}
                 rows={3}
               />
             </div>
@@ -2454,10 +2477,10 @@ export default function AdminDashboard() {
                 <Textarea
                   id="allergies"
                   value={Array.isArray(medicalRecordForm.allergies) ? medicalRecordForm.allergies.join('\n') : ''}
-                  onChange={(e) => startTransition(() => setMedicalRecordForm(prev => ({ 
+                  onChange={(e) => setMedicalRecordForm(prev => ({ 
                     ...prev, 
                     allergies: e.target.value.split('\n').filter(item => item.trim()) 
-                  })))}
+                  }))}
                   rows={3}
                 />
               </div>
@@ -2466,10 +2489,10 @@ export default function AdminDashboard() {
                 <Textarea
                   id="currentMedications"
                   value={Array.isArray(medicalRecordForm.currentMedications) ? medicalRecordForm.currentMedications.join('\n') : ''}
-                  onChange={(e) => startTransition(() => setMedicalRecordForm(prev => ({ 
+                  onChange={(e) => setMedicalRecordForm(prev => ({ 
                     ...prev, 
                     currentMedications: e.target.value.split('\n').filter(item => item.trim()) 
-                  })))}
+                  }))}
                   rows={3}
                 />
               </div>
@@ -2480,7 +2503,7 @@ export default function AdminDashboard() {
               <Textarea
                 id="treatmentPlan"
                 value={medicalRecordForm.treatmentPlan || ''}
-                onChange={(e) => startTransition(() => setMedicalRecordForm(prev => ({ ...prev, treatmentPlan: e.target.value })))}
+                onChange={(e) => setMedicalRecordForm(prev => ({ ...prev, treatmentPlan: e.target.value }))}
                 rows={4}
                 required
               />
@@ -2491,7 +2514,7 @@ export default function AdminDashboard() {
               <Textarea
                 id="recordNotes"
                 value={medicalRecordForm.notes || ''}
-                onChange={(e) => startTransition(() => setMedicalRecordForm(prev => ({ ...prev, notes: e.target.value })))}
+                onChange={(e) => setMedicalRecordForm(prev => ({ ...prev, notes: e.target.value }))}
                 rows={3}
               />
             </div>
@@ -2664,29 +2687,29 @@ export default function AdminDashboard() {
              <div className="grid grid-cols-2 gap-4">
                <div>
                  <Label htmlFor="staffFirstName">First Name</Label>
-                 <Input id="staffFirstName" value={staffForm.firstName || ''} onChange={(e) => startTransition(() => setStaffForm(prev => ({ ...prev, firstName: e.target.value })))} required />
+                 <Input id="staffFirstName" value={staffForm.firstName || ''} onChange={(e) => setStaffForm(prev => ({ ...prev, firstName: e.target.value }))} required />
                </div>
                <div>
                  <Label htmlFor="staffLastName">Last Name</Label>
-                 <Input id="staffLastName" value={staffForm.lastName || ''} onChange={(e) => startTransition(() => setStaffForm(prev => ({ ...prev, lastName: e.target.value })))} required />
+                 <Input id="staffLastName" value={staffForm.lastName || ''} onChange={(e) => setStaffForm(prev => ({ ...prev, lastName: e.target.value }))} required />
                </div>
              </div>
 
              <div className="grid grid-cols-2 gap-4">
                <div>
                  <Label htmlFor="staffEmail">Email</Label>
-                 <Input id="staffEmail" type="email" value={staffForm.email || ''} onChange={(e) => startTransition(() => setStaffForm(prev => ({ ...prev, email: e.target.value })))} required />
+                 <Input id="staffEmail" type="email" value={staffForm.email || ''} onChange={(e) => setStaffForm(prev => ({ ...prev, email: e.target.value }))} required />
                </div>
                <div>
                  <Label htmlFor="staffPhone">Phone</Label>
-                 <Input id="staffPhone" value={staffForm.phone || ''} onChange={(e) => startTransition(() => setStaffForm(prev => ({ ...prev, phone: e.target.value })))} required />
+                 <Input id="staffPhone" value={staffForm.phone || ''} onChange={(e) => setStaffForm(prev => ({ ...prev, phone: e.target.value }))} required />
                </div>
              </div>
 
              <div className="grid grid-cols-2 gap-4">
                <div>
                  <Label htmlFor="staffPosition">Position</Label>
-                 <Select value={staffForm.position || ''} onValueChange={(value) => startTransition(() => setStaffForm(prev => ({ ...prev, position: value as Staff['position'] })))}>
+                 <Select value={staffForm.position || ''} onValueChange={(value) => setStaffForm(prev => ({ ...prev, position: value as Staff['position'] }))}>
                    <SelectTrigger>
                      <SelectValue placeholder="Select position" />
                    </SelectTrigger>
@@ -2705,25 +2728,25 @@ export default function AdminDashboard() {
                </div>
                <div>
                  <Label htmlFor="staffDepartment">Department</Label>
-                 <Input id="staffDepartment" value={staffForm.department || ''} onChange={(e) => startTransition(() => setStaffForm(prev => ({ ...prev, department: e.target.value })))} />
+                 <Input id="staffDepartment" value={staffForm.department || ''} onChange={(e) => setStaffForm(prev => ({ ...prev, department: e.target.value }))} />
                </div>
              </div>
 
              <div className="grid grid-cols-2 gap-4">
                <div>
                  <Label htmlFor="licenseNumber">License Number</Label>
-                 <Input id="licenseNumber" value={staffForm.licenseNumber || ''} onChange={(e) => startTransition(() => setStaffForm(prev => ({ ...prev, licenseNumber: e.target.value })))} />
+                 <Input id="licenseNumber" value={staffForm.licenseNumber || ''} onChange={(e) => setStaffForm(prev => ({ ...prev, licenseNumber: e.target.value }))} />
                </div>
                <div>
                  <Label htmlFor="hireDate">Hire Date</Label>
-                 <Input id="hireDate" type="date" value={staffForm.hireDate || ''} onChange={(e) => startTransition(() => setStaffForm(prev => ({ ...prev, hireDate: e.target.value })))} />
+                 <Input id="hireDate" type="date" value={staffForm.hireDate || ''} onChange={(e) => setStaffForm(prev => ({ ...prev, hireDate: e.target.value }))} />
                </div>
              </div>
 
              <div className="grid grid-cols-2 gap-4">
                <div>
                  <Label htmlFor="staffStatus">Status</Label>
-                 <Select value={staffForm.status || ''} onValueChange={(value) => startTransition(() => setStaffForm(prev => ({ ...prev, status: value as Staff['status'] })))}>
+                 <Select value={staffForm.status || ''} onValueChange={(value) => setStaffForm(prev => ({ ...prev, status: value as Staff['status'] }))}>
                    <SelectTrigger>
                      <SelectValue placeholder="Select status" />
                    </SelectTrigger>
@@ -2737,13 +2760,13 @@ export default function AdminDashboard() {
                </div>
                <div>
                  <Label htmlFor="specialties">Specialties (one per line)</Label>
-                 <Textarea id="specialties" rows={3} value={Array.isArray(staffForm.specialties) ? staffForm.specialties.join('\n') : ''} onChange={(e) => startTransition(() => setStaffForm(prev => ({ ...prev, specialties: e.target.value.split('\n').filter(i => i.trim()) })))} />
+                 <Textarea id="specialties" rows={3} value={Array.isArray(staffForm.specialties) ? staffForm.specialties.join('\n') : ''} onChange={(e) => setStaffForm(prev => ({ ...prev, specialties: e.target.value.split('\n').filter(i => i.trim()) }))} />
                </div>
              </div>
 
              <div>
                <Label htmlFor="staffNotes">Notes</Label>
-                 <Textarea id="staffNotes" rows={3} value={staffForm.notes || ''} onChange={(e) => startTransition(() => setStaffForm(prev => ({ ...prev, notes: e.target.value })))} />
+                 <Textarea id="staffNotes" rows={3} value={staffForm.notes || ''} onChange={(e) => setStaffForm(prev => ({ ...prev, notes: e.target.value }))} />
              </div>
 
              <div className="flex justify-end gap-2">
