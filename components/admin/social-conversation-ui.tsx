@@ -235,7 +235,7 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
   }
 
   return (
-    <div className="flex h-[600px] border rounded-xl overflow-hidden bg-gradient-to-br from-white to-white/60 shadow-sm">
+    <div className="flex min-h-[60vh] sm:min-h-[70vh] lg:min-h-[600px] border rounded-xl overflow-hidden bg-gradient-to-br from-white to-white/60 shadow-sm">
       <div className="hidden sm:flex w-14 bg-white/80 backdrop-blur-sm border-r flex-col items-center gap-4 py-4">
         <div className="h-10 w-10 rounded-full bg-gray-100 grid place-items-center">
           <MessageCircle className="h-5 w-5 text-gray-700" />
@@ -249,7 +249,7 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
       </div>
       {/* Conversations Sidebar */}
       <div className="w-full sm:w-1/3 border-r bg-white/70 backdrop-blur-sm">
-        <div className="p-4 border-b bg-white/80">
+        <div className="p-3 sm:p-4 border-b bg-white/80">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-lg tracking-tight">Conversations</h3>
             <div className="flex gap-2">
@@ -283,13 +283,13 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
             </div>
           </div>
           
-          <div className="relative mb-4">
+          <div className="relative mb-3 sm:mb-4">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               placeholder="Search conversations..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
+              className="pl-10 h-10 sm:h-9"
               aria-label="Search conversations"
             />
           </div>
@@ -307,7 +307,7 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
           </Tabs>
         </div>
 
-        <div className="h-[calc(100%-200px)] overflow-y-auto" role="list" aria-label="Conversation list">
+        <div className="flex-1 overflow-y-auto" role="list" aria-label="Conversation list">
           <div className="p-2">
             {initialLoading && filteredConversations.length === 0 ? (
               <div className="space-y-2">
@@ -382,7 +382,7 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
         {selectedConversation ? (
           <>
             {/* Chat Header */}
-            <div className="p-4 border-b bg-white/80">
+            <div className="p-3 sm:p-4 border-b bg-white/80">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="relative">
@@ -419,22 +419,24 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => {
-                        try {
-                          socialMediaService.createPotentialClientDraft(selectedConversation.id)
-                          
-                        } catch {}
-                      }}
-                    >
-                      Capture Client
-                    </Button>
+                          onClick={() => {
+                            try {
+                              socialMediaService.createPotentialClientDraft(selectedConversation.id)
+                              if (typeof window !== 'undefined') {
+                                window.dispatchEvent(new CustomEvent('capture_client'))
+                              }
+                            } catch {}
+                          }}
+                        >
+                          Capture Client
+                        </Button>
                   )}
                 </div>
               </div>
             </div>
 
             {/* Messages */}
-            <div className="flex-1 p-4 overflow-y-auto" aria-live="polite" role="list">
+            <div className="flex-1 p-3 sm:p-4 overflow-y-auto" aria-live="polite" role="list">
               <div className="space-y-4">
                 {messages.map((message, idx) => (
                   <div
@@ -477,7 +479,7 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
             </div>
 
             {/* Message Input */}
-            <div className="p-4 border-t bg-white/80">
+            <div className="p-3 sm:p-4 border-t bg-white/80">
               <div className="flex gap-2">
                 <Input
                   placeholder="Type a message..."
@@ -486,11 +488,12 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
                   onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
                   disabled={isLoading}
                   aria-label="Message input"
+                  className="h-10 sm:h-9"
                 />
                 <Button 
                   onClick={handleSendMessage} 
                   disabled={!newMessage.trim() || isLoading}
-                  className="motion-safe:transition-all motion-safe:hover:scale-[1.02]"
+                  className="motion-safe:transition-all motion-safe:hover:scale-[1.02] min-h-10 sm:min-h-9"
                 >
                   <Send className="h-4 w-4" />
                 </Button>
@@ -511,7 +514,7 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
           </div>
         )}
       </div>
-      <div className={`${showDetails ? 'hidden sm:block' : 'hidden'} w-80 bg-white/80 backdrop-blur-sm border-l p-4 space-y-4`}>
+      <div className={`${showDetails ? 'hidden sm:block' : 'hidden'} w-full sm:w-80 bg-white/80 backdrop-blur-sm border-l p-3 sm:p-4 space-y-4`}>
         <div className="flex items-center justify-between">
           <h4 className="font-semibold">Chat details</h4>
           <Button variant="outline" size="sm" onClick={() => setShowDetails(false)}>
@@ -530,7 +533,7 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
               .slice(0,8)
               .map((url, i) => (
                 <div key={`${url}-${i}`} className="aspect-square rounded-md overflow-hidden">
-                  <img src={url as string} alt="media" className="w-full h-full object-cover" />
+                  <img src={url as string} alt="media" className="w-full h-full object-cover" loading="lazy" />
                 </div>
               ))}
           </div>

@@ -1,34 +1,44 @@
 import { NextResponse } from "next/server"
+import { supabaseAdminClient } from "@/lib/supabase-admin"
+import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
+import { cookies } from "next/headers"
 
 export async function POST(request: Request) {
   try {
-    const { username, password } = await request.json()
-
-    // Simple authentication check
-    if (username === "admin" && password === "skinessentials2024") {
-      // Create response with cookie
-      const response = NextResponse.json({ success: true })
-      
-      // Set cookie with proper expiration (24 hours)
-      const expirationDate = new Date()
-      expirationDate.setTime(expirationDate.getTime() + 24 * 60 * 60 * 1000)
-      
-      const protocol = new URL(request.url).protocol
-      response.cookies.set({
-        name: "admin_token",
-        value: "authenticated",
-        expires: expirationDate,
-        path: "/",
-        httpOnly: false,
-        secure: protocol === "https:",
-        sameSite: "lax"
-      })
-
-      return response
-    } else {
-      return NextResponse.json({ success: false, error: "Invalid credentials" }, { status: 401 })
+    const { email, password } = await request.json()
+    const supabase = createRouteHandlerClient({ cookies })
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error || !data.session) {
+      const msg = error?.message || 'Invalid credentials'
+      try {
+        const admin = supabaseAdminClient()
+        await admin.from('error_logs').insert({ context: 'admin_login', message: msg, meta: { email } })
+      } catch {}
+      return NextResponse.json({ success: false, error: msg }, { status: 401 })
     }
+    try {
+      const role = await supabase.from('admin_users').select('active').eq('user_id', data.user!.id).single()
+      if (role.error || !role.data || role.data.active !== true) {
+        await supabase.auth.signOut()
+        try {
+          const admin = supabaseAdminClient()
+          await admin.from('error_logs').insert({ context: 'admin_login', message: 'Not authorized', meta: { email, user_id: data.user?.id } })
+        } catch {}
+        return NextResponse.json({ success: false, error: 'Not authorized' }, { status: 403 })
+      }
+    } catch {}
+    return NextResponse.json({ success: true, user: { id: data.user?.id, email: data.user?.email } })
   } catch (error) {
-    return NextResponse.json({ success: false, error: "Invalid request" }, { status: 400 })
+    return NextResponse.json({ success: false, error: "Invalid request payload" }, { status: 400 })
+  }
+}
+
+export async function DELETE() {
+  try {
+    const supabase = supabaseServerClient()
+    await supabase.auth.signOut()
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    return NextResponse.json({ success: false }, { status: 500 })
   }
 }

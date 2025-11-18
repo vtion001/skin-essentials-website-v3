@@ -140,16 +140,9 @@ export default function AdminDashboard() {
   const [appointmentsPage, setAppointmentsPage] = useState<number>(1)
   const [appointmentsPageSize, setAppointmentsPageSize] = useState<number>(10)
 
-  // Authentication check
+  // Authentication is enforced by middleware; optional client-side redirect kept minimal
   useEffect(() => {
-    const token = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("admin_token="))
-      ?.split("=")[1]
-
-    if (!token || token !== "authenticated") {
-      router.push("/admin/login")
-    }
+    // No-op: relying on middleware and Supabase session
   }, [router])
 
   // Load data
@@ -177,7 +170,17 @@ export default function AdminDashboard() {
         }
       }
       window.addEventListener('storage', onStorage)
+      const onCapture = () => {
+        const d = localStorage.getItem('potential_client_draft')
+        const l = localStorage.getItem('potential_conversation_id')
+        if (d && l) {
+          setClientForm(JSON.parse(d))
+          setIsClientModalOpen(true)
+        }
+      }
+      window.addEventListener('capture_client', onCapture as EventListener)
       return () => window.removeEventListener('storage', onStorage)
+    
     } catch {}
   }, [])
 
@@ -199,10 +202,11 @@ export default function AdminDashboard() {
     setSocialMessages(socialMediaService.getAllMessages())
   }
 
-  const handleLogout = () => {
-    document.cookie = "admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"
-    localStorage.removeItem("admin_token")
-    router.push("/admin/login")
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/admin/login', { method: 'DELETE' })
+    } catch {}
+    router.push('/admin/login')
   }
 
   const showNotification = (type: "success" | "error", message: string) => {
@@ -453,41 +457,90 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen relative bg-gradient-to-br from-[#fffaff] to-white">
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute -top-16 -left-24 w-48 h-48 bg-[#fbc6c5]/20 rounded-full blur-3xl"></div>
-        <div className="absolute top-32 -right-24 w-56 h-56 bg-[#d09d80]/15 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-1/3 w-40 h-40 bg-blue-100/20 rounded-full blur-3xl"></div>
+    <div className="min-h-screen relative bg-gradient-to-br from-slate-50 via-purple-50/30 to-blue-50/20">
+      <style jsx global>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-10px); }
+        }
+        @keyframes slideInUp {
+          from {
+            transform: translateY(30px);
+            opacity: 0;
+          }
+          to {
+            transform: translateY(0);
+            opacity: 1;
+          }
+        }
+        @keyframes glow {
+          0%, 100% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.3); }
+          50% { box-shadow: 0 0 30px rgba(139, 92, 246, 0.5); }
+        }
+        @keyframes shimmer {
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
+        .animate-float {
+          animation: float 6s ease-in-out infinite;
+        }
+        .animate-slideInUp {
+          animation: slideInUp 0.6s ease-out;
+        }
+        .animate-glow {
+          animation: glow 2s ease-in-out infinite;
+        }
+        .animate-shimmer {
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+          background-size: 200% 100%;
+          animation: shimmer 3s infinite;
+        }
+        .delay-1000 { animation-delay: 1s; }
+        .delay-2000 { animation-delay: 2s; }
+        .delay-3000 { animation-delay: 3s; }
+      `}</style>
+      {/* Animated background elements */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-16 -left-24 w-96 h-96 bg-gradient-to-br from-purple-400/20 via-pink-300/15 to-transparent rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute top-1/4 -right-32 w-80 h-80 bg-gradient-to-br from-blue-400/20 via-cyan-300/15 to-transparent rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute bottom-1/4 left-1/4 w-72 h-72 bg-gradient-to-br from-amber-400/20 via-orange-300/15 to-transparent rounded-full blur-3xl animate-pulse delay-2000"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-to-br from-emerald-400/10 via-teal-300/8 to-transparent rounded-full blur-3xl animate-pulse delay-3000"></div>
       </div>
       
 
-      {/* Notification */}
+      {/* Premium Notification */}
       {notification && (
         <div
-          className={`fixed top-24 right-4 z-50 p-4 rounded-xl shadow-lg border ${
+          className={`fixed top-24 right-6 z-50 p-6 rounded-3xl shadow-2xl border-2 backdrop-blur-2xl animate-slideInUp ${
             notification.type === "success"
-              ? "bg-green-50 border-green-200 text-green-800"
-              : "bg-red-50 border-red-200 text-red-800"
-          } animate-slideInRight`}
+              ? "bg-gradient-to-br from-green-50/90 via-emerald-50/80 to-green-50/90 border-emerald-300/70 text-emerald-900 shadow-emerald-500/20"
+              : "bg-gradient-to-br from-red-50/90 via-rose-50/80 to-red-50/90 border-rose-300/70 text-rose-900 shadow-rose-500/20"
+          }`}
         >
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-4">
             {notification.type === "success" ? (
-              <CheckCircle className="w-5 h-5" />
+              <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl shadow-lg shadow-green-500/30">
+                <CheckCircle className="w-6 h-6 text-white" />
+              </div>
             ) : (
-              <AlertCircle className="w-5 h-5" />
+              <div className="p-3 bg-gradient-to-br from-red-500 to-rose-500 rounded-2xl shadow-lg shadow-red-500/30">
+                <AlertCircle className="w-6 h-6 text-white" />
+              </div>
             )}
-            <span className="font-medium">{notification.message}</span>
+            <span className="font-bold text-lg">{notification.message}</span>
           </div>
         </div>
       )}
 
-      <div className="pt-24 pb-12 px-4">
+      <div className="pt-20 sm:pt-24 pb-10 sm:pb-12 px-4 sm:px-6">
         <div className="container mx-auto max-w-7xl">
-          {/* Page Header */}
+          {/* Page Header - Glassmorphism effect */}
           <div className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
-              <p className="text-gray-600">Comprehensive management system for Skin Essentials</p>
+            <div className="bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl p-8 shadow-2xl shadow-purple-500/5">
+              <h1 className="text-5xl font-bold bg-gradient-to-r from-gray-900 via-purple-600 to-blue-600 bg-clip-text text-transparent mb-3">
+                Admin Dashboard
+              </h1>
+              <p className="text-gray-600 text-lg font-medium">Comprehensive management system for Skin Essentials</p>
             </div>
             <div className="flex items-center space-x-4">
               {supabaseAvailable() ? (
@@ -499,7 +552,7 @@ export default function AdminDashboard() {
               <Button
                 onClick={loadAllData}
                 variant="outline"
-                className="border-[#fbc6c5]/30 text-gray-700 hover:bg-[#fbc6c5]/10"
+                className="bg-white/60 backdrop-blur-sm border border-white/70 text-gray-700 hover:bg-white/80 hover:shadow-lg transition-all duration-300 hover:scale-105"
                 disabled={isLoading}
               >
                 <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
@@ -508,7 +561,7 @@ export default function AdminDashboard() {
               <Button
                 onClick={handleLogout}
                 variant="outline"
-                className="border-red-200 text-red-600 hover:bg-red-50"
+                className="bg-white/60 backdrop-blur-sm border border-red-200/70 text-red-600 hover:bg-red-50/80 hover:shadow-lg transition-all duration-300 hover:scale-105"
               >
                 Logout
               </Button>
@@ -516,32 +569,34 @@ export default function AdminDashboard() {
           </div>
 
           {/* Main Dashboard Navigation */}
-          <div className="grid lg:grid-cols-[240px_1fr] gap-8">
+          <div className="grid lg:grid-cols-[240px_1fr] gap-6 lg:gap-8">
             <aside role="navigation" aria-label="Admin sections" className="hidden lg:block">
-              <div className="rounded-2xl bg-white/70 backdrop-blur-sm shadow-sm border border-white/40 p-3">
-                <div className="text-xs font-semibold text-gray-500 px-2 mb-2">Navigation</div>
-                <div className="space-y-1">
+              <div className="rounded-3xl bg-white/30 backdrop-blur-2xl shadow-2xl shadow-purple-500/10 border border-white/60 p-6">
+                <div className="text-sm font-bold text-gray-700 px-2 mb-4 uppercase tracking-wider">Navigation</div>
+                <div className="space-y-2">
                   {[
-                    { key: 'dashboard', label: 'Dashboard', icon: BarChart3 },
-                    { key: 'appointments', label: 'Bookings', icon: CalendarIcon },
-                    { key: 'payments', label: 'Payments', icon: CreditCard },
-                    { key: 'medical', label: 'EMR', icon: FileText },
-                    { key: 'clients', label: 'Clients', icon: Users },
-                    { key: 'social', label: 'Social Media', icon: MessageSquare },
-                  ].map(({ key, label, icon: Icon }) => (
+                    { key: 'dashboard', label: 'Dashboard', icon: BarChart3, color: 'from-blue-500 to-cyan-500' },
+                    { key: 'appointments', label: 'Bookings', icon: CalendarIcon, color: 'from-purple-500 to-pink-500' },
+                    { key: 'payments', label: 'Payments', icon: CreditCard, color: 'from-green-500 to-emerald-500' },
+                    { key: 'medical', label: 'EMR', icon: FileText, color: 'from-orange-500 to-amber-500' },
+                    { key: 'clients', label: 'Clients', icon: Users, color: 'from-indigo-500 to-purple-500' },
+                    { key: 'social', label: 'Social Media', icon: MessageSquare, color: 'from-rose-500 to-pink-500' },
+                  ].map(({ key, label, icon: Icon, color }) => (
                     <button
                       key={key}
                       onClick={() => setActiveTab(key)}
                       aria-current={activeTab === key ? 'page' : undefined}
-                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-all motion-safe:hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-300 motion-safe:hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                         activeTab === key
-                          ? 'bg-white/60 text-gray-900 shadow-sm border border-white/50'
-                          : 'text-gray-700 hover:bg-white/60'
+                          ? `bg-gradient-to-r ${color} text-white shadow-xl shadow-${color.split('-')[1]}-500/30 border border-white/80 transform scale-105`
+                          : 'text-gray-700 hover:bg-white/60 hover:shadow-md'
                       }`}
                     >
-                      <Icon className="w-4 h-4" />
+                      <div className={`p-2 rounded-xl ${activeTab === key ? 'bg-white/20' : 'bg-gray-100'}`}>
+                        <Icon className="w-5 h-5" />
+                      </div>
                       <span className="flex-1 text-left">{label}</span>
-                      {activeTab === key && <span className="inline-block w-2 h-2 rounded-full bg-brand-tan/80" aria-hidden="true" />}
+                      {activeTab === key && <div className="w-3 h-3 bg-white/40 rounded-full animate-pulse" />}
                     </button>
                   ))}
                 </div>
@@ -549,133 +604,182 @@ export default function AdminDashboard() {
             </aside>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col gap-2 w-full">
-            <TabsList className="bg-muted text-muted-foreground h-9 items-center justify-center rounded-lg p-[3px] grid w-full grid-cols-6 mb-8 lg:hidden">
-              <TabsTrigger value="dashboard" className="data-[state=active]:bg-background dark:data-[state=active]:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:outline-ring dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 text-foreground dark:text-muted-foreground h-[calc(100%-1px)] flex-1 justify-center rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-sm [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 flex items-center gap-2">
-                <BarChart3 className="w-4 h-4" />
+            <TabsList className="bg-white/30 backdrop-blur-xl border border-white/60 shadow-2xl shadow-purple-500/10 h-16 items-center justify-center rounded-3xl p-3 grid w-full grid-cols-6 mb-8 lg:hidden overflow-x-auto scrollbar-none">
+              <TabsTrigger value="dashboard" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-cyan-500 data-[state=active]:text-white data-[state=active]:shadow-2xl data-[state=active]:shadow-blue-500/30 text-gray-700 h-[calc(100%-8px)] flex-1 justify-center rounded-2xl border border-transparent px-3 py-2 text-sm font-bold whitespace-nowrap transition-all duration-300 focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:border-white/80 data-[state=active]:scale-110 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-5 flex items-center gap-2 hover:scale-105 hover:shadow-lg">
+                <BarChart3 className="w-5 h-5" />
                 Dashboard
               </TabsTrigger>
-              <TabsTrigger value="appointments" className="data-[state=active]:bg-background dark:data-[state=active]:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:outline-ring dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 text-foreground dark:text-muted-foreground h-[calc(100%-1px)] flex-1 justify-center rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-sm [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 flex items-center gap-2">
-                <CalendarIcon className="w-4 h-4" />
+              <TabsTrigger value="appointments" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:shadow-2xl data-[state=active]:shadow-purple-500/30 text-gray-700 h-[calc(100%-8px)] flex-1 justify-center rounded-2xl border border-transparent px-3 py-2 text-sm font-bold whitespace-nowrap transition-all duration-300 focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:border-white/80 data-[state=active]:scale-110 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-5 flex items-center gap-2 hover:scale-105 hover:shadow-lg">
+                <CalendarIcon className="w-5 h-5" />
                 Bookings
               </TabsTrigger>
-              <TabsTrigger value="payments" className="data-[state=active]:bg-background dark:data-[state=active]:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:outline-ring dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 text-foreground dark:text-muted-foreground h-[calc(100%-1px)] flex-1 justify-center rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-sm [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 flex items-center gap-2">
-                <CreditCard className="w-4 h-4" />
+              <TabsTrigger value="payments" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-500 data-[state=active]:text-white data-[state=active]:shadow-2xl data-[state=active]:shadow-green-500/30 text-gray-700 h-[calc(100%-8px)] flex-1 justify-center rounded-2xl border border-transparent px-3 py-2 text-sm font-bold whitespace-nowrap transition-all duration-300 focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:border-white/80 data-[state=active]:scale-110 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-5 flex items-center gap-2 hover:scale-105 hover:shadow-lg">
+                <CreditCard className="w-5 h-5" />
                 Payments
               </TabsTrigger>
-              <TabsTrigger value="medical" className="data-[state=active]:bg-background dark:data-[state=active]:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:outline-ring dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 text-foreground dark:text-muted-foreground h-[calc(100%-1px)] flex-1 justify-center rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-sm [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 flex items-center gap-2">
-                <FileText className="w-4 h-4" />
+              <TabsTrigger value="medical" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-amber-500 data-[state=active]:text-white data-[state=active]:shadow-2xl data-[state=active]:shadow-orange-500/30 text-gray-700 h-[calc(100%-8px)] flex-1 justify-center rounded-2xl border border-transparent px-3 py-2 text-sm font-bold whitespace-nowrap transition-all duration-300 focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:border-white/80 data-[state=active]:scale-110 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-5 flex items-center gap-2 hover:scale-105 hover:shadow-lg">
+                <FileText className="w-5 h-5" />
                 EMR
               </TabsTrigger>
-              <TabsTrigger value="clients" className="data-[state=active]:bg-background dark:data-[state=active]:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:outline-ring dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 text-foreground dark:text-muted-foreground h-[calc(100%-1px)] flex-1 justify-center rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-sm [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 flex items-center gap-2">
-                <Users className="w-4 h-4" />
+              <TabsTrigger value="clients" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=active]:shadow-2xl data-[state=active]:shadow-indigo-500/30 text-gray-700 h-[calc(100%-8px)] flex-1 justify-center rounded-2xl border border-transparent px-3 py-2 text-sm font-bold whitespace-nowrap transition-all duration-300 focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:border-white/80 data-[state=active]:scale-110 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-5 flex items-center gap-2 hover:scale-105 hover:shadow-lg">
+                <Users className="w-5 h-5" />
                 Clients
               </TabsTrigger>
-              <TabsTrigger value="social" className="data-[state=active]:bg-background dark:data-[state=active]:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:outline-ring dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 text-foreground dark:text-muted-foreground h-[calc(100%-1px)] flex-1 justify-center rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-sm [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 flex items-center gap-2">
-                <MessageSquare className="w-4 h-4" />
+              <TabsTrigger value="social" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:shadow-2xl data-[state=active]:shadow-rose-500/30 text-gray-700 h-[calc(100%-8px)] flex-1 justify-center rounded-2xl border border-transparent px-3 py-2 text-sm font-bold whitespace-nowrap transition-all duration-300 focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:border-white/80 data-[state=active]:scale-110 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-5 flex items-center gap-2 hover:scale-105 hover:shadow-lg">
+                <MessageSquare className="w-5 h-5" />
                 Social Media
               </TabsTrigger>
             </TabsList>
 
-            {/* Dashboard Overview */}
-            <TabsContent value="dashboard" className="space-y-6">
-              {/* Stats Cards */}
+            {/* Dashboard Overview - Premium Animated */}
+            <TabsContent value="dashboard" className="space-y-8 animate-slideInUp">
+              {/* Stats Cards - Premium Glassmorphism */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
-            <Card className="bg-white/60 backdrop-blur-sm border border-blue-200 transition-all motion-safe:hover:shadow-lg motion-safe:hover:scale-[1.01]">
+            <Card className="bg-gradient-to-br from-blue-50/40 via-white/50 to-cyan-50/30 backdrop-blur-xl border border-blue-200/50 shadow-2xl shadow-blue-500/10 transition-all duration-500 hover:shadow-blue-500/20 hover:scale-[1.03]">
               <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-gray-600">Today's Appointments</p>
-                        <p className="text-2xl font-bold text-blue-600">{stats.todayAppointments}</p>
-                      </div>
-                      <CalendarIcon className="w-8 h-8 text-blue-500" />
-                    </div>
-                  </CardContent>
-                </Card>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-blue-600/80 mb-1">Today's Appointments</p>
+                    <p className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+                      {stats.todayAppointments}
+                    </p>
+                  </div>
+                  <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl shadow-lg shadow-blue-500/30">
+                    <CalendarIcon className="w-8 h-8 text-white" />
+                  </div>
+                </div>
+                <div className="mt-4 h-2 bg-gradient-to-r from-blue-200/50 to-cyan-200/50 rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full animate-pulse" style={{width: `${Math.min(stats.todayAppointments * 10, 100)}%`}}></div>
+                </div>
+              </CardContent>
+            </Card>
 
-            <Card className="bg-white/60 backdrop-blur-sm border border-green-200 transition-all motion-safe:hover:shadow-lg motion-safe:hover:scale-[1.01]">
+            <Card className="bg-gradient-to-br from-green-50/40 via-white/50 to-emerald-50/30 backdrop-blur-xl border border-green-200/50 shadow-2xl shadow-green-500/10 transition-all duration-500 hover:shadow-green-500/20 hover:scale-[1.03]">
               <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-gray-600">Total Clients</p>
-                        <p className="text-2xl font-bold text-green-600">{stats.totalClients}</p>
-                      </div>
-                      <Users className="w-8 h-8 text-green-500" />
-                    </div>
-                  </CardContent>
-                </Card>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-green-600/80 mb-1">Total Clients</p>
+                    <p className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                      {stats.totalClients}
+                    </p>
+                  </div>
+                  <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl shadow-lg shadow-green-500/30">
+                    <Users className="w-8 h-8 text-white" />
+                  </div>
+                </div>
+                <div className="mt-4 h-2 bg-gradient-to-r from-green-200/50 to-emerald-200/50 rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-full animate-pulse" style={{width: `${Math.min(stats.totalClients * 2, 100)}%`}}></div>
+                </div>
+              </CardContent>
+            </Card>
 
-            <Card className="bg-white/60 backdrop-blur-sm border border-purple-200 transition-all motion-safe:hover:shadow-lg motion-safe:hover:scale-[1.01]">
+            <Card className="bg-gradient-to-br from-purple-50/40 via-white/50 to-violet-50/30 backdrop-blur-xl border border-purple-200/50 shadow-2xl shadow-purple-500/10 transition-all duration-500 hover:shadow-purple-500/20 hover:scale-[1.03]">
               <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-gray-600">Monthly Revenue</p>
-                        <p className="text-2xl font-bold text-purple-600">₱{stats.monthlyRevenue.toLocaleString()}</p>
-                      </div>
-                      <DollarSign className="w-8 h-8 text-purple-500" />
-                    </div>
-                  </CardContent>
-                </Card>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-purple-600/80 mb-1">Monthly Revenue</p>
+                    <p className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-violet-600 bg-clip-text text-transparent">
+                      ₱{stats.monthlyRevenue.toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="p-3 bg-gradient-to-br from-purple-500 to-violet-500 rounded-2xl shadow-lg shadow-purple-500/30">
+                    <DollarSign className="w-8 h-8 text-white" />
+                  </div>
+                </div>
+                <div className="mt-4 h-2 bg-gradient-to-r from-purple-200/50 to-violet-200/50 rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-purple-500 to-violet-500 rounded-full animate-pulse" style={{width: `${Math.min((stats.monthlyRevenue / 100000) * 100, 100)}%`}}></div>
+                </div>
+              </CardContent>
+            </Card>
 
-            <Card className="bg-white/60 backdrop-blur-sm border border-orange-200 transition-all motion-safe:hover:shadow-lg motion-safe:hover:scale-[1.01]">
+            <Card className="bg-gradient-to-br from-orange-50/40 via-white/50 to-amber-50/30 backdrop-blur-xl border border-orange-200/50 shadow-2xl shadow-orange-500/10 transition-all duration-500 hover:shadow-orange-500/20 hover:scale-[1.03]">
               <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-gray-600">Unread Messages</p>
-                        <p className="text-2xl font-bold text-orange-600">{stats.unreadMessages}</p>
-                      </div>
-                      <MessageSquare className="w-8 h-8 text-orange-500" />
-                    </div>
-                  </CardContent>
-                </Card>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-orange-600/80 mb-1">Unread Messages</p>
+                    <p className="text-4xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
+                      {stats.unreadMessages}
+                    </p>
+                  </div>
+                  <div className="p-3 bg-gradient-to-br from-orange-500 to-amber-500 rounded-2xl shadow-lg shadow-orange-500/30">
+                    <MessageSquare className="w-8 h-8 text-white" />
+                  </div>
+                </div>
+                <div className="mt-4 h-2 bg-gradient-to-r from-orange-200/50 to-amber-200/50 rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-orange-500 to-amber-500 rounded-full animate-pulse" style={{width: `${Math.min(stats.unreadMessages * 20, 100)}%`}}></div>
+                </div>
+              </CardContent>
+            </Card>
 
-            <Card className="bg-white/60 backdrop-blur-sm border border-red-200 transition-all motion-safe:hover:shadow-lg motion-safe:hover:scale-[1.01]">
+            <Card className="bg-gradient-to-br from-red-50/40 via-white/50 to-rose-50/30 backdrop-blur-xl border border-red-200/50 shadow-2xl shadow-red-500/10 transition-all duration-500 hover:shadow-red-500/20 hover:scale-[1.03]">
               <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-gray-600">Pending Payments</p>
-                        <p className="text-2xl font-bold text-red-600">{stats.pendingPayments}</p>
-                      </div>
-                      <Clock className="w-8 h-8 text-red-500" />
-                    </div>
-                  </CardContent>
-                </Card>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-red-600/80 mb-1">Pending Payments</p>
+                    <p className="text-4xl font-bold bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent">
+                      {stats.pendingPayments}
+                    </p>
+                  </div>
+                  <div className="p-3 bg-gradient-to-br from-red-500 to-rose-500 rounded-2xl shadow-lg shadow-red-500/30">
+                    <Clock className="w-8 h-8 text-white" />
+                  </div>
+                </div>
+                <div className="mt-4 h-2 bg-gradient-to-r from-red-200/50 to-rose-200/50 rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-red-500 to-rose-500 rounded-full animate-pulse" style={{width: `${Math.min(stats.pendingPayments * 15, 100)}%`}}></div>
+                </div>
+              </CardContent>
+            </Card>
 
-            <Card className="bg-white/60 backdrop-blur-sm border border-[#fbc6c5]/30 transition-all motion-safe:hover:shadow-lg motion-safe:hover:scale-[1.01]">
+            <Card className="bg-gradient-to-br from-amber-50/40 via-white/50 to-yellow-50/30 backdrop-blur-xl border border-amber-200/50 shadow-2xl shadow-amber-500/10 transition-all duration-500 hover:shadow-amber-500/20 hover:scale-[1.03]">
               <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-gray-600">Completed</p>
-                        <p className="text-2xl font-bold text-[#d09d80]">{stats.completedAppointments}</p>
-                      </div>
-                      <CheckCircle className="w-8 h-8 text-[#d09d80]" />
-                    </div>
-                  </CardContent>
-                </Card>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-amber-600/80 mb-1">Completed</p>
+                    <p className="text-4xl font-bold bg-gradient-to-r from-amber-600 to-yellow-600 bg-clip-text text-transparent">
+                      {stats.completedAppointments}
+                    </p>
+                  </div>
+                  <div className="p-3 bg-gradient-to-br from-amber-500 to-yellow-500 rounded-2xl shadow-lg shadow-amber-500/30">
+                    <CheckCircle className="w-8 h-8 text-white" />
+                  </div>
+                </div>
+                <div className="mt-4 h-2 bg-gradient-to-r from-amber-200/50 to-yellow-200/50 rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-amber-500 to-yellow-500 rounded-full animate-pulse" style={{width: `${Math.min(stats.completedAppointments * 5, 100)}%`}}></div>
+                </div>
+              </CardContent>
+            </Card>
               </div>
 
-              {/* Recent Activity */}
+              {/* Recent Activity - Premium Glass Cards */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card className="bg-white/60 backdrop-blur-sm border border-[#fbc6c5]/20 transition-all motion-safe:hover:shadow-lg motion-safe:hover:scale-[1.01]">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Activity className="w-5 h-5" />
+                <Card className="bg-gradient-to-br from-slate-50/40 via-white/60 to-blue-50/30 backdrop-blur-2xl border border-white/70 shadow-2xl shadow-blue-500/10 transition-all duration-500 hover:shadow-blue-500/20 hover:scale-[1.02]">
+                  <CardHeader className="border-b border-white/50">
+                    <CardTitle className="flex items-center gap-3 text-xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+                      <div className="p-2 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl shadow-lg shadow-blue-500/30">
+                        <Activity className="w-5 h-5 text-white" />
+                      </div>
                       Recent Appointments
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="p-6">
                     <div className="space-y-4">
-                      {appointments.slice(0, 5).map((appointment) => (
-                        <div key={appointment.id} className="flex items-center justify-between p-3 bg-white/50 rounded-lg transition-all motion-safe:hover:shadow-sm">
-                          <div>
-                            <p className="font-medium">{appointment.clientName}</p>
-                            <p className="text-sm text-gray-600">{appointment.service}</p>
-                            <p className="text-xs text-gray-500">{appointment.date} at {appointment.time}</p>
+                      {appointments.slice(0, 5).map((appointment, index) => (
+                        <div key={appointment.id} className="flex items-center justify-between p-4 bg-white/40 backdrop-blur-sm rounded-2xl border border-white/60 shadow-lg shadow-gray-500/5 transition-all duration-300 hover:shadow-xl hover:scale-[1.01] hover:bg-white/50">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/10">
+                              <span className="text-blue-600 font-bold text-lg">{index + 1}</span>
+                            </div>
+                            <div>
+                              <p className="font-bold text-gray-900 text-lg">{appointment.clientName}</p>
+                              <p className="text-sm text-gray-600 font-medium">{appointment.service}</p>
+                              <p className="text-xs text-gray-500 font-medium">{appointment.date} at {appointment.time}</p>
+                            </div>
                           </div>
                           <Badge className={
-                            appointment.status === 'completed' ? 'bg-green-100 text-green-800' :
-                            appointment.status === 'confirmed' ? 'bg-blue-100 text-blue-800' :
-                            appointment.status === 'scheduled' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-red-100 text-red-800'
+                            appointment.status === 'completed' ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/30 border-0' :
+                            appointment.status === 'confirmed' ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/30 border-0' :
+                            appointment.status === 'scheduled' ? 'bg-gradient-to-r from-yellow-500 to-amber-500 text-white shadow-lg shadow-yellow-500/30 border-0' :
+                            'bg-gradient-to-r from-red-500 to-rose-500 text-white shadow-lg shadow-red-500/30 border-0'
                           }>
                             {appointment.status}
                           </Badge>
@@ -685,31 +789,39 @@ export default function AdminDashboard() {
                   </CardContent>
                 </Card>
 
-                <Card className="bg-white/60 backdrop-blur-sm border border-[#fbc6c5]/20 transition-all motion-safe:hover:shadow-lg motion-safe:hover:scale-[1.01]">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <MessageSquare className="w-5 h-5" />
+                <Card className="bg-gradient-to-br from-slate-50/40 via-white/60 to-purple-50/30 backdrop-blur-2xl border border-white/70 shadow-2xl shadow-purple-500/10 transition-all duration-500 hover:shadow-purple-500/20 hover:scale-[1.02]">
+                  <CardHeader className="border-b border-white/50">
+                    <CardTitle className="flex items-center gap-3 text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                      <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl shadow-lg shadow-purple-500/30">
+                        <MessageSquare className="w-5 h-5 text-white" />
+                      </div>
                       Recent Messages
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="p-6">
                     <div className="space-y-4">
-                      {socialMessages.slice(0, 5).map((message) => (
-                        <div key={message.id} className="flex items-start gap-3 p-3 bg-white/50 rounded-lg transition-all motion-safe:hover:shadow-sm">
+                      {socialMessages.slice(0, 5).map((message, index) => (
+                        <div key={message.id} className="flex items-start gap-4 p-4 bg-white/40 backdrop-blur-sm rounded-2xl border border-white/60 shadow-lg shadow-gray-500/5 transition-all duration-300 hover:shadow-xl hover:scale-[1.01] hover:bg-white/50">
                           <div className="flex-shrink-0">
-                            {message.platform === 'instagram' ? (
-                              <Instagram className="w-5 h-5 text-pink-500" />
-                            ) : (
-                              <Facebook className="w-5 h-5 text-blue-500" />
-                            )}
+                            <div className="w-12 h-12 bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl flex items-center justify-center shadow-lg shadow-purple-500/10">
+                              {message.platform === 'instagram' ? (
+                                <Instagram className="w-6 h-6 text-pink-500" />
+                              ) : (
+                                <Facebook className="w-6 h-6 text-blue-500" />
+                              )}
+                            </div>
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm">{message.senderName}</p>
-                            <p className="text-sm text-gray-600 truncate">{message.message}</p>
-                            <p className="text-xs text-gray-500">{new Date(message.timestamp).toLocaleString()}</p>
+                            <div className="flex items-center gap-2 mb-1">
+                              <p className="font-bold text-gray-900 text-lg">{message.senderName}</p>
+                              <span className="text-xs text-gray-500 font-medium">{new Date(message.timestamp).toLocaleString()}</span>
+                            </div>
+                            <p className="text-sm text-gray-700 font-medium leading-relaxed">{message.message}</p>
                           </div>
                           {!message.isRead && (
-                            <div className="w-2 h-2 bg-red-500 rounded-full flex-shrink-0"></div>
+                            <div className="flex-shrink-0">
+                              <div className="w-3 h-3 bg-gradient-to-r from-red-500 to-rose-500 rounded-full animate-pulse shadow-lg shadow-red-500/30"></div>
+                            </div>
                           )}
                         </div>
                       ))}
@@ -719,13 +831,13 @@ export default function AdminDashboard() {
               </div>
             </TabsContent>
 
-            {/* Appointments/Booking System */}
-            <TabsContent value="appointments" className="space-y-6">
+            {/* Appointments/Booking System - Premium Animated */}
+            <TabsContent value="appointments" className="space-y-8 animate-slideInUp">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-gray-900">Booking Management</h2>
                 <Button
                   onClick={() => openAppointmentModal()}
-                  className="bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] hover:from-[#d09d80] hover:to-[#fbc6c5] text-white"
+                  className="bg-gradient-to-r from-purple-500 via-pink-500 to-rose-500 hover:from-purple-600 hover:via-pink-600 hover:to-rose-600 text-white shadow-2xl shadow-purple-500/30 hover:shadow-purple-500/40 transition-all duration-300 hover:scale-105 font-bold px-6 py-3 rounded-2xl"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   New Appointment
@@ -827,7 +939,7 @@ export default function AdminDashboard() {
                     </div>
                     <div>
                       <Select value={appointmentsStatusFilter} onValueChange={(v) => { setAppointmentsStatusFilter(v); setAppointmentsPage(1) }}>
-                        <SelectTrigger>
+                        <SelectTrigger className="h-9">
                           <SelectValue placeholder="Status" />
                         </SelectTrigger>
                         <SelectContent>
@@ -842,7 +954,7 @@ export default function AdminDashboard() {
                     </div>
                     <div>
                       <Select value={appointmentsServiceFilter} onValueChange={(v) => { setAppointmentsServiceFilter(v); setAppointmentsPage(1) }}>
-                        <SelectTrigger>
+                        <SelectTrigger className="h-9">
                           <SelectValue placeholder="Service" />
                         </SelectTrigger>
                         <SelectContent>
@@ -854,14 +966,14 @@ export default function AdminDashboard() {
                       </Select>
                     </div>
                     <div>
-                      <Input type="date" value={appointmentsDateFrom} onChange={(e) => { setAppointmentsDateFrom(e.target.value); setAppointmentsPage(1) }} />
+                      <Input type="date" value={appointmentsDateFrom} onChange={(e) => { setAppointmentsDateFrom(e.target.value); setAppointmentsPage(1) }} className="h-9" />
                     </div>
                     <div>
-                      <Input type="date" value={appointmentsDateTo} onChange={(e) => { setAppointmentsDateTo(e.target.value); setAppointmentsPage(1) }} />
+                      <Input type="date" value={appointmentsDateTo} onChange={(e) => { setAppointmentsDateTo(e.target.value); setAppointmentsPage(1) }} className="h-9" />
                     </div>
                     <div>
                       <Select value={appointmentsSort} onValueChange={setAppointmentsSort}>
-                        <SelectTrigger>
+                        <SelectTrigger className="h-9">
                           <SelectValue placeholder="Sort" />
                         </SelectTrigger>
                         <SelectContent>
@@ -975,9 +1087,9 @@ export default function AdminDashboard() {
                           <div className="text-sm text-gray-600">Page {page} of {totalPages}</div>
                           <div className="flex items-center gap-2">
                             <Select value={String(appointmentsPageSize)} onValueChange={(v) => { setAppointmentsPageSize(parseInt(v)); setAppointmentsPage(1) }}>
-                              <SelectTrigger className="w-24">
-                                <SelectValue placeholder="Rows" />
-                              </SelectTrigger>
+                            <SelectTrigger className="w-24 h-9">
+                              <SelectValue placeholder="Rows" />
+                            </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="10">10</SelectItem>
                                 <SelectItem value="25">25</SelectItem>
@@ -995,13 +1107,13 @@ export default function AdminDashboard() {
               </Card>
             </TabsContent>
 
-            {/* Payment Processing */}
-            <TabsContent value="payments" className="space-y-6">
+            {/* Payment Processing - Premium Animated */}
+            <TabsContent value="payments" className="space-y-8 animate-slideInUp">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-gray-900">Payment Management</h2>
                 <Button
                   onClick={() => openPaymentModal()}
-                  className="bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] hover:from-[#d09d80] hover:to-[#fbc6c5] text-white"
+                  className="bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 hover:from-green-600 hover:via-emerald-600 hover:to-teal-600 text-white shadow-2xl shadow-green-500/30 hover:shadow-green-500/40 transition-all duration-300 hover:scale-105 font-bold px-6 py-3 rounded-2xl"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Record Payment
@@ -1009,7 +1121,7 @@ export default function AdminDashboard() {
               </div>
 
               <Card className="bg-white/60 backdrop-blur-sm border border-[#fbc6c5]/20">
-                <CardContent className="p-6">
+                <CardContent className="p-4 sm:p-6">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -1065,13 +1177,13 @@ export default function AdminDashboard() {
               </Card>
             </TabsContent>
 
-            {/* Electronic Medical Records */}
-            <TabsContent value="medical" className="space-y-6">
+            {/* Electronic Medical Records - Premium Animated */}
+            <TabsContent value="medical" className="space-y-8 animate-slideInUp">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-gray-900">Electronic Medical Records</h2>
                 <Button
                   onClick={() => openMedicalRecordModal()}
-                  className="bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] hover:from-[#d09d80] hover:to-[#fbc6c5] text-white"
+                  className="bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-500 hover:from-orange-600 hover:via-amber-600 hover:to-yellow-600 text-white shadow-2xl shadow-orange-500/30 hover:shadow-orange-500/40 transition-all duration-300 hover:scale-105 font-bold px-6 py-3 rounded-2xl"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   New Record
@@ -1079,7 +1191,7 @@ export default function AdminDashboard() {
               </div>
 
               <Card className="bg-white/60 backdrop-blur-sm border border-[#fbc6c5]/20">
-                <CardContent className="p-6">
+                <CardContent className="p-4 sm:p-6">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -1125,8 +1237,8 @@ export default function AdminDashboard() {
               </Card>
             </TabsContent>
 
-            {/* User Management */}
-            <TabsContent value="clients" className="space-y-6">
+            {/* User Management - Premium Animated */}
+            <TabsContent value="clients" className="space-y-8 animate-slideInUp">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-gray-900">Client Management</h2>
                 <div className="flex items-center gap-4">
@@ -1141,7 +1253,7 @@ export default function AdminDashboard() {
                   </div>
                   <Button
                     onClick={() => openClientModal()}
-                    className="bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] hover:from-[#d09d80] hover:to-[#fbc6c5] text-white"
+                    className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white shadow-2xl shadow-indigo-500/30 hover:shadow-indigo-500/40 transition-all duration-300 hover:scale-105 font-bold px-6 py-3 rounded-2xl"
                   >
                     <UserPlus className="w-4 h-4 mr-2" />
                     Add Client
@@ -1160,7 +1272,7 @@ export default function AdminDashboard() {
                   )
                   .map((client) => (
                     <Card key={client.id} className="bg-white/60 backdrop-blur-sm border border-[#fbc6c5]/20">
-                      <CardContent className="p-6">
+                      <CardContent className="p-4 sm:p-6">
                         <div className="flex items-start justify-between mb-4">
                           <div>
                             <h3 className="font-bold text-lg">{client.firstName} {client.lastName}</h3>
@@ -1223,8 +1335,8 @@ export default function AdminDashboard() {
               </div>
             </TabsContent>
 
-            {/* Social Media Integration */}
-            <TabsContent value="social" className="space-y-6">
+            {/* Social Media Integration - Premium Animated */}
+            <TabsContent value="social" className="space-y-8 animate-slideInUp">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold text-gray-900">Social Media Management</h2>
                 <Button
@@ -1844,7 +1956,7 @@ export default function AdminDashboard() {
                  <Button 
                    onClick={handleSocialReply}
                    disabled={isLoading || !replyMessage.trim()}
-                   className="bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] hover:from-[#d09d80] hover:to-[#fbc6c5] text-white"
+                   className="bg-gradient-to-r from-rose-500 via-pink-500 to-purple-500 hover:from-rose-600 hover:via-pink-600 hover:to-purple-600 text-white shadow-2xl shadow-rose-500/30 hover:shadow-rose-500/40 transition-all duration-300 hover:scale-105 font-bold px-6 py-3 rounded-2xl"
                  >
                    {isLoading ? 'Sending...' : 'Send Reply'}
                  </Button>

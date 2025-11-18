@@ -2,6 +2,9 @@
 
 ## 🎉 SUCCESS! LocalTunnel is Working
 
+LOGIN PAGE CREDENTIALS
+Admin user created : admin@skinessentials.local / Sk1nAdmin!2025 (confirmed email)
+
 **Tunnel URL**: `https://skin-essentials-admin.loca.lt`
 **Status**: ✅ Active and Working
 

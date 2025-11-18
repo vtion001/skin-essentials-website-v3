@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { facebookAPI } from '@/lib/facebook-api'
 import { socialMediaService } from '@/lib/admin-services'
+import { logError } from '@/lib/error-logger'
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,6 +19,7 @@ export async function GET(request: NextRequest) {
 
     return new NextResponse('Forbidden', { status: 403 })
   } catch (error) {
+    await logError('facebook_webhook_get', error as any)
     return new NextResponse('Internal Server Error', { status: 500 })
   }
 }
@@ -62,6 +64,7 @@ export async function POST(request: NextRequest) {
     console.log('Facebook webhook processed successfully')
     return new NextResponse('OK', { status: 200 })
   } catch (error) {
+    await logError('facebook_webhook_post', error as any)
     return new NextResponse('Internal Server Error', { status: 500 })
   }
 }
@@ -69,6 +72,10 @@ export async function POST(request: NextRequest) {
 async function processPageEntry(entry: any) {
   try {
     const pageId = entry.id
+    if (typeof entry.time === 'number') {
+      const ageMs = Date.now() - entry.time
+      if (ageMs > 5 * 60 * 1000) return
+    }
     
     // Get the platform connection for this page
     const connections = socialMediaService.getPlatformConnections()
@@ -95,6 +102,7 @@ async function processPageEntry(entry: any) {
     }
 
   } catch (error) {
+    await logError('facebook_process_page_entry', error as any, { entry })
   }
 }
 
@@ -179,6 +187,7 @@ async function processMessagingEvent(event: any, connection: any, pageId: string
     }
 
   } catch (error) {
+    await logError('facebook_process_messaging_event', error as any, { event })
   }
 }
 
@@ -190,5 +199,6 @@ async function processChange(change: any, connection: any, pageId: string) {
     // For example: feed updates, page info changes, etc.
     
   } catch (error) {
+    await logError('facebook_process_change', error as any, { change })
   }
 }

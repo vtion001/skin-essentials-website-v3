@@ -2,26 +2,46 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { AlertCircle, Eye, EyeOff, Shield } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { AlertCircle, Eye, EyeOff, Shield, CheckCircle } from "lucide-react"
+import { useRouter, useSearchParams } from "next/navigation"
 
 export default function AdminLoginPage() {
-  const [username, setUsername] = useState("")
+  const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState("")
+  const [message, setMessage] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [rememberMe, setRememberMe] = useState(false)
   const router = useRouter()
+  const search = useSearchParams()
+  const initialError = search.get('error') === 'not_admin' ? 'You are not authorized to access the admin dashboard' : ''
+  const [initialized, setInitialized] = useState(false)
+  if (!initialized && initialError) {
+    setError(initialError)
+    setInitialized(true)
+  }
+
+  useEffect(() => {
+    try {
+      const saved = typeof window !== 'undefined' ? localStorage.getItem('admin_login_email') : null
+      if (saved) {
+        setEmail(saved)
+        setRememberMe(true)
+      }
+    } catch {}
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setError("")
+    setMessage("")
 
     try {
       const response = await fetch("/api/admin/login", {
@@ -29,19 +49,28 @@ export default function AdminLoginPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ username, password }),
+        credentials: 'include',
+        body: JSON.stringify({ email, password }),
       })
 
       if (response.ok) {
         const data = await response.json()
         if (data.success) {
-          // Redirect to admin dashboard
-          router.push("/admin")
+          setMessage("Signed in successfully. Redirecting...")
+          try {
+            if (rememberMe) {
+              localStorage.setItem('admin_login_email', email)
+            } else {
+              localStorage.removeItem('admin_login_email')
+            }
+          } catch {}
+          setTimeout(() => router.replace("/admin"), 100)
         } else {
-          setError("Invalid username or password")
+          setError(data.error || "Invalid email or password")
         }
       } else {
-        setError("Login failed. Please try again.")
+        const data = await response.json().catch(() => ({}))
+        setError(data?.error || "Login failed. Please try again.")
       }
     } catch (error) {
       setError("Network error. Please check your connection.")
@@ -71,15 +100,15 @@ export default function AdminLoginPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="username" className="text-gray-700 font-medium">
-                Username
+              <Label htmlFor="email" className="text-gray-700 font-medium">
+                Email
               </Label>
               <Input
-                id="username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter your username"
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
                 required
                 className="border-[#fbc6c5]/30 focus:border-[#d09d80] focus:ring-[#d09d80]/20"
               />
@@ -115,6 +144,12 @@ export default function AdminLoginPage() {
                 <span className="text-sm">{error}</span>
               </div>
             )}
+            {!error && message && (
+              <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700">
+                <CheckCircle className="w-4 h-4" />
+                <span className="text-sm">{message}</span>
+              </div>
+            )}
 
             <Button
               type="submit"
@@ -130,18 +165,17 @@ export default function AdminLoginPage() {
                 "Sign In"
               )}
             </Button>
+            <div className="mt-2 flex items-center gap-2">
+              <input id="remember" type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} />
+              <label htmlFor="remember" className="text-sm text-gray-700">Remember email</label>
+            </div>
           </form>
 
           <div className="mt-8 pt-6 border-t border-gray-200">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h4 className="font-medium text-blue-900 mb-2">Demo Credentials</h4>
-              <div className="text-sm text-blue-700 space-y-1">
-                <p>
-                  <strong>Username:</strong> admin
-                </p>
-                <p>
-                  <strong>Password:</strong> skinessentials2024
-                </p>
+              <h4 className="font-medium text-blue-900 mb-2">Use your admin account</h4>
+              <div className="text-sm text-blue-700">
+                Sign in with your Supabase-managed admin email and password.
               </div>
             </div>
           </div>

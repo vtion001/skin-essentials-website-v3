@@ -577,24 +577,41 @@ export default function ServicesPage() {
         </section>
 
         {/* Services Navigator */}
-        <section className="sticky top-16 z-40 bg-white/80 backdrop-blur-xl border-b border-gray-100">
+        <section className="sticky md:top-16 top-0 z-40 border-b border-gray-100 bg-white md:bg-white/80 md:backdrop-blur-xl">
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-between py-4 gap-4">
               <div className="flex-1">
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
+                <div className="hidden md:grid grid-cols-3 lg:grid-cols-5 gap-2">
                   {serviceCategories.map((cat) => (
                     <a
                       key={cat.id}
                       href={`#${cat.id}`}
-                      className={`px-4 py-2 rounded-xl transition-all duration-300 text-center ${
+                      className={`px-4 py-2 rounded-xl transition-[color,box-shadow] duration-300 text-center ${
                         activeCategoryId === cat.id
                           ? "bg-white/70 shadow-sm text-brand-tan"
-                          : "bg-white/40 hover:bg-white/60 text-gray-700"
+                          : "bg-white hover:bg-white/60 text-gray-700"
                       }`}
                     >
                       {cat.category}
                     </a>
                   ))}
+                </div>
+                <div className="md:hidden overflow-x-auto scrollbar-hide">
+                  <div className="flex gap-2 min-w-max">
+                    {serviceCategories.map((cat) => (
+                      <a
+                        key={cat.id}
+                        href={`#${cat.id}`}
+                        className={`px-4 py-2 rounded-xl transition-[color,box-shadow] duration-300 text-center ${
+                          activeCategoryId === cat.id
+                            ? "bg-white shadow-sm text-brand-tan"
+                            : "bg-white text-gray-700"
+                        }`}
+                      >
+                        {cat.category}
+                      </a>
+                    ))}
+                  </div>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -607,7 +624,7 @@ export default function ServicesPage() {
                     const el = document.getElementById(id)
                     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" })
                   }}
-                  className="bg-white/70 backdrop-blur-sm rounded-xl px-3 py-2 shadow-sm border border-white/30 text-sm text-gray-700"
+                  className="bg-white md:bg-white/70 md:backdrop-blur-sm rounded-xl px-3 py-2 shadow-sm border border-white/30 text-sm text-gray-700"
                 >
                   {serviceCategories.map((cat) => (
                     <option key={cat.id} value={cat.id}>
@@ -615,7 +632,7 @@ export default function ServicesPage() {
                     </option>
                   ))}
                 </select>
-                <div className="flex items-center bg-white/70 backdrop-blur-sm rounded-xl px-3 py-2 shadow-sm border border-white/30">
+                <div className="flex items-center bg-white md:bg-white/70 md:backdrop-blur-sm rounded-xl px-3 py-2 shadow-sm border border-white/30">
                   <Search className="w-4 h-4 text-gray-500 mr-2" />
                   <input
                     value={query}
