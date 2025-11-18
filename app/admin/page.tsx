@@ -2,6 +2,7 @@
 
 import type React from "react"
 import React, { useState, useEffect, useTransition } from "react"
+import { createClient } from "@supabase/supabase-js"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -260,6 +261,58 @@ export default function AdminDashboard() {
     return true
   }
 
+  const supabaseRealtimeEnabled = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+  const supabaseBrowser = supabaseRealtimeEnabled ? createClient(String(process.env.NEXT_PUBLIC_SUPABASE_URL), String(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)) : null
+
+  const refreshAppointments = async () => {
+    await appointmentService.fetchFromSupabase?.()
+    setAppointments(appointmentService.getAllAppointments())
+  }
+  const refreshClients = async () => {
+    await clientService.fetchFromSupabase?.()
+    setClients(clientService.getAllClients())
+  }
+  const refreshStaff = async () => {
+    await staffService.fetchFromSupabase?.()
+    setStaff(staffService.getAllStaff())
+  }
+  const refreshPayments = async () => {
+    try {
+      const res = await fetch('/api/admin/payments', { cache: 'no-store' })
+      const json = await res.json()
+      setPayments(Array.isArray(json?.payments) ? json.payments : [])
+    } catch {}
+  }
+  const refreshMedical = async () => {
+    try {
+      const res = await fetch('/api/admin/medical-records', { cache: 'no-store' })
+      const json = await res.json()
+      setMedicalRecords(Array.isArray(json?.records) ? json.records : [])
+    } catch {}
+  }
+  const refreshInfluencers = async () => {
+    await influencerService.fetchFromSupabase?.()
+    setInfluencers(influencerService.getAllInfluencers())
+  }
+  const refreshReferrals = async () => {
+    await influencerService.fetchFromSupabase?.()
+    setInfluencers(influencerService.getAllInfluencers())
+  }
+
+  useEffect(() => {
+    if (!supabaseBrowser) return
+    const channel = supabaseBrowser.channel('admin-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, () => { refreshAppointments() })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' }, () => { refreshClients() })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'staff' }, () => { refreshStaff() })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'payments' }, () => { refreshPayments() })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'medical_records' }, () => { refreshMedical() })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'influencers' }, () => { refreshInfluencers() })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'influencer_referrals' }, () => { refreshReferrals() })
+      .subscribe()
+    return () => { supabaseBrowser.removeChannel(channel) }
+  }, [])
+
   // Dashboard Statistics
   const getDashboardStats = () => {
     const today = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' })).toISOString().split('T')[0]
@@ -283,26 +336,25 @@ export default function AdminDashboard() {
   const handleAppointmentSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    ;(async () => {
-      try {
-        const method = selectedAppointment ? 'PATCH' : 'POST'
-        const payload = selectedAppointment ? { id: selectedAppointment.id, ...appointmentForm } : appointmentForm
-        const res = await fetch('/api/admin/appointments', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-        if (!res.ok) throw new Error('Failed')
-        const listRes = await fetch('/api/admin/appointments', { cache: 'no-store' })
-        const json = await listRes.json()
-        const arr = Array.isArray(json?.appointments) ? json.appointments : []
-        setAppointments(arr)
-        showNotification("success", selectedAppointment ? "Appointment updated successfully!" : "Appointment created successfully!")
-        setIsAppointmentModalOpen(false)
-        setAppointmentForm({})
-        setSelectedAppointment(null)
-      } catch {
-        showNotification("error", "Failed to save appointment")
-      } finally {
-        setIsLoading(false)
+    
+    try {
+      if (selectedAppointment) {
+        appointmentService.updateAppointment(selectedAppointment.id, appointmentForm)
+        showNotification("success", "Appointment updated successfully!")
+      } else {
+        appointmentService.addAppointment(appointmentForm as Omit<Appointment, "id" | "createdAt" | "updatedAt">)
+        showNotification("success", "Appointment created successfully!")
       }
-    })()
+      
+      setAppointments(appointmentService.getAllAppointments())
+      setIsAppointmentModalOpen(false)
+      setAppointmentForm({})
+      setSelectedAppointment(null)
+    } catch (error) {
+      showNotification("error", "Failed to save appointment")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   // Payment Management

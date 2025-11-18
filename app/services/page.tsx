@@ -7,7 +7,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Clock, Star, Phone, Award, Shield, Users, CheckCircle, ArrowRight, Calendar, Search, ChevronDown, ChevronUp } from "lucide-react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { MobileNav } from "@/components/mobile-nav"
 import { PullToRefresh } from "@/components/pull-to-refresh"
 import { SharedHeader } from "@/components/shared-header"
@@ -42,14 +42,26 @@ interface ServiceCategory {
   services: Service[]
 }
 
-export default function ServicesPage() {
+function BookingQueryEffect({ setSelectedServiceId, setIsBookingOpen }: { setSelectedServiceId: (v: string) => void, setIsBookingOpen: (v: boolean) => void }) {
+  const searchParams = useSearchParams()
+  useEffect(() => {
+    const open = searchParams?.get('book') === 'true'
+    const svc = searchParams?.get('service') || ''
+    if (open) {
+      setSelectedServiceId(svc)
+      setIsBookingOpen(true)
+    }
+  }, [searchParams, setSelectedServiceId, setIsBookingOpen])
+  return null
+}
+
+function ServicesContent() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isBookingOpen, setIsBookingOpen] = useState(false)
   const [selectedServiceId, setSelectedServiceId] = useState<string>("")
   const [activeCategoryId, setActiveCategoryId] = useState<string>("")
   const [query, setQuery] = useState<string>("")
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({})
-  const searchParams = useSearchParams()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -59,14 +71,7 @@ export default function ServicesPage() {
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
-  useEffect(() => {
-    const open = searchParams?.get('book') === 'true'
-    const svc = searchParams?.get('service') || ''
-    if (open) {
-      setSelectedServiceId(svc)
-      setIsBookingOpen(true)
-    }
-  }, [searchParams])
+  
 
   const toId = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
 
@@ -863,5 +868,13 @@ export default function ServicesPage() {
       </div>
       <BookingModal isOpen={isBookingOpen} onClose={() => setIsBookingOpen(false)} defaultServiceId={selectedServiceId} />
     </PullToRefresh>
+  )
+}
+
+export default function ServicesPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-white flex items-center justify-center">Loading...</div>}>
+      <ServicesContent />
+    </Suspense>
   )
 }

@@ -9,9 +9,39 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const body = await req.json()
+  const raw = await req.json()
+  const id = raw.id || `ref_${Date.now()}`
+  const payload = {
+    id,
+    influencer_id: raw.influencerId ?? raw.influencer_id ?? null,
+    client_id: raw.clientId ?? raw.client_id ?? null,
+    client_name: raw.clientName ?? raw.client_name ?? null,
+    amount: raw.amount ?? null,
+    date: raw.date ?? null,
+    appointment_id: raw.appointmentId ?? raw.appointment_id ?? null,
+    notes: raw.notes ?? null,
+  }
   const admin = supabaseAdminClient()
-  const { data, error } = await admin.from('influencer_referrals').insert(body).select('*').single()
+  const { data, error } = await admin.from('influencer_referrals').insert(payload).select('*').single()
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ referral: data })
+}
+
+export async function PATCH(req: Request) {
+  const body = await req.json()
+  const { id } = body || {}
+  if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
+  const updates = {
+    influencer_id: body.influencerId ?? body.influencer_id,
+    client_id: body.clientId ?? body.client_id,
+    client_name: body.clientName ?? body.client_name,
+    amount: body.amount,
+    date: body.date,
+    appointment_id: body.appointmentId ?? body.appointment_id,
+    notes: body.notes,
+  }
+  const admin = supabaseAdminClient()
+  const { data, error } = await admin.from('influencer_referrals').update(updates).eq('id', id).select('*').single()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ referral: data })
 }

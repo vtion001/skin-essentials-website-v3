@@ -2,7 +2,7 @@
 
 import { facebookAPI, type FacebookPage, type FacebookConversation, type FacebookMessage } from './facebook-api'
 import { instagramAPI, type InstagramUser, type InstagramConversation, type InstagramMessage } from './instagram-api'
-import { supabaseAvailable, supabaseFetchAppointments, supabaseInsertAppointment, supabaseUpdateAppointment, supabaseDeleteAppointment } from './supabase'
+import { supabaseAvailable, supabaseFetchAppointments, supabaseInsertAppointment, supabaseUpdateAppointment, supabaseDeleteAppointment, supabaseFetchClients, supabaseFetchStaff, supabaseFetchPayments, supabaseFetchMedicalRecords, supabaseFetchInfluencers, supabaseFetchReferrals } from './supabase'
 
 export interface Appointment {
   id: string

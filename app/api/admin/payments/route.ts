@@ -9,18 +9,42 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const body = await req.json()
+  const raw = await req.json()
   const admin = supabaseAdminClient()
-  const { data, error } = await admin.from('payments').insert(body).select('*').single()
+  const payload = {
+    id: raw.id || `pay_${Date.now()}`,
+    appointment_id: raw.appointmentId ?? null,
+    client_id: raw.clientId,
+    amount: raw.amount,
+    method: raw.method,
+    status: raw.status,
+    transaction_id: raw.transactionId ?? null,
+    receipt_url: raw.receiptUrl ?? null,
+    uploaded_files: Array.isArray(raw.uploadedFiles) ? raw.uploadedFiles : [],
+    notes: raw.notes ?? null,
+  }
+  const { data, error } = await admin.from('payments').insert(payload).select('*').single()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ payment: data })
 }
 
 export async function PATCH(req: Request) {
-  const body = await req.json()
-  const { id, ...updates } = body || {}
+  const raw = await req.json()
+  const { id } = raw || {}
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
   const admin = supabaseAdminClient()
+  const updates = {
+    appointment_id: raw.appointmentId ?? undefined,
+    client_id: raw.clientId ?? undefined,
+    amount: raw.amount ?? undefined,
+    method: raw.method ?? undefined,
+    status: raw.status ?? undefined,
+    transaction_id: raw.transactionId ?? undefined,
+    receipt_url: raw.receiptUrl ?? undefined,
+    uploaded_files: Array.isArray(raw.uploadedFiles) ? raw.uploadedFiles : undefined,
+    notes: raw.notes ?? undefined,
+    updated_at: new Date().toISOString(),
+  }
   const { data, error } = await admin.from('payments').update(updates).eq('id', id).select('*').single()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ payment: data })
