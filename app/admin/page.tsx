@@ -58,11 +58,16 @@ import {
   medicalRecordService,
   clientService,
   socialMediaService,
+  staffService,
+  influencerService,
   type Appointment,
   type Payment,
   type MedicalRecord,
   type Client,
   type SocialMessage,
+  type Staff,
+  type Influencer,
+  type ReferralRecord,
 } from "@/lib/admin-services"
 import { SocialConversationUI } from "@/components/admin/social-conversation-ui"
 import { FacebookStatusIndicator } from "@/components/admin/facebook-status-indicator"
@@ -104,6 +109,8 @@ export default function AdminDashboard() {
   const [medicalRecords, setMedicalRecords] = useState<MedicalRecord[]>([])
   const [clients, setClients] = useState<Client[]>([])
   const [socialMessages, setSocialMessages] = useState<SocialMessage[]>([])
+  const [staff, setStaff] = useState<Staff[]>([])
+  const [influencers, setInfluencers] = useState<Influencer[]>([])
   
   // Modal states
   const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false)
@@ -111,6 +118,9 @@ export default function AdminDashboard() {
   const [isMedicalRecordModalOpen, setIsMedicalRecordModalOpen] = useState(false)
   const [isClientModalOpen, setIsClientModalOpen] = useState(false)
   const [isSocialReplyModalOpen, setIsSocialReplyModalOpen] = useState(false)
+  const [isStaffModalOpen, setIsStaffModalOpen] = useState(false)
+  const [isInfluencerModalOpen, setIsInfluencerModalOpen] = useState(false)
+  const [isReferralModalOpen, setIsReferralModalOpen] = useState(false)
   
   // Selected items
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
@@ -118,6 +128,8 @@ export default function AdminDashboard() {
   const [selectedMedicalRecord, setSelectedMedicalRecord] = useState<MedicalRecord | null>(null)
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
   const [selectedMessage, setSelectedMessage] = useState<SocialMessage | null>(null)
+  const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null)
+  const [selectedInfluencer, setSelectedInfluencer] = useState<Influencer | null>(null)
   
   // Form states
   const [appointmentForm, setAppointmentForm] = useState<Partial<Appointment>>({})
@@ -125,6 +137,9 @@ export default function AdminDashboard() {
   const [medicalRecordForm, setMedicalRecordForm] = useState<Partial<MedicalRecord>>({})
   const [clientForm, setClientForm] = useState<Partial<Client>>({})
   const [replyMessage, setReplyMessage] = useState("")
+  const [staffForm, setStaffForm] = useState<Partial<Staff>>({})
+  const [influencerForm, setInfluencerForm] = useState<Partial<Influencer>>({ commissionRate: 0.10, status: 'active' })
+  const [referralForm, setReferralForm] = useState<Partial<ReferralRecord>>({})
   
   // Calendar and search states
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
@@ -139,6 +154,14 @@ export default function AdminDashboard() {
   const [appointmentsSort, setAppointmentsSort] = useState<string>("date_desc")
   const [appointmentsPage, setAppointmentsPage] = useState<number>(1)
   const [appointmentsPageSize, setAppointmentsPageSize] = useState<number>(10)
+  const [staffSearch, setStaffSearch] = useState("")
+  const [staffPositionFilter, setStaffPositionFilter] = useState<string>("all")
+  const [staffStatusFilter, setStaffStatusFilter] = useState<string>("all")
+  const [influencerSearch, setInfluencerSearch] = useState("")
+  const [influencerPlatformFilter, setInfluencerPlatformFilter] = useState<string>('all')
+  const [influencerStatusFilter, setInfluencerStatusFilter] = useState<string>('all')
+  const [analyticsDateFrom, setAnalyticsDateFrom] = useState<string>("")
+  const [analyticsDateTo, setAnalyticsDateTo] = useState<string>("")
 
   // Authentication is enforced by middleware; optional client-side redirect kept minimal
   useEffect(() => {
@@ -200,6 +223,8 @@ export default function AdminDashboard() {
     setMedicalRecords(medicalRecordService.getAllRecords())
     setClients(clientService.getAllClients())
     setSocialMessages(socialMediaService.getAllMessages())
+    setStaff(staffService.getAllStaff())
+    setInfluencers(influencerService.getAllInfluencers())
   }
 
   const handleLogout = async () => {
@@ -347,6 +372,35 @@ export default function AdminDashboard() {
     }
   }
 
+  const handleStaffSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+    try {
+      const emailOk = !staffForm.email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(staffForm.email)
+      const phoneOk = !staffForm.phone || /\+?\d[\d\s-]{6,}$/.test(staffForm.phone)
+      if (!emailOk || !phoneOk) {
+        showNotification("error", "Please enter valid email and phone")
+        setIsLoading(false)
+        return
+      }
+      if (selectedStaff) {
+        staffService.updateStaff(selectedStaff.id, staffForm)
+        showNotification("success", "Staff updated successfully!")
+      } else {
+        staffService.addStaff(staffForm as Omit<Staff, "id" | "createdAt" | "updatedAt">)
+        showNotification("success", "Staff added successfully!")
+      }
+      setStaff(staffService.getAllStaff())
+      setIsStaffModalOpen(false)
+      setStaffForm({})
+      setSelectedStaff(null)
+    } catch {
+      showNotification("error", "Failed to save staff")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   // Social Media Management
   const handleSocialReply = () => {
     if (!selectedMessage || !replyMessage.trim()) return
@@ -362,6 +416,54 @@ export default function AdminDashboard() {
       showNotification("success", "Reply sent successfully!")
     } catch (error) {
       showNotification("error", "Failed to send reply")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleInfluencerSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+    try {
+      if (!influencerForm.name || !influencerForm.platform) {
+        showNotification('error', 'Please fill required fields')
+        setIsLoading(false)
+        return
+      }
+      if (selectedInfluencer) {
+        influencerService.updateInfluencer(selectedInfluencer.id, influencerForm)
+        showNotification('success', 'Influencer updated successfully!')
+      } else {
+        influencerService.addInfluencer(influencerForm as Omit<Influencer, 'id' | 'createdAt' | 'updatedAt' | 'totalCommissionPaid'>)
+        showNotification('success', 'Influencer added successfully!')
+      }
+      setInfluencers(influencerService.getAllInfluencers())
+      setIsInfluencerModalOpen(false)
+      setSelectedInfluencer(null)
+      setInfluencerForm({ commissionRate: 0.10, status: 'active' })
+    } catch {
+      showNotification('error', 'Failed to save influencer')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleReferralSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedInfluencer) return
+    setIsLoading(true)
+    try {
+      if (!referralForm.clientName || !referralForm.amount || !referralForm.date) {
+        showNotification('error', 'Please fill referral details')
+        setIsLoading(false)
+        return
+      }
+      influencerService.addReferral({ influencerId: selectedInfluencer.id, clientName: referralForm.clientName!, amount: Number(referralForm.amount), date: referralForm.date!, notes: referralForm.notes })
+      showNotification('success', 'Referral recorded successfully!')
+      setIsReferralModalOpen(false)
+      setReferralForm({})
+    } catch {
+      showNotification('error', 'Failed to save referral')
     } finally {
       setIsLoading(false)
     }
@@ -446,6 +548,29 @@ export default function AdminDashboard() {
     setIsClientModalOpen(true)
   }
 
+  const openStaffModal = (person?: Staff) => {
+    if (person) {
+      setSelectedStaff(person)
+      setStaffForm(person)
+    } else {
+      setSelectedStaff(null)
+      setStaffForm({
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        position: 'other',
+        department: '',
+        licenseNumber: '',
+        specialties: [],
+        hireDate: new Date().toISOString().split('T')[0],
+        status: 'active',
+        notes: ''
+      })
+    }
+    setIsStaffModalOpen(true)
+  }
+
   const openSocialReplyModal = (message: SocialMessage) => {
     setSelectedMessage(message)
     setReplyMessage("")
@@ -454,6 +579,17 @@ export default function AdminDashboard() {
       socialMediaService.markAsRead(message.id)
       setSocialMessages(socialMediaService.getAllMessages())
     }
+  }
+
+  const openInfluencerModal = (inf?: Influencer) => {
+    if (inf) {
+      setSelectedInfluencer(inf)
+      setInfluencerForm(inf)
+    } else {
+      setSelectedInfluencer(null)
+      setInfluencerForm({ name: '', handle: '', platform: 'instagram', email: '', phone: '', referralCode: '', commissionRate: 0.10, status: 'active', notes: '' })
+    }
+    setIsInfluencerModalOpen(true)
   }
 
   return (
@@ -580,6 +716,9 @@ export default function AdminDashboard() {
                     { key: 'payments', label: 'Payments', icon: CreditCard, color: 'from-green-500 to-emerald-500' },
                     { key: 'medical', label: 'EMR', icon: FileText, color: 'from-orange-500 to-amber-500' },
                     { key: 'clients', label: 'Clients', icon: Users, color: 'from-indigo-500 to-purple-500' },
+                    { key: 'staff', label: 'Staff', icon: Settings, color: 'from-slate-500 to-gray-500' },
+                    { key: 'influencers', label: 'Influencers', icon: TrendingUp, color: 'from-fuchsia-500 to-violet-600' },
+                    { key: 'analytics', label: 'Analytics', icon: BarChart3, color: 'from-blue-600 to-emerald-600' },
                     { key: 'social', label: 'Social Media', icon: MessageSquare, color: 'from-rose-500 to-pink-500' },
                   ].map(({ key, label, icon: Icon, color }) => (
                     <button
@@ -624,6 +763,18 @@ export default function AdminDashboard() {
               <TabsTrigger value="clients" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=active]:shadow-2xl data-[state=active]:shadow-indigo-500/30 text-gray-700 h-[calc(100%-8px)] flex-1 justify-center rounded-2xl border border-transparent px-3 py-2 text-sm font-bold whitespace-nowrap transition-all duration-300 focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:border-white/80 data-[state=active]:scale-110 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-5 flex items-center gap-2 hover:scale-105 hover:shadow-lg">
                 <Users className="w-5 h-5" />
                 Clients
+              </TabsTrigger>
+              <TabsTrigger value="staff" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-slate-500 data-[state=active]:to-gray-600 data-[state=active]:text-white data-[state=active]:shadow-2xl data-[state=active]:shadow-slate-500/30 text-gray-700 h-[calc(100%-8px)] flex-1 justify-center rounded-2xl border border-transparent px-3 py-2 text-sm font-bold whitespace-nowrap transition-all duration-300 focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:border-white/80 data-[state=active]:scale-110 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-5 flex items-center gap-2 hover:scale-105 hover:shadow-lg">
+                <Settings className="w-5 h-5" />
+                Staff
+              </TabsTrigger>
+              <TabsTrigger value="influencers" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-500 data-[state=active]:to-violet-600 data-[state=active]:text-white data-[state=active]:shadow-2xl data-[state=active]:shadow-fuchsia-500/30 text-gray-700 h-[calc(100%-8px)] flex-1 justify-center rounded-2xl border border-transparent px-3 py-2 text-sm font-bold whitespace-nowrap transition-all duration-300 focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:border-white/80 data-[state=active]:scale-110 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-5 flex items-center gap-2 hover:scale-105 hover:shadow-lg">
+                <TrendingUp className="w-5 h-5" />
+                Influencers
+              </TabsTrigger>
+              <TabsTrigger value="analytics" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-2xl data-[state=active]:shadow-blue-600/30 text-gray-700 h-[calc(100%-8px)] flex-1 justify-center rounded-2xl border border-transparent px-3 py-2 text-sm font-bold whitespace-nowrap transition-all duration-300 focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:border-white/80 data-[state=active]:scale-110 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-5 flex items-center gap-2 hover:scale-105 hover:shadow-lg">
+                <BarChart3 className="w-5 h-5" />
+                Analytics
               </TabsTrigger>
               <TabsTrigger value="social" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:shadow-2xl data-[state=active]:shadow-rose-500/30 text-gray-700 h-[calc(100%-8px)] flex-1 justify-center rounded-2xl border border-transparent px-3 py-2 text-sm font-bold whitespace-nowrap transition-all duration-300 focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:border-white/80 data-[state=active]:scale-110 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-5 flex items-center gap-2 hover:scale-105 hover:shadow-lg">
                 <MessageSquare className="w-5 h-5" />
@@ -1335,6 +1486,446 @@ export default function AdminDashboard() {
               </div>
             </TabsContent>
 
+            <TabsContent value="staff" className="space-y-8 animate-slideInUp">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-gray-900">Staffing Management</h2>
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      placeholder="Search staff..."
+                      value={staffSearch}
+                      onChange={(e) => setStaffSearch(e.target.value)}
+                      className="pl-10 w-64"
+                    />
+                  </div>
+                  <Button
+                    onClick={() => openStaffModal()}
+                    className="bg-gradient-to-r from-slate-600 via-gray-700 to-slate-800 hover:from-slate-700 hover:via-gray-800 hover:to-slate-900 text-white shadow-2xl shadow-slate-500/30 hover:shadow-slate-500/40 transition-all duration-300 hover:scale-105 font-bold px-6 py-3 rounded-2xl"
+                  >
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Add Staff
+                  </Button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                <Select value={staffPositionFilter} onValueChange={setStaffPositionFilter}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="Position" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Positions</SelectItem>
+                    <SelectItem value="anesthesiologist">Anesthesiologist</SelectItem>
+                    <SelectItem value="surgeon_aesthetic">Surgeon (Aesthetic)</SelectItem>
+                    <SelectItem value="dermatologist">Dermatologist</SelectItem>
+                    <SelectItem value="nurse">Nurse</SelectItem>
+                    <SelectItem value="therapist">Therapist</SelectItem>
+                    <SelectItem value="technician">Technician</SelectItem>
+                    <SelectItem value="receptionist">Receptionist</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={staffStatusFilter} onValueChange={setStaffStatusFilter}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="on_leave">On Leave</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="terminated">Terminated</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {staff
+                  .filter(s => staffStatusFilter === 'all' ? true : s.status === staffStatusFilter)
+                  .filter(s => staffPositionFilter === 'all' ? true : s.position === staffPositionFilter)
+                  .filter(s => 
+                    staffSearch === '' ||
+                    s.firstName.toLowerCase().includes(staffSearch.toLowerCase()) ||
+                    s.lastName.toLowerCase().includes(staffSearch.toLowerCase()) ||
+                    s.email.toLowerCase().includes(staffSearch.toLowerCase()) ||
+                    s.phone.includes(staffSearch)
+                  )
+                  .map((s) => (
+                    <Card key={s.id} className="bg-gradient-to-br from-slate-50/40 via-white/60 to-gray-50/30 backdrop-blur-2xl border border-white/70 shadow-2xl shadow-slate-500/10 transition-all duration-500 hover:shadow-slate-500/20 hover:scale-[1.02]">
+                      <CardContent className="p-6">
+                        <div className="flex items-start justify-between mb-4">
+                          <div>
+                            <h3 className="font-bold text-lg">{s.firstName} {s.lastName}</h3>
+                            <p className="text-sm text-gray-600">{s.email}</p>
+                            <p className="text-sm text-gray-600">{s.phone}</p>
+                          </div>
+                          <Badge className="bg-gradient-to-r from-slate-600 to-gray-700 text-white">{s.position.replace('_', ' ')}</Badge>
+                        </div>
+                        <div className="space-y-2 mb-4">
+                          {s.department && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <Settings className="w-4 h-4 text-gray-500" />
+                              <span>Department: {s.department}</span>
+                            </div>
+                          )}
+                          {s.licenseNumber && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <Shield className="w-4 h-4 text-gray-500" />
+                              <span>License: {s.licenseNumber}</span>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-2 text-sm">
+                            <CalendarIcon className="w-4 h-4 text-gray-500" />
+                            <span>Hired: {new Date(s.hireDate).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button size="sm" variant="outline" onClick={() => openStaffModal(s)} className="flex-1">
+                            <Edit className="w-4 h-4 mr-2" />
+                            Edit
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => staffService.deleteStaff(s.id) && setStaff(staffService.getAllStaff())}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="influencers" className="space-y-8 animate-slideInUp">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-gray-900">Influencers Referral Management</h2>
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input placeholder="Search influencers..." value={influencerSearch} onChange={(e) => setInfluencerSearch(e.target.value)} className="pl-10 w-64" />
+                  </div>
+                  <Button onClick={() => openInfluencerModal()} className="bg-gradient-to-r from-fuchsia-500 via-violet-600 to-indigo-600 hover:from-fuchsia-600 hover:via-violet-700 hover:to-indigo-700 text-white shadow-2xl shadow-fuchsia-500/30 hover:shadow-fuchsia-500/40 transition-all duration-300 hover:scale-105 font-bold px-6 py-3 rounded-2xl">
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Add Influencer
+                  </Button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                <Select value={influencerPlatformFilter} onValueChange={setInfluencerPlatformFilter}>
+                  <SelectTrigger className="h-9"><SelectValue placeholder="Platform" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Platforms</SelectItem>
+                    <SelectItem value="instagram">Instagram</SelectItem>
+                    <SelectItem value="facebook">Facebook</SelectItem>
+                    <SelectItem value="tiktok">TikTok</SelectItem>
+                    <SelectItem value="youtube">YouTube</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={influencerStatusFilter} onValueChange={setInfluencerStatusFilter}>
+                  <SelectTrigger className="h-9"><SelectValue placeholder="Status" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {influencers
+                  .filter(i => influencerStatusFilter === 'all' ? true : i.status === influencerStatusFilter)
+                  .filter(i => influencerPlatformFilter === 'all' ? true : i.platform === influencerPlatformFilter)
+                  .filter(i => influencerSearch === '' || i.name.toLowerCase().includes(influencerSearch.toLowerCase()) || (i.handle ?? '').toLowerCase().includes(influencerSearch.toLowerCase()))
+                  .map((i) => {
+                    const stats = influencerService.getStats(i.id)
+                    return (
+                      <Card key={i.id} className="bg-gradient-to-br from-fuchsia-50/40 via-white/60 to-violet-50/30 backdrop-blur-2xl border border-white/70 shadow-2xl shadow-fuchsia-500/10 transition-all duration-500 hover:shadow-fuchsia-500/20 hover:scale-[1.02]">
+                        <CardContent className="p-6">
+                          <div className="flex items-start justify-between mb-4">
+                            <div>
+                              <h3 className="font-bold text-lg">{i.name} {i.handle && <span className="text-sm text-gray-500">({i.handle})</span>}</h3>
+                              <p className="text-sm text-gray-600 capitalize">{i.platform}</p>
+                              {i.email && <p className="text-sm text-gray-600">{i.email}</p>}
+                              {i.phone && <p className="text-sm text-gray-600">{i.phone}</p>}
+                            </div>
+                            <Badge className="bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white">{i.status}</Badge>
+                          </div>
+                          <div className="grid grid-cols-3 gap-4 mb-4">
+                            <div className="p-3 rounded-xl bg-white/50">
+                              <p className="text-xs text-gray-500">Referrals</p>
+                              <p className="text-xl font-bold">{stats.totalReferrals}</p>
+                            </div>
+                            <div className="p-3 rounded-xl bg-white/50">
+                              <p className="text-xs text-gray-500">Revenue</p>
+                              <p className="text-xl font-bold">₱{stats.totalRevenue.toLocaleString()}</p>
+                            </div>
+                            <div className="p-3 rounded-xl bg-white/50">
+                              <p className="text-xs text-gray-500">Commission ({Math.round(stats.commissionRate*100)}%)</p>
+                              <p className="text-xl font-bold">₱{stats.commissionDue.toLocaleString()}</p>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4 mb-4">
+                            <div className="p-3 rounded-xl bg-white/50">
+                              <p className="text-xs text-gray-500">Paid</p>
+                              <p className="text-lg font-bold">₱{stats.commissionPaid.toLocaleString()}</p>
+                            </div>
+                            <div className="p-3 rounded-xl bg-white/50">
+                              <p className="text-xs text-gray-500">Remaining</p>
+                              <p className="text-lg font-bold">₱{stats.commissionRemaining.toLocaleString()}</p>
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2 mb-4">
+                            <Button size="sm" variant="outline" onClick={() => openInfluencerModal(i)} className="w-full sm:w-auto">
+                              <Edit className="w-4 h-4 mr-2" />
+                              Edit
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => { setSelectedInfluencer(i); setIsReferralModalOpen(true) }} className="w-full sm:w-auto">
+                              <Plus className="w-4 h-4 mr-2" />
+                              Add Referral
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => influencerService.payCommission(i.id) && setInfluencers(influencerService.getAllInfluencers())} className="w-full sm:w-auto">
+                              <DollarSign className="w-4 h-4 mr-2" />
+                              Pay Commission
+                            </Button>
+                          </div>
+                          <div className="space-y-2">
+                            {influencerService.getReferralsByInfluencer(i.id).slice(0,5).map(ref => (
+                              <div key={ref.id} className="flex items-center justify-between p-3 bg-white/50 rounded-lg">
+                                <div>
+                                  <p className="font-medium text-sm">{ref.clientName}</p>
+                                  <p className="text-xs text-gray-500">{new Date(ref.date).toLocaleDateString()}</p>
+                                </div>
+                                <div className="text-sm font-semibold">₱{ref.amount.toLocaleString()}</div>
+                              </div>
+                            ))}
+                            {influencerService.getReferralsByInfluencer(i.id).length === 0 && (
+                              <div className="text-center py-6 text-gray-500">No referrals yet</div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )
+                  })}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="analytics" className="space-y-8 animate-slideInUp">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-gray-900">Analytics</h2>
+                <div className="grid grid-cols-2 gap-3 w-full sm:w-auto sm:flex sm:items-center">
+                  <Input type="date" value={analyticsDateFrom} onChange={(e) => setAnalyticsDateFrom(e.target.value)} className="h-9" />
+                  <Input type="date" value={analyticsDateTo} onChange={(e) => setAnalyticsDateTo(e.target.value)} className="h-9" />
+                </div>
+              </div>
+
+              {(() => {
+                const inRange = (iso: string) => {
+                  const t = new Date(iso).getTime()
+                  const from = analyticsDateFrom ? new Date(analyticsDateFrom).getTime() : -Infinity
+                  const to = analyticsDateTo ? new Date(analyticsDateTo).getTime() : Infinity
+                  return t >= from && t <= to
+                }
+                const inRangeDateOnly = (d: string) => {
+                  const t = new Date(d).getTime()
+                  const from = analyticsDateFrom ? new Date(analyticsDateFrom).getTime() : -Infinity
+                  const to = analyticsDateTo ? new Date(analyticsDateTo).getTime() : Infinity
+                  return t >= from && t <= to
+                }
+
+                const completedPayments = payments.filter(p => p.status === 'completed' && inRange(p.createdAt))
+                const totalRevenue = completedPayments.reduce((s, p) => s + p.amount, 0)
+                const avgOrder = completedPayments.length ? totalRevenue / completedPayments.length : 0
+
+                const bookedApts = appointments.filter(a => inRangeDateOnly(a.date))
+                const completedApts = appointments.filter(a => a.status === 'completed' && inRangeDateOnly(a.date))
+
+                const bySource: Record<string, number> = {}
+                completedPayments.forEach(p => {
+                  const c = clients.find(x => x.id === p.clientId)
+                  const src = c?.source || 'unknown'
+                  bySource[src] = (bySource[src] || 0) + 1
+                })
+
+                const platformAgg: Record<string, { referrals: number; revenue: number }> = {}
+                influencers.forEach(i => {
+                  const refs = influencerService.getReferralsByInfluencer(i.id).filter(r => inRange(r.date))
+                  const count = refs.length
+                  const rev = refs.reduce((s, r) => s + r.amount, 0)
+                  const key = i.platform
+                  platformAgg[key] = {
+                    referrals: (platformAgg[key]?.referrals || 0) + count,
+                    revenue: (platformAgg[key]?.revenue || 0) + rev,
+                  }
+                })
+
+                const topInfluencers = influencers
+                  .map(i => ({ i, refs: influencerService.getReferralsByInfluencer(i.id).filter(r => inRange(r.date)) }))
+                  .map(({ i, refs }) => ({ id: i.id, name: i.name, handle: i.handle, platform: i.platform, count: refs.length, revenue: refs.reduce((s, r) => s + r.amount, 0) }))
+                  .sort((a, b) => b.count - a.count)
+                  .slice(0, 5)
+
+                const sourceLabels: Record<string, string> = { website: 'Website', referral: 'Referral', social_media: 'Social Media', walk_in: 'Walk-in', unknown: 'Unknown' }
+
+                const statusBreakdown: Record<string, number> = {}
+                bookedApts.forEach(a => { statusBreakdown[a.status] = (statusBreakdown[a.status] || 0) + 1 })
+
+                const paymentBreakdown: Record<string, number> = {}
+                payments.filter(p => inRange(p.createdAt)).forEach(p => { paymentBreakdown[p.status] = (paymentBreakdown[p.status] || 0) + 1 })
+
+                const pct = (n: number, d: number) => (d ? Math.round((n / d) * 100) : 0)
+
+                return (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                      <Card className="bg-gradient-to-br from-blue-50/40 via-white/50 to-cyan-50/30 backdrop-blur-xl border border-blue-200/50 shadow-2xl">
+                        <CardContent className="p-6">
+                          <p className="text-sm text-blue-600/80">Revenue</p>
+                          <p className="text-3xl font-bold">₱{totalRevenue.toLocaleString()}</p>
+                          <p className="text-xs text-gray-500">Avg Order: ₱{Math.round(avgOrder).toLocaleString()}</p>
+                        </CardContent>
+                      </Card>
+                      <Card className="bg-gradient-to-br from-purple-50/40 via-white/50 to-violet-50/30 backdrop-blur-xl border border-purple-200/50 shadow-2xl">
+                        <CardContent className="p-6">
+                          <p className="text-sm text-purple-600/80">Bookings</p>
+                          <p className="text-3xl font-bold">{bookedApts.length}</p>
+                          <p className="text-xs text-gray-500">Completed: {completedApts.length}</p>
+                        </CardContent>
+                      </Card>
+                      <Card className="bg-gradient-to-br from-fuchsia-50/40 via-white/50 to-violet-50/30 backdrop-blur-xl border border-fuchsia-200/50 shadow-2xl">
+                        <CardContent className="p-6">
+                          <p className="text-sm text-fuchsia-600/80">Influencer Referrals</p>
+                          <p className="text-3xl font-bold">{topInfluencers.reduce((s, x) => s + x.count, 0)}</p>
+                          <p className="text-xs text-gray-500">Revenue: ₱{topInfluencers.reduce((s, x) => s + x.revenue, 0).toLocaleString()}</p>
+                        </CardContent>
+                      </Card>
+                      <Card className="bg-gradient-to-br from-emerald-50/40 via-white/50 to-teal-50/30 backdrop-blur-xl border border-emerald-200/50 shadow-2xl">
+                        <CardContent className="p-6">
+                          <p className="text-sm text-emerald-600/80">Payments</p>
+                          <p className="text-3xl font-bold">{completedPayments.length}</p>
+                          <p className="text-xs text-gray-500">Completed</p>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <Card className="bg-white/60 backdrop-blur-sm border">
+                        <CardHeader>
+                          <CardTitle>Conversions by Source</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            {Object.entries(sourceLabels).map(([key, label]) => (
+                              <div key={key} className="flex items-center gap-4">
+                                <div className="w-28 text-sm text-gray-600">{label}</div>
+                                <div className="flex-1 h-2 bg-gray-200/60 rounded-full overflow-hidden">
+                                  <div className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full" style={{ width: `${pct(bySource[key] || 0, completedPayments.length)}%` }}></div>
+                                </div>
+                                <div className="w-12 text-sm font-medium text-gray-900 text-right">{bySource[key] || 0}</div>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="bg-white/60 backdrop-blur-sm border">
+                        <CardHeader>
+                          <CardTitle>Influencer Performance by Platform</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            {Object.entries(platformAgg).map(([platform, stats]) => (
+                              <div key={platform} className="grid grid-cols-3 gap-3 items-center">
+                                <div className="text-sm font-medium capitalize">{platform}</div>
+                                <div className="text-sm">Referrals: {stats.referrals}</div>
+                                <div className="text-sm">Revenue: ₱{stats.revenue.toLocaleString()}</div>
+                              </div>
+                            ))}
+                            {Object.keys(platformAgg).length === 0 && (
+                              <div className="text-center py-6 text-gray-500">No data for selected range</div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <Card className="bg-white/60 backdrop-blur-sm border">
+                        <CardHeader>
+                          <CardTitle>Appointment Status</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-2">
+                            {Object.entries(statusBreakdown).map(([st, n]) => (
+                              <div key={st} className="flex items-center gap-4">
+                                <div className="w-28 text-sm capitalize text-gray-700">{st.replace('_',' ')}</div>
+                                <div className="flex-1 h-2 bg-gray-200/60 rounded-full overflow-hidden">
+                                  <div className="h-full bg-gradient-to-r from-purple-500 to-violet-500 rounded-full" style={{ width: `${pct(n, bookedApts.length)}%` }}></div>
+                                </div>
+                                <div className="w-12 text-sm font-medium text-gray-900 text-right">{n}</div>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                      <Card className="bg-white/60 backdrop-blur-sm border">
+                        <CardHeader>
+                          <CardTitle>Payment Status</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-2">
+                            {Object.entries(paymentBreakdown).map(([st, n]) => (
+                              <div key={st} className="flex items-center gap-4">
+                                <div className="w-28 text-sm capitalize text-gray-700">{st.replace('_',' ')}</div>
+                                <div className="flex-1 h-2 bg-gray-200/60 rounded-full overflow-hidden">
+                                  <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full" style={{ width: `${pct(n, payments.filter(p => inRange(p.createdAt)).length)}%` }}></div>
+                                </div>
+                                <div className="w-12 text-sm font-medium text-gray-900 text-right">{n}</div>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    <Card className="bg-white/60 backdrop-blur-sm border">
+                      <CardHeader>
+                        <CardTitle>Top Influencers</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Name</TableHead>
+                              <TableHead>Platform</TableHead>
+                              <TableHead>Referrals</TableHead>
+                              <TableHead>Revenue</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {topInfluencers.map(t => (
+                              <TableRow key={t.id}>
+                                <TableCell>{t.name} {t.handle ? `(${t.handle})` : ''}</TableCell>
+                                <TableCell className="capitalize">{t.platform}</TableCell>
+                                <TableCell>{t.count}</TableCell>
+                                <TableCell>₱{t.revenue.toLocaleString()}</TableCell>
+                              </TableRow>
+                            ))}
+                            {topInfluencers.length === 0 && (
+                              <TableRow>
+                                <TableCell colSpan={4} className="text-center text-gray-500">No influencer data</TableCell>
+                              </TableRow>
+                            )}
+                          </TableBody>
+                        </Table>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )
+              })()}
+            </TabsContent>
+
             {/* Social Media Integration - Premium Animated */}
             <TabsContent value="social" className="space-y-8 animate-slideInUp">
               <div className="flex items-center justify-between mb-6">
@@ -1509,7 +2100,7 @@ export default function AdminDashboard() {
               </Button>
             </div>
           </form>
-        </DialogContent>
+       </DialogContent>
       </Dialog>
 
       {/* Payment Modal */}
@@ -1633,8 +2224,113 @@ export default function AdminDashboard() {
               </Button>
             </div>
           </form>
-        </DialogContent>
+       </DialogContent>
       </Dialog>
+
+       <Dialog open={isInfluencerModalOpen} onOpenChange={setIsInfluencerModalOpen}>
+         <DialogContent className="max-w-2xl">
+           <DialogHeader>
+             <DialogTitle>{selectedInfluencer ? 'Edit Influencer' : 'Add New Influencer'}</DialogTitle>
+           </DialogHeader>
+           <form onSubmit={handleInfluencerSubmit} className="space-y-4">
+             <div className="grid grid-cols-2 gap-4">
+               <div>
+                 <Label htmlFor="infName">Name</Label>
+                 <Input id="infName" value={influencerForm.name || ''} onChange={(e) => setInfluencerForm(prev => ({ ...prev, name: e.target.value }))} required />
+               </div>
+               <div>
+                 <Label htmlFor="infHandle">Handle</Label>
+                 <Input id="infHandle" value={influencerForm.handle || ''} onChange={(e) => setInfluencerForm(prev => ({ ...prev, handle: e.target.value }))} />
+               </div>
+             </div>
+             <div className="grid grid-cols-2 gap-4">
+               <div>
+                 <Label htmlFor="infPlatform">Platform</Label>
+                 <Select value={influencerForm.platform || ''} onValueChange={(v) => setInfluencerForm(prev => ({ ...prev, platform: v as Influencer['platform'] }))}>
+                   <SelectTrigger><SelectValue placeholder="Select platform" /></SelectTrigger>
+                   <SelectContent>
+                     <SelectItem value="instagram">Instagram</SelectItem>
+                     <SelectItem value="facebook">Facebook</SelectItem>
+                     <SelectItem value="tiktok">TikTok</SelectItem>
+                     <SelectItem value="youtube">YouTube</SelectItem>
+                     <SelectItem value="other">Other</SelectItem>
+                   </SelectContent>
+                 </Select>
+               </div>
+               <div>
+                 <Label htmlFor="infReferralCode">Referral Code</Label>
+                 <Input id="infReferralCode" value={influencerForm.referralCode || ''} onChange={(e) => setInfluencerForm(prev => ({ ...prev, referralCode: e.target.value }))} />
+               </div>
+             </div>
+             <div className="grid grid-cols-2 gap-4">
+               <div>
+                 <Label htmlFor="infEmail">Email</Label>
+                 <Input id="infEmail" type="email" value={influencerForm.email || ''} onChange={(e) => setInfluencerForm(prev => ({ ...prev, email: e.target.value }))} />
+               </div>
+               <div>
+                 <Label htmlFor="infPhone">Phone</Label>
+                 <Input id="infPhone" value={influencerForm.phone || ''} onChange={(e) => setInfluencerForm(prev => ({ ...prev, phone: e.target.value }))} />
+               </div>
+             </div>
+             <div className="grid grid-cols-2 gap-4">
+               <div>
+                 <Label htmlFor="infRate">Commission Rate (%)</Label>
+                 <Input id="infRate" type="number" step="1" value={Math.round((influencerForm.commissionRate || 0.10) * 100)} onChange={(e) => setInfluencerForm(prev => ({ ...prev, commissionRate: Math.max(0, Math.min(100, Number(e.target.value))) / 100 }))} />
+               </div>
+               <div>
+                 <Label htmlFor="infStatus">Status</Label>
+                 <Select value={influencerForm.status || ''} onValueChange={(v) => setInfluencerForm(prev => ({ ...prev, status: v as Influencer['status'] }))}>
+                   <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
+                   <SelectContent>
+                     <SelectItem value="active">Active</SelectItem>
+                     <SelectItem value="inactive">Inactive</SelectItem>
+                   </SelectContent>
+                 </Select>
+               </div>
+             </div>
+             <div>
+               <Label htmlFor="infNotes">Notes</Label>
+               <Textarea id="infNotes" rows={3} value={influencerForm.notes || ''} onChange={(e) => setInfluencerForm(prev => ({ ...prev, notes: e.target.value }))} />
+             </div>
+             <div className="flex justify-end gap-2">
+               <Button type="button" variant="outline" onClick={() => setIsInfluencerModalOpen(false)}>Cancel</Button>
+               <Button type="submit" disabled={isLoading}>{isLoading ? 'Saving...' : 'Save Influencer'}</Button>
+             </div>
+           </form>
+         </DialogContent>
+       </Dialog>
+
+       <Dialog open={isReferralModalOpen} onOpenChange={setIsReferralModalOpen}>
+         <DialogContent className="max-w-lg">
+           <DialogHeader>
+             <DialogTitle>Add Referral</DialogTitle>
+           </DialogHeader>
+           <form onSubmit={handleReferralSubmit} className="space-y-4">
+             <div>
+               <Label htmlFor="refClientName">Client Name</Label>
+               <Input id="refClientName" value={referralForm.clientName || ''} onChange={(e) => setReferralForm(prev => ({ ...prev, clientName: e.target.value }))} required />
+             </div>
+             <div className="grid grid-cols-2 gap-4">
+               <div>
+                 <Label htmlFor="refAmount">Amount (₱)</Label>
+                 <Input id="refAmount" type="number" value={referralForm.amount || ''} onChange={(e) => setReferralForm(prev => ({ ...prev, amount: Number(e.target.value) }))} required />
+               </div>
+               <div>
+                 <Label htmlFor="refDate">Date</Label>
+                 <Input id="refDate" type="date" value={referralForm.date || ''} onChange={(e) => setReferralForm(prev => ({ ...prev, date: e.target.value }))} required />
+               </div>
+             </div>
+             <div>
+               <Label htmlFor="refNotes">Notes</Label>
+               <Textarea id="refNotes" rows={3} value={referralForm.notes || ''} onChange={(e) => setReferralForm(prev => ({ ...prev, notes: e.target.value }))} />
+             </div>
+             <div className="flex justify-end gap-2">
+               <Button type="button" variant="outline" onClick={() => setIsReferralModalOpen(false)}>Cancel</Button>
+               <Button type="submit" disabled={isLoading || !selectedInfluencer}>{isLoading ? 'Saving...' : 'Save Referral'}</Button>
+             </div>
+           </form>
+         </DialogContent>
+       </Dialog>
 
       {/* Medical Record Modal */}
       <Dialog open={isMedicalRecordModalOpen} onOpenChange={setIsMedicalRecordModalOpen}>
@@ -1781,7 +2477,7 @@ export default function AdminDashboard() {
        </Dialog>
 
        {/* Client Modal */}
-       <Dialog open={isClientModalOpen} onOpenChange={setIsClientModalOpen}>
+      <Dialog open={isClientModalOpen} onOpenChange={setIsClientModalOpen}>
          <DialogContent className="max-w-2xl">
            <DialogHeader>
              <DialogTitle>
@@ -1904,6 +2600,107 @@ export default function AdminDashboard() {
                <Button type="submit" disabled={isLoading}>
                  {isLoading ? 'Saving...' : 'Save Client'}
                </Button>
+             </div>
+           </form>
+         </DialogContent>
+      </Dialog>
+
+       <Dialog open={isStaffModalOpen} onOpenChange={setIsStaffModalOpen}>
+         <DialogContent className="max-w-2xl">
+           <DialogHeader>
+             <DialogTitle>
+               {selectedStaff ? 'Edit Staff' : 'Add New Staff'}
+             </DialogTitle>
+           </DialogHeader>
+           <form onSubmit={handleStaffSubmit} className="space-y-4">
+             <div className="grid grid-cols-2 gap-4">
+               <div>
+                 <Label htmlFor="staffFirstName">First Name</Label>
+                 <Input id="staffFirstName" value={staffForm.firstName || ''} onChange={(e) => setStaffForm(prev => ({ ...prev, firstName: e.target.value }))} required />
+               </div>
+               <div>
+                 <Label htmlFor="staffLastName">Last Name</Label>
+                 <Input id="staffLastName" value={staffForm.lastName || ''} onChange={(e) => setStaffForm(prev => ({ ...prev, lastName: e.target.value }))} required />
+               </div>
+             </div>
+
+             <div className="grid grid-cols-2 gap-4">
+               <div>
+                 <Label htmlFor="staffEmail">Email</Label>
+                 <Input id="staffEmail" type="email" value={staffForm.email || ''} onChange={(e) => setStaffForm(prev => ({ ...prev, email: e.target.value }))} required />
+               </div>
+               <div>
+                 <Label htmlFor="staffPhone">Phone</Label>
+                 <Input id="staffPhone" value={staffForm.phone || ''} onChange={(e) => setStaffForm(prev => ({ ...prev, phone: e.target.value }))} required />
+               </div>
+             </div>
+
+             <div className="grid grid-cols-2 gap-4">
+               <div>
+                 <Label htmlFor="staffPosition">Position</Label>
+                 <Select value={staffForm.position || ''} onValueChange={(value) => setStaffForm(prev => ({ ...prev, position: value as Staff['position'] }))}>
+                   <SelectTrigger>
+                     <SelectValue placeholder="Select position" />
+                   </SelectTrigger>
+                   <SelectContent>
+                     <SelectItem value="anesthesiologist">Anesthesiologist</SelectItem>
+                     <SelectItem value="surgeon_aesthetic">Surgeon (Aesthetic)</SelectItem>
+                     <SelectItem value="dermatologist">Dermatologist</SelectItem>
+                     <SelectItem value="nurse">Nurse</SelectItem>
+                     <SelectItem value="therapist">Therapist</SelectItem>
+                     <SelectItem value="technician">Technician</SelectItem>
+                     <SelectItem value="receptionist">Receptionist</SelectItem>
+                     <SelectItem value="admin">Admin</SelectItem>
+                     <SelectItem value="other">Other</SelectItem>
+                   </SelectContent>
+                 </Select>
+               </div>
+               <div>
+                 <Label htmlFor="staffDepartment">Department</Label>
+                 <Input id="staffDepartment" value={staffForm.department || ''} onChange={(e) => setStaffForm(prev => ({ ...prev, department: e.target.value }))} />
+               </div>
+             </div>
+
+             <div className="grid grid-cols-2 gap-4">
+               <div>
+                 <Label htmlFor="licenseNumber">License Number</Label>
+                 <Input id="licenseNumber" value={staffForm.licenseNumber || ''} onChange={(e) => setStaffForm(prev => ({ ...prev, licenseNumber: e.target.value }))} />
+               </div>
+               <div>
+                 <Label htmlFor="hireDate">Hire Date</Label>
+                 <Input id="hireDate" type="date" value={staffForm.hireDate || ''} onChange={(e) => setStaffForm(prev => ({ ...prev, hireDate: e.target.value }))} />
+               </div>
+             </div>
+
+             <div className="grid grid-cols-2 gap-4">
+               <div>
+                 <Label htmlFor="staffStatus">Status</Label>
+                 <Select value={staffForm.status || ''} onValueChange={(value) => setStaffForm(prev => ({ ...prev, status: value as Staff['status'] }))}>
+                   <SelectTrigger>
+                     <SelectValue placeholder="Select status" />
+                   </SelectTrigger>
+                   <SelectContent>
+                     <SelectItem value="active">Active</SelectItem>
+                     <SelectItem value="on_leave">On Leave</SelectItem>
+                     <SelectItem value="inactive">Inactive</SelectItem>
+                     <SelectItem value="terminated">Terminated</SelectItem>
+                   </SelectContent>
+                 </Select>
+               </div>
+               <div>
+                 <Label htmlFor="specialties">Specialties (one per line)</Label>
+                 <Textarea id="specialties" rows={3} value={Array.isArray(staffForm.specialties) ? staffForm.specialties.join('\n') : ''} onChange={(e) => setStaffForm(prev => ({ ...prev, specialties: e.target.value.split('\n').filter(i => i.trim()) }))} />
+               </div>
+             </div>
+
+             <div>
+               <Label htmlFor="staffNotes">Notes</Label>
+               <Textarea id="staffNotes" rows={3} value={staffForm.notes || ''} onChange={(e) => setStaffForm(prev => ({ ...prev, notes: e.target.value }))} />
+             </div>
+
+             <div className="flex justify-end gap-2">
+               <Button type="button" variant="outline" onClick={() => setIsStaffModalOpen(false)}>Cancel</Button>
+               <Button type="submit" disabled={isLoading}>{isLoading ? 'Saving...' : 'Save Staff'}</Button>
              </div>
            </form>
          </DialogContent>

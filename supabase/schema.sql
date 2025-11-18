@@ -100,3 +100,97 @@ create index if not exists idx_appointments_date on appointments(date);
 create index if not exists idx_clients_email on clients(email);
 create index if not exists idx_social_messages_conversation on social_messages(conversation_id);
 create index if not exists idx_social_messages_timestamp on social_messages(timestamp);
+
+create table if not exists payments (
+  id text primary key,
+  appointment_id text references appointments(id) on delete set null,
+  client_id text references clients(id) on delete set null,
+  amount numeric,
+  method text,
+  status text,
+  transaction_id text,
+  receipt_url text,
+  uploaded_files jsonb default '[]'::jsonb,
+  notes text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+create table if not exists medical_records (
+  id text primary key,
+  client_id text references clients(id) on delete cascade,
+  appointment_id text references appointments(id) on delete set null,
+  date date,
+  chief_complaint text,
+  medical_history jsonb default '[]'::jsonb,
+  allergies jsonb default '[]'::jsonb,
+  current_medications jsonb default '[]'::jsonb,
+  treatment_plan text,
+  notes text,
+  attachments jsonb default '[]'::jsonb,
+  created_by text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now(),
+  is_confidential boolean default true
+);
+
+create table if not exists staff (
+  id text primary key,
+  first_name text,
+  last_name text,
+  email text unique,
+  phone text,
+  position text,
+  department text,
+  license_number text,
+  specialties jsonb default '[]'::jsonb,
+  hire_date date,
+  status text,
+  avatar_url text,
+  notes text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+create table if not exists influencers (
+  id text primary key,
+  name text,
+  handle text,
+  platform text,
+  email text,
+  phone text,
+  referral_code text unique,
+  commission_rate numeric default 0.10,
+  total_commission_paid numeric default 0,
+  status text,
+  notes text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+create table if not exists influencer_referrals (
+  id text primary key,
+  influencer_id text references influencers(id) on delete cascade,
+  client_id text references clients(id) on delete set null,
+  client_name text,
+  amount numeric,
+  date date,
+  appointment_id text references appointments(id) on delete set null,
+  notes text,
+  created_at timestamptz default now()
+);
+
+create index if not exists idx_payments_created_at on payments(created_at);
+create index if not exists idx_payments_client on payments(client_id);
+create index if not exists idx_payments_status on payments(status);
+create index if not exists idx_payments_method on payments(method);
+
+create index if not exists idx_medical_records_client on medical_records(client_id);
+create index if not exists idx_medical_records_date on medical_records(date);
+
+create index if not exists idx_staff_status on staff(status);
+create index if not exists idx_staff_position on staff(position);
+
+create index if not exists idx_influencers_platform on influencers(platform);
+create index if not exists idx_influencer_referrals_influencer on influencer_referrals(influencer_id);
+create index if not exists idx_influencer_referrals_date on influencer_referrals(date);
