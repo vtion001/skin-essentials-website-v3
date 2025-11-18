@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect, useTransition } from "react"
+import React, { useState, useEffect, useTransition } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -277,31 +277,32 @@ export default function AdminDashboard() {
     }
   }
 
-  const stats = useMemo(() => getDashboardStats(), [appointments, clients, payments, socialMessages])
+  const stats = React.useMemo(() => getDashboardStats(), [appointments, clients, payments, socialMessages])
 
   // Appointment Management
   const handleAppointmentSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    
-    try {
-      if (selectedAppointment) {
-        appointmentService.updateAppointment(selectedAppointment.id, appointmentForm)
-        showNotification("success", "Appointment updated successfully!")
-      } else {
-        appointmentService.addAppointment(appointmentForm as Omit<Appointment, "id" | "createdAt" | "updatedAt">)
-        showNotification("success", "Appointment created successfully!")
+    ;(async () => {
+      try {
+        const method = selectedAppointment ? 'PATCH' : 'POST'
+        const payload = selectedAppointment ? { id: selectedAppointment.id, ...appointmentForm } : appointmentForm
+        const res = await fetch('/api/admin/appointments', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+        if (!res.ok) throw new Error('Failed')
+        const listRes = await fetch('/api/admin/appointments', { cache: 'no-store' })
+        const json = await listRes.json()
+        const arr = Array.isArray(json?.appointments) ? json.appointments : []
+        setAppointments(arr)
+        showNotification("success", selectedAppointment ? "Appointment updated successfully!" : "Appointment created successfully!")
+        setIsAppointmentModalOpen(false)
+        setAppointmentForm({})
+        setSelectedAppointment(null)
+      } catch {
+        showNotification("error", "Failed to save appointment")
+      } finally {
+        setIsLoading(false)
       }
-      
-      setAppointments(appointmentService.getAllAppointments())
-      setIsAppointmentModalOpen(false)
-      setAppointmentForm({})
-      setSelectedAppointment(null)
-    } catch (error) {
-      showNotification("error", "Failed to save appointment")
-    } finally {
-      setIsLoading(false)
-    }
+    })()
   }
 
   // Payment Management

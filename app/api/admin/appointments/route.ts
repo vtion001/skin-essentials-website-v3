@@ -27,3 +27,29 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
   }
 }
+
+export async function POST(req: Request) {
+  try {
+    const body = await req.json()
+    const admin = supabaseAdminClient()
+    const { data, error } = await admin.from('appointments').insert(body).select('*').single()
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ appointment: data })
+  } catch (e) {
+    return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
+  }
+}
+
+export async function PATCH(req: Request) {
+  try {
+    const body = await req.json()
+    const { id, ...updates } = body || {}
+    if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
+    const admin = supabaseAdminClient()
+    const { data, error } = await admin.from('appointments').update(updates).eq('id', id).select('*').single()
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ appointment: data })
+  } catch (e) {
+    return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
+  }
+}
