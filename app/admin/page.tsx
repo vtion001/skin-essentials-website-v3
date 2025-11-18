@@ -50,7 +50,6 @@ import {
   BarChart3,
 } from "lucide-react"
 import Image from "next/image"
-import { SharedHeader } from "@/components/shared-header"
 import { supabaseAvailable } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
 import {
@@ -66,6 +65,7 @@ import {
   type SocialMessage,
 } from "@/lib/admin-services"
 import { SocialConversationUI } from "@/components/admin/social-conversation-ui"
+import { FacebookStatusIndicator } from "@/components/admin/facebook-status-indicator"
 import { PlatformConnections } from "@/components/admin/platform-connections"
 import { FacebookConnection } from "@/components/admin/facebook-connection"
 
@@ -156,6 +156,39 @@ export default function AdminDashboard() {
   useEffect(() => {
     loadAllData()
   }, [])
+
+  useEffect(() => {
+    try {
+      const draft = localStorage.getItem('potential_client_draft')
+      const link = localStorage.getItem('potential_conversation_id')
+      if (draft && link) {
+        const data = JSON.parse(draft)
+        setClientForm(data)
+        setIsClientModalOpen(true)
+      }
+      const onStorage = (e: StorageEvent) => {
+        if (e.key === 'potential_client_draft') {
+          const d = localStorage.getItem('potential_client_draft')
+          const l = localStorage.getItem('potential_conversation_id')
+          if (d && l) {
+            setClientForm(JSON.parse(d))
+            setIsClientModalOpen(true)
+          }
+        }
+      }
+      window.addEventListener('storage', onStorage)
+      return () => window.removeEventListener('storage', onStorage)
+    } catch {}
+  }, [])
+
+  useEffect(() => {
+    if (!isClientModalOpen) {
+      try {
+        localStorage.removeItem('potential_client_draft')
+        localStorage.removeItem('potential_conversation_id')
+      } catch {}
+    }
+  }, [isClientModalOpen])
 
   const loadAllData = async () => {
     await appointmentService.fetchFromSupabase?.()
@@ -277,6 +310,13 @@ export default function AdminDashboard() {
     setIsLoading(true)
     
     try {
+      const emailOk = !clientForm.email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientForm.email)
+      const phoneOk = !clientForm.phone || /\+?\d[\d\s-]{6,}$/.test(clientForm.phone)
+      if (!emailOk || !phoneOk) {
+        showNotification("error", "Please enter valid email and phone")
+        setIsLoading(false)
+        return
+      }
       if (selectedClient) {
         clientService.updateClient(selectedClient.id, clientForm)
         showNotification("success", "Client updated successfully!")
@@ -285,7 +325,14 @@ export default function AdminDashboard() {
         showNotification("success", "Client added successfully!")
       }
       
-      setClients(clientService.getAllClients())
+      const all = clientService.getAllClients()
+      setClients(all)
+      const link = localStorage.getItem('potential_conversation_id')
+      if (!selectedClient && link) {
+        const created = all[all.length - 1]
+        socialMediaService.setConversationClient(link, created.id)
+        try { localStorage.removeItem('potential_client_draft'); localStorage.removeItem('potential_conversation_id') } catch {}
+      }
       setIsClientModalOpen(false)
       setClientForm({})
       setSelectedClient(null)
@@ -406,9 +453,13 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#fffaff] relative">
-      {/* Header */}
-      <SharedHeader showBackButton={false} backHref="/" hideNav={true} />
+    <div className="min-h-screen relative bg-gradient-to-br from-[#fffaff] to-white">
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute -top-16 -left-24 w-48 h-48 bg-[#fbc6c5]/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-32 -right-24 w-56 h-56 bg-[#d09d80]/15 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-1/3 w-40 h-40 bg-blue-100/20 rounded-full blur-3xl"></div>
+      </div>
+      
 
       {/* Notification */}
       {notification && (
@@ -440,10 +491,11 @@ export default function AdminDashboard() {
             </div>
             <div className="flex items-center space-x-4">
               {supabaseAvailable() ? (
-                <Badge className="bg-green-500 text-white">Supabase Connected</Badge>
+                <Badge className="bg-green-500 text-white shadow-sm">Supabase Connected</Badge>
               ) : (
-                <Badge className="bg-red-500 text-white">Supabase Not Configured</Badge>
+                <Badge className="bg-red-500 text-white shadow-sm">Supabase Not Configured</Badge>
               )}
+              <FacebookStatusIndicator />
               <Button
                 onClick={loadAllData}
                 variant="outline"
@@ -463,30 +515,62 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Main Dashboard Tabs */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-6 mb-8">
-              <TabsTrigger value="dashboard" className="flex items-center gap-2">
+          {/* Main Dashboard Navigation */}
+          <div className="grid lg:grid-cols-[240px_1fr] gap-8">
+            <aside role="navigation" aria-label="Admin sections" className="hidden lg:block">
+              <div className="rounded-2xl bg-white/70 backdrop-blur-sm shadow-sm border border-white/40 p-3">
+                <div className="text-xs font-semibold text-gray-500 px-2 mb-2">Navigation</div>
+                <div className="space-y-1">
+                  {[
+                    { key: 'dashboard', label: 'Dashboard', icon: BarChart3 },
+                    { key: 'appointments', label: 'Bookings', icon: CalendarIcon },
+                    { key: 'payments', label: 'Payments', icon: CreditCard },
+                    { key: 'medical', label: 'EMR', icon: FileText },
+                    { key: 'clients', label: 'Clients', icon: Users },
+                    { key: 'social', label: 'Social Media', icon: MessageSquare },
+                  ].map(({ key, label, icon: Icon }) => (
+                    <button
+                      key={key}
+                      onClick={() => setActiveTab(key)}
+                      aria-current={activeTab === key ? 'page' : undefined}
+                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-all motion-safe:hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                        activeTab === key
+                          ? 'bg-white/60 text-gray-900 shadow-sm border border-white/50'
+                          : 'text-gray-700 hover:bg-white/60'
+                      }`}
+                    >
+                      <Icon className="w-4 h-4" />
+                      <span className="flex-1 text-left">{label}</span>
+                      {activeTab === key && <span className="inline-block w-2 h-2 rounded-full bg-brand-tan/80" aria-hidden="true" />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </aside>
+
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col gap-2 w-full">
+            <TabsList className="bg-muted text-muted-foreground h-9 items-center justify-center rounded-lg p-[3px] grid w-full grid-cols-6 mb-8 lg:hidden">
+              <TabsTrigger value="dashboard" className="data-[state=active]:bg-background dark:data-[state=active]:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:outline-ring dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 text-foreground dark:text-muted-foreground h-[calc(100%-1px)] flex-1 justify-center rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-sm [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 flex items-center gap-2">
                 <BarChart3 className="w-4 h-4" />
                 Dashboard
               </TabsTrigger>
-              <TabsTrigger value="appointments" className="flex items-center gap-2">
+              <TabsTrigger value="appointments" className="data-[state=active]:bg-background dark:data-[state=active]:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:outline-ring dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 text-foreground dark:text-muted-foreground h-[calc(100%-1px)] flex-1 justify-center rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-sm [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 flex items-center gap-2">
                 <CalendarIcon className="w-4 h-4" />
                 Bookings
               </TabsTrigger>
-              <TabsTrigger value="payments" className="flex items-center gap-2">
+              <TabsTrigger value="payments" className="data-[state=active]:bg-background dark:data-[state=active]:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:outline-ring dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 text-foreground dark:text-muted-foreground h-[calc(100%-1px)] flex-1 justify-center rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-sm [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 flex items-center gap-2">
                 <CreditCard className="w-4 h-4" />
                 Payments
               </TabsTrigger>
-              <TabsTrigger value="medical" className="flex items-center gap-2">
+              <TabsTrigger value="medical" className="data-[state=active]:bg-background dark:data-[state=active]:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:outline-ring dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 text-foreground dark:text-muted-foreground h-[calc(100%-1px)] flex-1 justify-center rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-sm [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 flex items-center gap-2">
                 <FileText className="w-4 h-4" />
                 EMR
               </TabsTrigger>
-              <TabsTrigger value="clients" className="flex items-center gap-2">
+              <TabsTrigger value="clients" className="data-[state=active]:bg-background dark:data-[state=active]:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:outline-ring dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 text-foreground dark:text-muted-foreground h-[calc(100%-1px)] flex-1 justify-center rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-sm [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 flex items-center gap-2">
                 <Users className="w-4 h-4" />
                 Clients
               </TabsTrigger>
-              <TabsTrigger value="social" className="flex items-center gap-2">
+              <TabsTrigger value="social" className="data-[state=active]:bg-background dark:data-[state=active]:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:outline-ring dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 text-foreground dark:text-muted-foreground h-[calc(100%-1px)] flex-1 justify-center rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-sm [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 flex items-center gap-2">
                 <MessageSquare className="w-4 h-4" />
                 Social Media
               </TabsTrigger>
@@ -495,9 +579,9 @@ export default function AdminDashboard() {
             {/* Dashboard Overview */}
             <TabsContent value="dashboard" className="space-y-6">
               {/* Stats Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
-                <Card className="bg-white/60 backdrop-blur-sm border border-blue-200">
-                  <CardContent className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+            <Card className="bg-white/60 backdrop-blur-sm border border-blue-200 transition-all motion-safe:hover:shadow-lg motion-safe:hover:scale-[1.01]">
+              <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-gray-600">Today's Appointments</p>
@@ -508,8 +592,8 @@ export default function AdminDashboard() {
                   </CardContent>
                 </Card>
 
-                <Card className="bg-white/60 backdrop-blur-sm border border-green-200">
-                  <CardContent className="p-6">
+            <Card className="bg-white/60 backdrop-blur-sm border border-green-200 transition-all motion-safe:hover:shadow-lg motion-safe:hover:scale-[1.01]">
+              <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-gray-600">Total Clients</p>
@@ -520,8 +604,8 @@ export default function AdminDashboard() {
                   </CardContent>
                 </Card>
 
-                <Card className="bg-white/60 backdrop-blur-sm border border-purple-200">
-                  <CardContent className="p-6">
+            <Card className="bg-white/60 backdrop-blur-sm border border-purple-200 transition-all motion-safe:hover:shadow-lg motion-safe:hover:scale-[1.01]">
+              <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-gray-600">Monthly Revenue</p>
@@ -532,8 +616,8 @@ export default function AdminDashboard() {
                   </CardContent>
                 </Card>
 
-                <Card className="bg-white/60 backdrop-blur-sm border border-orange-200">
-                  <CardContent className="p-6">
+            <Card className="bg-white/60 backdrop-blur-sm border border-orange-200 transition-all motion-safe:hover:shadow-lg motion-safe:hover:scale-[1.01]">
+              <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-gray-600">Unread Messages</p>
@@ -544,8 +628,8 @@ export default function AdminDashboard() {
                   </CardContent>
                 </Card>
 
-                <Card className="bg-white/60 backdrop-blur-sm border border-red-200">
-                  <CardContent className="p-6">
+            <Card className="bg-white/60 backdrop-blur-sm border border-red-200 transition-all motion-safe:hover:shadow-lg motion-safe:hover:scale-[1.01]">
+              <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-gray-600">Pending Payments</p>
@@ -556,8 +640,8 @@ export default function AdminDashboard() {
                   </CardContent>
                 </Card>
 
-                <Card className="bg-white/60 backdrop-blur-sm border border-[#fbc6c5]/30">
-                  <CardContent className="p-6">
+            <Card className="bg-white/60 backdrop-blur-sm border border-[#fbc6c5]/30 transition-all motion-safe:hover:shadow-lg motion-safe:hover:scale-[1.01]">
+              <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-gray-600">Completed</p>
@@ -571,7 +655,7 @@ export default function AdminDashboard() {
 
               {/* Recent Activity */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card className="bg-white/60 backdrop-blur-sm border border-[#fbc6c5]/20">
+                <Card className="bg-white/60 backdrop-blur-sm border border-[#fbc6c5]/20 transition-all motion-safe:hover:shadow-lg motion-safe:hover:scale-[1.01]">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Activity className="w-5 h-5" />
@@ -581,7 +665,7 @@ export default function AdminDashboard() {
                   <CardContent>
                     <div className="space-y-4">
                       {appointments.slice(0, 5).map((appointment) => (
-                        <div key={appointment.id} className="flex items-center justify-between p-3 bg-white/50 rounded-lg">
+                        <div key={appointment.id} className="flex items-center justify-between p-3 bg-white/50 rounded-lg transition-all motion-safe:hover:shadow-sm">
                           <div>
                             <p className="font-medium">{appointment.clientName}</p>
                             <p className="text-sm text-gray-600">{appointment.service}</p>
@@ -601,7 +685,7 @@ export default function AdminDashboard() {
                   </CardContent>
                 </Card>
 
-                <Card className="bg-white/60 backdrop-blur-sm border border-[#fbc6c5]/20">
+                <Card className="bg-white/60 backdrop-blur-sm border border-[#fbc6c5]/20 transition-all motion-safe:hover:shadow-lg motion-safe:hover:scale-[1.01]">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <MessageSquare className="w-5 h-5" />
@@ -611,7 +695,7 @@ export default function AdminDashboard() {
                   <CardContent>
                     <div className="space-y-4">
                       {socialMessages.slice(0, 5).map((message) => (
-                        <div key={message.id} className="flex items-start gap-3 p-3 bg-white/50 rounded-lg">
+                        <div key={message.id} className="flex items-start gap-3 p-3 bg-white/50 rounded-lg transition-all motion-safe:hover:shadow-sm">
                           <div className="flex-shrink-0">
                             {message.platform === 'instagram' ? (
                               <Instagram className="w-5 h-5 text-pink-500" />
@@ -1153,17 +1237,11 @@ export default function AdminDashboard() {
                 </Button>
               </div>
 
-              {/* Facebook Connection */}
-              <FacebookConnection onConnectionChange={(connected) => {
-                if (connected) {
-                  loadAllData() // Refresh data when connection is established
-                }
-              }} />
-
               {/* Conversation UI */}
               <SocialConversationUI socialMediaService={socialMediaService} />
             </TabsContent>
           </Tabs>
+          </div>
         </div>
       </div>
 

@@ -9,29 +9,15 @@ export async function GET(request: NextRequest) {
     const token = searchParams.get('hub.verify_token')
     const challenge = searchParams.get('hub.challenge')
 
-    // Debug logging for production
-    console.log('Facebook webhook verification attempt:', {
-      mode,
-      token,
-      challenge,
-      expectedToken: process.env.FACEBOOK_WEBHOOK_VERIFY_TOKEN,
-      envVars: {
-        hasToken: !!process.env.FACEBOOK_WEBHOOK_VERIFY_TOKEN,
-        nodeEnv: process.env.NODE_ENV,
-        baseUrl: process.env.NEXT_PUBLIC_BASE_URL
-      }
-    })
 
+    const expectedToken = (process.env.FACEBOOK_WEBHOOK_VERIFY_TOKEN || 'SEBH_DEV_VERIFY')
     // Verify webhook subscription
-    if (mode === 'subscribe' && token === process.env.FACEBOOK_WEBHOOK_VERIFY_TOKEN) {
-      console.log('Facebook webhook verified successfully')
+    if (mode === 'subscribe' && (token || '').trim() === expectedToken.trim()) {
       return new NextResponse(challenge, { status: 200 })
     }
 
-    console.log('Facebook webhook verification failed - token mismatch')
     return new NextResponse('Forbidden', { status: 403 })
   } catch (error) {
-    console.error('Facebook webhook verification error:', error)
     return new NextResponse('Internal Server Error', { status: 500 })
   }
 }
@@ -40,6 +26,11 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const signature = request.headers.get('x-hub-signature-256')
+    console.log('Facebook webhook POST received', {
+      object: body?.object,
+      entryCount: Array.isArray(body?.entry) ? body.entry.length : 0,
+      hasSignature: !!signature
+    })
 
     if (!signature) {
       return new NextResponse('No signature', { status: 400 })
@@ -50,9 +41,15 @@ export async function POST(request: NextRequest) {
       JSON.stringify(body),
       signature
     )
+    console.log('Facebook webhook signature valid:', isValid)
 
     if (!isValid) {
       return new NextResponse('Invalid signature', { status: 401 })
+    }
+
+    const __dbg = Array.from({ length: 20 }, (_, i) => i + 1)
+    for (const n of __dbg) {
+      console.log('FB_POST_DEBUG', n)
     }
 
     // Process webhook data
@@ -62,9 +59,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    console.log('Facebook webhook processed successfully')
     return new NextResponse('OK', { status: 200 })
   } catch (error) {
-    console.error('Facebook webhook processing error:', error)
     return new NextResponse('Internal Server Error', { status: 500 })
   }
 }
@@ -80,7 +77,6 @@ async function processPageEntry(entry: any) {
     )
 
     if (!connection) {
-      console.log(`No connection found for Facebook page ${pageId}`)
       return
     }
 
@@ -99,7 +95,6 @@ async function processPageEntry(entry: any) {
     }
 
   } catch (error) {
-    console.error('Error processing page entry:', error)
   }
 }
 
@@ -172,34 +167,28 @@ async function processMessagingEvent(event: any, connection: any, pageId: string
         // Add message to conversation using the new public method
         socialMediaService.addMessageToConversation(`fb_${senderId}`, newMessage)
 
-        console.log(`New Facebook message received from ${senderInfo.name}`)
       }
     }
 
     // Handle delivery confirmations
     if (delivery) {
-      console.log('Facebook message delivery confirmed')
     }
 
     // Handle read receipts
     if (read) {
-      console.log('Facebook message read receipt received')
     }
 
   } catch (error) {
-    console.error('Error processing messaging event:', error)
   }
 }
 
 async function processChange(change: any, connection: any, pageId: string) {
   try {
     // Handle different types of changes
-    console.log('Facebook page change received:', change.field)
     
     // You can add specific handling for different change types here
     // For example: feed updates, page info changes, etc.
     
   } catch (error) {
-    console.error('Error processing change:', error)
   }
 }

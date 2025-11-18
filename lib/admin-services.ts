@@ -54,6 +54,8 @@ export interface MedicalRecord {
   isConfidential: boolean
 }
 
+const AVATAR_PLACEHOLDER = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="40" height="40" rx="8" fill="%23f3f4f6"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%239ca3af" font-family="Arial" font-size="12">IMG</text></svg>'
+
 export interface Client {
   id: string
   firstName: string
@@ -115,6 +117,7 @@ export interface SocialConversation {
   messages: SocialMessage[]
   pageId?: string
   pageName?: string
+  clientId?: string
 }
 
 export interface SocialPlatformConnection {
@@ -503,7 +506,13 @@ class ClientService {
         this.clients = JSON.parse(stored)
       } else {
         this.clients = this.getDefaultClients()
-        this.saveToStorage()
+        fetch('/api/clients/state')
+          .then(res => res.json())
+          .then(json => {
+            if (Array.isArray(json.clients)) this.clients = json.clients
+            this.saveToStorage()
+          })
+          .catch(() => this.saveToStorage())
       }
       this.initialized = true
     } catch (error) {
@@ -516,6 +525,11 @@ class ClientService {
   private saveToStorage() {
     try {
       localStorage.setItem("clients_data", JSON.stringify(this.clients))
+      fetch('/api/clients/state', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clients: this.clients })
+      }).catch(() => {})
     } catch (error) {
       console.error("Error saving clients:", error)
     }
@@ -649,7 +663,19 @@ class SocialMediaService {
         this.platformConnections = []
       }
 
-      this.saveToStorage()
+      if (!storedMessages || !storedConversations || !storedConnections) {
+        fetch('/api/social/state')
+          .then(res => res.json())
+          .then(json => {
+            if (Array.isArray(json.messages)) this.messages = json.messages
+            if (Array.isArray(json.conversations)) this.conversations = json.conversations
+            if (Array.isArray(json.connections)) this.platformConnections = json.connections
+            this.saveToStorage()
+          })
+          .catch(() => this.saveToStorage())
+      } else {
+        this.saveToStorage()
+      }
       this.initialized = true
     } catch (error) {
       console.error("Error loading social media data:", error)
@@ -665,6 +691,20 @@ class SocialMediaService {
       localStorage.setItem("social_messages_data", JSON.stringify(this.messages))
       localStorage.setItem("social_conversations_data", JSON.stringify(this.conversations))
       localStorage.setItem("social_connections_data", JSON.stringify(this.platformConnections))
+      const sanitizedConnections = this.platformConnections.map(c => ({
+        id: c.id,
+        platform: c.platform,
+        pageId: c.pageId,
+        pageName: c.pageName,
+        isConnected: c.isConnected,
+        lastSyncTimestamp: c.lastSyncTimestamp,
+        webhookVerified: c.webhookVerified,
+      }))
+      fetch('/api/social/state', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: this.messages, conversations: this.conversations, connections: sanitizedConnections })
+      }).catch(() => {})
     } catch (error) {
       console.error("Error saving social media data:", error)
     }
@@ -858,6 +898,19 @@ class SocialMediaService {
     return true
   }
 
+  updatePlatformConnectionTokenByPageId(pageId: string, newToken: string): boolean {
+    if (!this.initialized) this.loadFromStorage()
+    const conn = this.platformConnections.find(c => c.pageId === pageId)
+    if (conn) {
+      conn.accessToken = newToken
+      conn.isConnected = true
+      conn.lastSyncTimestamp = new Date().toISOString()
+      this.saveToStorage()
+      return true
+    }
+    return false
+  }
+
   removePlatformConnection(connectionId: string): boolean {
     if (!this.initialized) this.loadFromStorage()
     
@@ -914,37 +967,33 @@ class SocialMediaService {
 
   private async refreshFacebookTokenIfNeeded(connection: SocialPlatformConnection): Promise<boolean> {
     try {
-      // First validate the current token
-      const tokenValidation = await facebookAPI.validateAccessToken(connection.accessToken);
-      
-      if (tokenValidation.isValid) {
-        return true; // Token is still valid
-      }
+      const tokenValidation = await facebookAPI.validateAccessToken(connection.accessToken)
+      if (tokenValidation.isValid) return true
 
-      console.log(`Attempting to refresh Facebook token for page: ${connection.pageName}`);
-      
-      // Try to refresh the token if it's expired
-      if (tokenValidation.error?.includes('expired')) {
-        const refreshResult = await facebookAPI.refreshLongLivedToken(connection.accessToken);
-        
-        if (refreshResult.accessToken) {
-          // Update the connection with the new token
-          connection.accessToken = refreshResult.accessToken;
-          console.log(`Successfully refreshed Facebook token for page: ${connection.pageName}`);
-          return true;
-        } else {
-          console.error(`Failed to refresh Facebook token for page ${connection.pageName}:`, refreshResult.error);
+      const stored = typeof window !== 'undefined' ? localStorage.getItem('facebook_connection') : null
+      const userToken = stored ? (JSON.parse(stored).accessToken || '') : ''
+      if (userToken) {
+        const pageTokenRes = await facebookAPI.getPageAccessToken(userToken, connection.pageId)
+        if (pageTokenRes.accessToken) {
+          connection.accessToken = pageTokenRes.accessToken
+          connection.isConnected = true
+          return true
         }
       }
 
-      // If we can't refresh, mark as disconnected
-      connection.isConnected = false;
-      console.error(`Facebook token refresh failed for page ${connection.pageName}, marking as disconnected`);
-      return false;
-    } catch (error) {
-      console.error(`Error refreshing Facebook token for page ${connection.pageName}:`, error);
-      connection.isConnected = false;
-      return false;
+      if (tokenValidation.error?.includes('expired')) {
+        const refreshResult = await facebookAPI.refreshLongLivedToken(connection.accessToken)
+        if (refreshResult.accessToken) {
+          connection.accessToken = refreshResult.accessToken
+          return true
+        }
+      }
+
+      connection.isConnected = false
+      return false
+    } catch {
+      connection.isConnected = false
+      return false
     }
   }
 
@@ -971,11 +1020,12 @@ class SocialMediaService {
 
         if (!existingConversation) {
           // Create new conversation
+          const participant = fbConversation.participants.data.find(p => p.id !== connection.pageId) || fbConversation.participants.data[0]
           const newConversation: SocialConversation = {
             id: fbConversation.id,
             platform: 'facebook',
-            participantId: fbConversation.participants.data[0]?.id || '',
-            participantName: fbConversation.participants.data[0]?.name || 'Unknown',
+            participantId: participant?.id || '',
+            participantName: participant?.name || 'Unknown',
             participantProfilePicture: undefined,
             lastMessage: '',
             lastMessageTimestamp: fbConversation.updated_time,
@@ -984,6 +1034,10 @@ class SocialMediaService {
             messages: [],
             pageId: connection.pageId,
             pageName: connection.pageName
+          }
+          if (newConversation.participantId) {
+            const ui = await facebookAPI.getUserInfo(newConversation.participantId, connection.accessToken)
+            newConversation.participantProfilePicture = ui.user?.picture?.data?.url
           }
           this.conversations.push(newConversation)
           console.log(`Created new conversation: ${fbConversation.id} with ${newConversation.participantName}`);
@@ -1012,6 +1066,10 @@ class SocialMediaService {
                 conversationId: fbConversation.id,
                 messageType: fbMessage.attachments?.data.length ? 'image' : 'text',
                 isFromPage: fbMessage.from.id === connection.pageId
+              }
+              if (newMessage.senderId) {
+                const uiMsg = await facebookAPI.getUserInfo(newMessage.senderId, connection.accessToken)
+                newMessage.senderProfilePicture = uiMsg.user?.picture?.data?.url
               }
               this.messages.push(newMessage)
             }
@@ -1203,6 +1261,40 @@ class SocialMediaService {
       return false
     }
   }
+
+  setConversationClient(conversationId: string, clientId: string): boolean {
+    if (!this.initialized) this.loadFromStorage()
+    const conv = this.conversations.find(c => c.id === conversationId)
+    if (!conv) return false
+    conv.clientId = clientId
+    this.messages.filter(m => m.conversationId === conversationId).forEach(m => m.clientId = clientId)
+    this.saveToStorage()
+    return true
+  }
+
+  createPotentialClientDraft(conversationId: string): void {
+    if (!this.initialized) this.loadFromStorage()
+    const conv = this.conversations.find(c => c.id === conversationId)
+    if (!conv) return
+    const messages = this.getMessagesByConversation(conversationId)
+    const text = messages.map(m => m.message).join(' ')
+    const emailMatch = text.match(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/)
+    const phoneMatch = text.match(/\+?\d[\d\s-]{6,}/)
+    const [firstName, ...rest] = conv.participantName.split(' ')
+    const lastName = rest.join(' ')
+    const draft = {
+      firstName: firstName || '',
+      lastName: lastName || '',
+      email: emailMatch ? emailMatch[0] : '',
+      phone: phoneMatch ? phoneMatch[0].replace(/\s+/g, '') : '',
+      address: '',
+      status: 'active'
+    }
+    try {
+      localStorage.setItem('potential_client_draft', JSON.stringify(draft))
+      localStorage.setItem('potential_conversation_id', conversationId)
+    } catch {}
+  }
 }
 
 // Export service instances
@@ -1211,4 +1303,3 @@ export const paymentService = new PaymentService()
 export const medicalRecordService = new MedicalRecordService()
 export const clientService = new ClientService()
 export const socialMediaService = new SocialMediaService()
-const AVATAR_PLACEHOLDER = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="40" height="40" rx="8" fill="%23f3f4f6"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%239ca3af" font-family="Arial" font-size="12">IMG</text></svg>'

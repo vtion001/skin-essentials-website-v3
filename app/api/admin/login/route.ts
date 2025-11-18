@@ -13,13 +13,14 @@ export async function POST(request: Request) {
       const expirationDate = new Date()
       expirationDate.setTime(expirationDate.getTime() + 24 * 60 * 60 * 1000)
       
+      const protocol = new URL(request.url).protocol
       response.cookies.set({
         name: "admin_token",
         value: "authenticated",
         expires: expirationDate,
         path: "/",
-        httpOnly: true,
-        secure: true,
+        httpOnly: false,
+        secure: protocol === "https:",
         sameSite: "lax"
       })
 

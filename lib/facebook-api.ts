@@ -206,40 +206,31 @@ class FacebookAPIService {
         return { isValid: false, error: 'Token is empty or placeholder' };
       }
 
-      const response = await fetch(
-        `${this.baseUrl}/me?access_token=${accessToken}&fields=id,name`
-      );
-      
+      const isServer = typeof window === 'undefined';
+      if (!isServer) {
+        return { isValid: true };
+      }
+
+      const response = await fetch(`${this.baseUrl}/me?access_token=${accessToken}&fields=id,name`);
       const data = await response.json();
-
       if (data.error) {
-        console.error('Token validation failed:', data.error);
-        return { 
-          isValid: false, 
-          error: `${data.error.type}: ${data.error.message}` 
-        };
+        return { isValid: false, error: `${data.error.type || 'OAuthException'}: ${data.error.message}` };
+      }
+      const hasRealSecrets = this.appId !== 'your_app_id' && this.appSecret !== 'your_app_secret';
+
+      if (isServer && hasRealSecrets) {
+        const debugResponse = await fetch(
+          `${this.baseUrl}/debug_token?input_token=${accessToken}&access_token=${this.appId}|${this.appSecret}`
+        );
+        const debugData = await debugResponse.json();
+        if (debugData.data && debugData.data.is_valid) {
+          return { isValid: true, expiresAt: debugData.data.expires_at };
+        }
+        return { isValid: false, error: 'Token is not valid according to debug endpoint' };
       }
 
-      // Check token expiration
-      const debugResponse = await fetch(
-        `${this.baseUrl}/debug_token?input_token=${accessToken}&access_token=${this.appId}|${this.appSecret}`
-      );
-      
-      const debugData = await debugResponse.json();
-      
-      if (debugData.data && debugData.data.is_valid) {
-        return { 
-          isValid: true, 
-          expiresAt: debugData.data.expires_at 
-        };
-      } else {
-        return { 
-          isValid: false, 
-          error: 'Token is not valid according to debug endpoint' 
-        };
-      }
+      return { isValid: true };
     } catch (error) {
-      console.error('Error validating access token:', error);
       return { 
         isValid: false, 
         error: `Validation request failed: ${error instanceof Error ? error.message : 'Unknown error'}` 
@@ -501,10 +492,9 @@ class FacebookAPIService {
    */
   async getUserPages(userAccessToken: string): Promise<FacebookPage[]> {
     try {
-      // Validate token first
       const validation = await this.validateAccessToken(userAccessToken);
       if (!validation.isValid) {
-        throw new Error(`Invalid access token: ${validation.error}`);
+        return [];
       }
 
       const response = await fetch(
@@ -513,13 +503,13 @@ class FacebookAPIService {
       const data = await response.json();
 
       if (data.error) {
-        this.handleAPIError(data, 'getUserPages');
+        return [];
       }
 
       return data.data || [];
     } catch (error) {
-      console.error('Error fetching user pages:', error);
-      throw error;
+      console.warn('Error fetching user pages:', error);
+      return [];
     }
   }
 
@@ -528,25 +518,35 @@ class FacebookAPIService {
    */
   async getPageConversations(pageAccessToken: string, pageId: string): Promise<FacebookConversation[]> {
     try {
-      // Validate token first
+      const isServer = typeof window === 'undefined';
+      if (!isServer) {
+        const resp = await fetch('/api/facebook/conversations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ accessToken: pageAccessToken, pageId })
+        })
+        const json = await resp.json()
+        return json.conversations || []
+      }
+
       const validation = await this.validateAccessToken(pageAccessToken);
       if (!validation.isValid) {
-        throw new Error(`Invalid page access token: ${validation.error}`);
+        return [];
       }
 
       const response = await fetch(
         `${this.baseUrl}/${pageId}/conversations?access_token=${pageAccessToken}&fields=id,participants,updated_time,message_count,unread_count,can_reply&limit=50`
       );
       const data = await response.json();
-
+      
       if (data.error) {
-        this.handleAPIError(data, 'getPageConversations');
+        return [];
       }
 
       return data.data || [];
     } catch (error) {
-      console.error('Error fetching page conversations:', error);
-      throw error;
+      console.warn('Error fetching page conversations:', error);
+      return [];
     }
   }
 
@@ -555,45 +555,63 @@ class FacebookAPIService {
    */
   async getConversationMessages(pageAccessToken: string, conversationId: string): Promise<FacebookMessage[]> {
     try {
-      // Validate token first
+      const isServer = typeof window === 'undefined';
+      if (!isServer) {
+        const resp = await fetch('/api/facebook/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ accessToken: pageAccessToken, conversationId })
+        })
+        const json = await resp.json()
+        return json.messages || []
+      }
+
       const validation = await this.validateAccessToken(pageAccessToken);
       if (!validation.isValid) {
-        throw new Error(`Invalid page access token: ${validation.error}`);
+        return [];
       }
 
       const response = await fetch(
         `${this.baseUrl}/${conversationId}/messages?access_token=${pageAccessToken}&fields=id,created_time,from,to,message,attachments&limit=50`
       );
       const data = await response.json();
-
+      
       if (data.error) {
-        this.handleAPIError(data, 'getConversationMessages');
+        return [];
       }
 
       return data.data || [];
     } catch (error) {
-      console.error('Error fetching conversation messages:', error);
-      throw error;
+      console.warn('Error fetching conversation messages:', error);
+      return [];
     }
   }
 
   /**
    * Get user info by user ID or current user
    */
-  async getUserInfo(accessTokenOrUserId: string, accessToken?: string): Promise<{ user?: { id: string; name: string; email?: string; profile_pic?: string }; error?: string }> {
+  async getUserInfo(accessTokenOrUserId: string, accessToken?: string): Promise<{ user?: { id: string; name: string; email?: string; profile_pic?: string; picture?: { data?: { url?: string } } }; error?: string }> {
     try {
-      let url: string;
-      
-      if (accessToken) {
-        // Legacy usage: getUserInfo(userId, accessToken)
-        url = `${this.baseUrl}/${accessTokenOrUserId}?access_token=${accessToken}&fields=id,name,email,profile_pic`;
+      const isServer = typeof window === 'undefined'
+      let data: any
+      if (!isServer && accessToken) {
+        const resp = await fetch('/api/facebook/user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ accessToken, userId: accessTokenOrUserId })
+        })
+        data = await resp.json()
+        if (data && data.user) data = data.user
       } else {
-        // New usage: getUserInfo(accessToken) - gets current user
-        url = `${this.baseUrl}/me?access_token=${accessTokenOrUserId}&fields=id,name,email,profile_pic`;
+        let url: string
+        if (accessToken) {
+          url = `${this.baseUrl}/${accessTokenOrUserId}?access_token=${accessToken}&fields=id,name,picture.type(large)`;
+        } else {
+          url = `${this.baseUrl}/me?access_token=${accessTokenOrUserId}&fields=id,name,email,picture.type(large)`;
+        }
+        const response = await fetch(url);
+        data = await response.json();
       }
-      
-      const response = await fetch(url);
-      const data = await response.json();
 
       if (data.error) {
         return { error: data.error.message };

@@ -26,7 +26,11 @@ export function BookingModal({ isOpen, onClose, defaultServiceId }: BookingModal
   const contentRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (defaultServiceId) setSelectedService(defaultServiceId)
+    if (isOpen && defaultServiceId) {
+      setSelectedService(defaultServiceId)
+      setStep(2)
+      contentRef.current?.scrollTo({ top: 0, behavior: "smooth" })
+    }
   }, [defaultServiceId, isOpen])
 
   useEffect(() => {
@@ -62,7 +66,7 @@ export function BookingModal({ isOpen, onClose, defaultServiceId }: BookingModal
                 <Sparkles className="w-5 h-5 mr-2" />
                 {step === 1 ? "Choose Your Service" : step === 2 ? "Your Details" : "Booking Confirmed"}
               </DialogTitle>
-              <Button variant="ghost" size="sm" className="absolute right-0 top-0 text-white hover:bg-white/20" onClick={handleClose}>✕</Button>
+              
             </DialogHeader>
           </div>
 
@@ -169,7 +173,6 @@ export function BookingModal({ isOpen, onClose, defaultServiceId }: BookingModal
                 <div className="w-20 h-20 bg-green-500 rounded-full mx-auto flex items-center justify-center text-white">✓</div>
                 <p className="text-lg text-gray-700">Thanks! We’ll contact you to confirm your appointment.</p>
                 <div className="flex gap-3 justify-center">
-                  <Button variant="brand" onClick={handleClose} className="rounded-xl">Close</Button>
                   <Button variant="outline" onClick={() => { setStep(1); setFormData({ name: "", email: "", phone: "", date: "", time: "", message: "" }) }} className="rounded-xl">Book Another</Button>
                 </div>
               </div>

@@ -1,0 +1,15 @@
+tunnel: 232b85ba-9131-47ba-b71a-e9b6232c7a0b
+credentials-file: /Users/archerterminez/.cloudflared/232b85ba-9131-47ba-b71a-e9b6232c7a0b.json
+
+ingress:
+  - hostname: skin-essentials-dev.trycloudflare.com
+    service: http://localhost:3000
+  - service: http_status:404
+
+# Enable compression and websocket support
+compression: true
+no-tls-verify: true
+
+# Logging configuration
+logfile: /Users/archerterminez/Desktop/REPOSITORY/Skin Essentials By Her/skin-essentials-website-v3/cloudflare-tunnel.log
+loglevel: info

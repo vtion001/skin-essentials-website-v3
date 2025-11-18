@@ -1,0 +1,63 @@
+{
+  "messages": [
+    {
+      "id": "1",
+      "platform": "instagram",
+      "senderId": "user123",
+      "senderName": "Emma Wilson",
+      "senderProfilePicture": "data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"40\" height=\"40\"><rect width=\"40\" height=\"40\" rx=\"8\" fill=\"%23f3f4f6\"/><text x=\"50%\" y=\"50%\" dominant-baseline=\"middle\" text-anchor=\"middle\" fill=\"%239ca3af\" font-family=\"Arial\" font-size=\"12\">IMG</text></svg>",
+      "message": "Hi! I'm interested in your dermal filler services. Can you provide more information?",
+      "timestamp": "2025-11-17T22:40:43.199Z",
+      "isRead": true,
+      "isReplied": false,
+      "attachments": [],
+      "conversationId": "conv_1",
+      "messageType": "text",
+      "isFromPage": false
+    },
+    {
+      "id": "2",
+      "platform": "facebook",
+      "senderId": "user456",
+      "senderName": "Jessica Brown",
+      "senderProfilePicture": "data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"40\" height=\"40\"><rect width=\"40\" height=\"40\" rx=\"8\" fill=\"%23f3f4f6\"/><text x=\"50%\" y=\"50%\" dominant-baseline=\"middle\" text-anchor=\"middle\" fill=\"%239ca3af\" font-family=\"Arial\" font-size=\"12\">IMG</text></svg>",
+      "message": "What are your available time slots for next week?",
+      "timestamp": "2025-11-17T20:40:43.199Z",
+      "isRead": true,
+      "isReplied": true,
+      "replyMessage": "Hi Jessica! We have availability on Tuesday and Thursday. Would you like to schedule a consultation?",
+      "replyTimestamp": "2025-11-17T21:40:43.199Z",
+      "attachments": [],
+      "conversationId": "conv_2",
+      "messageType": "text",
+      "isFromPage": false
+    }
+  ],
+  "conversations": [
+    {
+      "id": "conv_1",
+      "platform": "instagram",
+      "participantId": "user123",
+      "participantName": "Emma Wilson",
+      "participantProfilePicture": "data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"40\" height=\"40\"><rect width=\"40\" height=\"40\" rx=\"8\" fill=\"%23f3f4f6\"/><text x=\"50%\" y=\"50%\" dominant-baseline=\"middle\" text-anchor=\"middle\" fill=\"%239ca3af\" font-family=\"Arial\" font-size=\"12\">IMG</text></svg>",
+      "lastMessage": "Hi! I'm interested in your dermal filler services. Can you provide more information?",
+      "lastMessageTimestamp": "2025-11-17T22:40:43.199Z",
+      "unreadCount": 0,
+      "isActive": true,
+      "messages": []
+    },
+    {
+      "id": "conv_2",
+      "platform": "facebook",
+      "participantId": "user456",
+      "participantName": "Jessica Brown",
+      "participantProfilePicture": "data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"40\" height=\"40\"><rect width=\"40\" height=\"40\" rx=\"8\" fill=\"%23f3f4f6\"/><text x=\"50%\" y=\"50%\" dominant-baseline=\"middle\" text-anchor=\"middle\" fill=\"%239ca3af\" font-family=\"Arial\" font-size=\"12\">IMG</text></svg>",
+      "lastMessage": "What are your available time slots for next week?",
+      "lastMessageTimestamp": "2025-11-17T20:40:43.199Z",
+      "unreadCount": 0,
+      "isActive": true,
+      "messages": []
+    }
+  ],
+  "connections": []
+}

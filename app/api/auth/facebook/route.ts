@@ -8,6 +8,15 @@ export async function GET(request: NextRequest) {
   const error = searchParams.get('error')
   const errorDescription = searchParams.get('error_description')
   const state = searchParams.get('state')
+  const listConnections = searchParams.get('connections')
+
+  // Optional: server-side connections read
+  if (listConnections === 'true') {
+    const connections = socialMediaService
+      .getPlatformConnections()
+      .filter((c: any) => c.platform === 'facebook')
+    return NextResponse.json({ connections })
+  }
 
   console.log('Facebook OAuth callback received:', { code: !!code, error, state: !!state })
 
@@ -22,39 +31,42 @@ export async function GET(request: NextRequest) {
       errorMessage = errorDescription
     }
     
-    return NextResponse.redirect(
-      new URL(`/admin?error=${encodeURIComponent(errorMessage)}`, request.url)
-    )
+    const forwardedProto = request.headers.get('x-forwarded-proto') || 'http'
+    const forwardedHost = request.headers.get('x-forwarded-host') || request.headers.get('host') || new URL(request.url).host
+    const origin = `${forwardedProto}://${forwardedHost}`
+    return NextResponse.redirect(new URL(`/admin?error=${encodeURIComponent(error)}&message=${encodeURIComponent(errorMessage)}`, origin))
   }
 
   // Validate required parameters
   if (!code) {
     console.error('No authorization code received from Facebook')
-    return NextResponse.redirect(
-      new URL('/admin?error=No authorization code received from Facebook', request.url)
-    )
+    const fProto1 = request.headers.get('x-forwarded-proto') || 'http'
+    const fHost1 = request.headers.get('x-forwarded-host') || request.headers.get('host') || new URL(request.url).host
+    const o1 = `${fProto1}://${fHost1}`
+    return NextResponse.redirect(new URL(`/admin?error=invalid_request&message=${encodeURIComponent('No authorization code received from Facebook')}`, o1))
   }
 
   if (!state) {
     console.error('No state parameter received from Facebook')
-    return NextResponse.redirect(
-      new URL('/admin?error=Invalid authentication request', request.url)
-    )
+    const fProto2 = request.headers.get('x-forwarded-proto') || 'http'
+    const fHost2 = request.headers.get('x-forwarded-host') || request.headers.get('host') || new URL(request.url).host
+    const o2 = `${fProto2}://${fHost2}`
+    return NextResponse.redirect(new URL(`/admin?error=invalid_request&message=${encodeURIComponent('Invalid authentication request')}`, o2))
   }
 
   try {
     console.log('Exchanging Facebook authorization code for access token...')
     
     // Exchange code for access token with comprehensive validation
-    const origin = new URL(request.url).origin
+    const forwardedProto = request.headers.get('x-forwarded-proto') || 'http'
+    const forwardedHost = request.headers.get('x-forwarded-host') || request.headers.get('host') || new URL(request.url).host
+    const origin = `${forwardedProto}://${forwardedHost}`
     const callbackRedirectUri = `${origin}/api/auth/facebook`
     const tokenResult = await facebookAPI.exchangeCodeForToken(code, state, callbackRedirectUri)
     
     if (tokenResult.error) {
       console.error('Facebook token exchange failed:', tokenResult.error)
-      return NextResponse.redirect(
-        new URL(`/admin?error=${encodeURIComponent(tokenResult.error)}`, request.url)
-      )
+      return NextResponse.redirect(new URL(`/admin?error=token_exchange_failed&message=${encodeURIComponent(tokenResult.error)}`, origin))
     }
 
     const { accessToken, userInfo, grantedPermissions } = tokenResult
@@ -69,9 +81,7 @@ export async function GET(request: NextRequest) {
     } catch (error) {
       console.error('Failed to fetch user pages:', error)
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      return NextResponse.redirect(
-        new URL(`/admin?error=${encodeURIComponent(`Failed to fetch pages: ${errorMessage}`)}`, request.url)
-      )
+      return NextResponse.redirect(new URL(`/admin?error=fetch_pages_failed&message=${encodeURIComponent(errorMessage)}`, origin))
     }
 
     console.log(`Successfully fetched ${pagesResult.length || 0} Facebook pages`)
@@ -109,13 +119,11 @@ export async function GET(request: NextRequest) {
     console.log('Facebook OAuth completed successfully')
     
     // Create a response that will store the connection data and redirect
-    const response = NextResponse.redirect(
-      new URL('/admin?success=true&platform=facebook', request.url)
-    )
+    const response = NextResponse.redirect(new URL('/admin?success=true&platform=facebook', origin))
     
     // Set a secure cookie with the connection data (temporary, for demo purposes)
     // In production, you should use proper session management and database storage
-    response.cookies.set('facebook_connection_temp', connectionDataForClient, {
+    response.cookies.set('facebook_connection_temp', encodeURIComponent(connectionDataForClient), {
       httpOnly: false, // Allow client-side access for this demo
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
@@ -163,9 +171,10 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString()
     })
     
-    return NextResponse.redirect(
-      new URL(`/admin?error=${errorCode}&message=${encodeURIComponent(errorMessage)}`, request.url)
-    )
+    const p = request.headers.get('x-forwarded-proto') || 'http'
+    const h = request.headers.get('x-forwarded-host') || request.headers.get('host') || new URL(request.url).host
+    const o = `${p}://${h}`
+    return NextResponse.redirect(new URL(`/admin?error=${errorCode}&message=${encodeURIComponent(errorMessage)}`, o))
   }
 }
 
