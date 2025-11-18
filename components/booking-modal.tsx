@@ -58,7 +58,11 @@ export function BookingModal({ isOpen, onClose, defaultServiceId }: BookingModal
 
   return (
     <Dialog open={isOpen} onOpenChange={(v) => { if (!v) handleClose() }} modal={false}>
-      <DialogContent ref={contentRef} className="max-w-3xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl p-0 shadow-2xl">
+      <DialogContent ref={contentRef} className="max-w-3xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl p-0 shadow-2xl will-change-transform [backface-visibility:hidden] [transform:translateZ(0)] [contain:layout_paint]">
+        <style jsx>{`
+          .hover-scale { will-change: transform; }
+          .rounded-xl, input, textarea, select { backface-visibility: hidden; transform: translateZ(0); }
+        `}</style>
         <div>
           <div className="bg-brand-gradient p-5 rounded-t-2xl">
             <DialogHeader className="relative">
@@ -137,26 +141,32 @@ export function BookingModal({ isOpen, onClose, defaultServiceId }: BookingModal
                 <div className="flex justify-between">
                   <Button variant="outline" onClick={() => setStep(1)} className="rounded-xl"><ArrowLeft className="w-4 h-4 mr-2" />Back</Button>
                   <Button
-                    onClick={() => {
+                    onClick={async () => {
                       const svc = services.find((s) => s.id === selectedService)
                       const priceStr = svc?.price ?? "0"
                       const price = /free/i.test(priceStr) ? 0 : parseFloat((priceStr.match(/[\d,.]+/g)?.[0] || "0").replace(/,/g, ""))
                       const durationStr = svc?.duration ?? "60"
                       const duration = parseInt((durationStr.match(/\d+/)?.[0] || "60"))
-                      appointmentService.addAppointment({
-                        clientId: `web-${Date.now()}`,
-                        clientName: formData.name,
-                        clientEmail: formData.email,
-                        clientPhone: formData.phone,
-                        service: svc?.name || selectedService,
-                        date: formData.date,
-                        time: formData.time,
-                        status: "scheduled",
-                        notes: formData.message,
-                        duration,
-                        price,
-                      })
-                      setStep(3)
+                      try {
+                        const res = await fetch('/api/bookings', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            name: formData.name,
+                            email: formData.email,
+                            phone: formData.phone,
+                            service: svc?.name || selectedService,
+                            date: formData.date,
+                            time: formData.time,
+                            notes: formData.message,
+                            duration,
+                            price,
+                          })
+                        })
+                        if (res.ok) {
+                          setStep(3)
+                        }
+                      } catch {}
                     }}
                     disabled={!formData.name || !formData.phone || !formData.date || !formData.time || !selectedService}
                     variant="brand"

@@ -194,3 +194,56 @@ create index if not exists idx_staff_position on staff(position);
 create index if not exists idx_influencers_platform on influencers(platform);
 create index if not exists idx_influencer_referrals_influencer on influencer_referrals(influencer_id);
 create index if not exists idx_influencer_referrals_date on influencer_referrals(date);
+
+-- Ensure a client exists for every appointment (auto-create/update)
+create or replace function ensure_client_on_appointments_insert()
+returns trigger as $$
+declare
+  target_id text;
+  first_name text;
+  last_name text;
+begin
+  target_id := NEW.client_id;
+
+  if target_id is null then
+    if NEW.client_email is not null then
+      select id into target_id from clients where email = NEW.client_email limit 1;
+    end if;
+  end if;
+
+  if target_id is null then
+    if NEW.client_phone is not null then
+      select id into target_id from clients where phone = NEW.client_phone limit 1;
+    end if;
+  end if;
+
+  -- derive names
+  first_name := split_part(coalesce(NEW.client_name, ''), ' ', 1);
+  if first_name = '' then first_name := coalesce(NEW.client_name, ''); end if;
+  last_name := regexp_replace(coalesce(NEW.client_name, ''), '^\S+\s?', '');
+
+  if target_id is null then
+    target_id := 'client_' || right(md5(random()::text || clock_timestamp()::text), 12);
+    insert into clients (
+      id, first_name, last_name, email, phone, source, status, total_spent, last_visit
+    ) values (
+      target_id, first_name, nullif(last_name,''), NEW.client_email, NEW.client_phone, 'website', 'active', 0, NEW.date
+    );
+  else
+    update clients
+      set email = coalesce(NEW.client_email, email),
+          phone = coalesce(NEW.client_phone, phone),
+          last_visit = NEW.date,
+          updated_at = now()
+      where id = target_id;
+  end if;
+
+  NEW.client_id := target_id;
+  return NEW;
+end;
+$$ language plpgsql security definer;
+
+drop trigger if exists trg_appointments_ensure_client on appointments;
+create trigger trg_appointments_ensure_client
+before insert on appointments
+for each row execute function ensure_client_on_appointments_insert();

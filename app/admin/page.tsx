@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useTransition } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -111,6 +111,7 @@ export default function AdminDashboard() {
   const [socialMessages, setSocialMessages] = useState<SocialMessage[]>([])
   const [staff, setStaff] = useState<Staff[]>([])
   const [influencers, setInfluencers] = useState<Influencer[]>([])
+  const [typingPending, startTransition] = useTransition()
   
   // Modal states
   const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false)
@@ -219,11 +220,24 @@ export default function AdminDashboard() {
   const loadAllData = async () => {
     await appointmentService.fetchFromSupabase?.()
     setAppointments(appointmentService.getAllAppointments())
-    setPayments(paymentService.getAllPayments())
-    setMedicalRecords(medicalRecordService.getAllRecords())
+    await clientService.fetchFromSupabase?.()
+    try {
+      const payRes = await fetch('/api/admin/payments', { cache: 'no-store' })
+      const payJson = await payRes.json()
+      setPayments(Array.isArray(payJson?.payments) ? payJson.payments : [])
+    } catch {}
+    try {
+      const recRes = await fetch('/api/admin/medical-records', { cache: 'no-store' })
+      const recJson = await recRes.json()
+      setMedicalRecords(Array.isArray(recJson?.records) ? recJson.records : [])
+    } catch {}
     setClients(clientService.getAllClients())
     setSocialMessages(socialMediaService.getAllMessages())
+    await staffService.syncLocalToSupabaseIfEmpty?.()
+    await staffService.fetchFromSupabase?.()
     setStaff(staffService.getAllStaff())
+    await influencerService.syncLocalToSupabaseIfEmpty?.()
+    await influencerService.fetchFromSupabase?.()
     setInfluencers(influencerService.getAllInfluencers())
   }
 
@@ -287,118 +301,118 @@ export default function AdminDashboard() {
   const handlePaymentSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    
-    try {
-      if (selectedPayment) {
-        paymentService.updatePayment(selectedPayment.id, paymentForm)
-        showNotification("success", "Payment updated successfully!")
-      } else {
-        paymentService.addPayment(paymentForm as Omit<Payment, "id" | "createdAt" | "updatedAt">)
-        showNotification("success", "Payment recorded successfully!")
+    ;(async () => {
+      try {
+        const method = selectedPayment ? 'PATCH' : 'POST'
+        const payload = selectedPayment ? { id: selectedPayment.id, ...paymentForm } : paymentForm
+        const res = await fetch('/api/admin/payments', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+        if (!res.ok) throw new Error('Failed')
+        const listRes = await fetch('/api/admin/payments', { cache: 'no-store' })
+        const json = await listRes.json()
+        setPayments(Array.isArray(json?.payments) ? json.payments : [])
+        showNotification("success", selectedPayment ? "Payment updated successfully!" : "Payment recorded successfully!")
+        setIsPaymentModalOpen(false)
+        setPaymentForm({})
+        setSelectedPayment(null)
+      } catch {
+        showNotification("error", "Failed to save payment")
+      } finally {
+        setIsLoading(false)
       }
-      
-      setPayments(paymentService.getAllPayments())
-      setIsPaymentModalOpen(false)
-      setPaymentForm({})
-      setSelectedPayment(null)
-    } catch (error) {
-      showNotification("error", "Failed to save payment")
-    } finally {
-      setIsLoading(false)
-    }
+    })()
   }
 
   // Medical Record Management
   const handleMedicalRecordSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    
-    try {
-      if (selectedMedicalRecord) {
-        medicalRecordService.updateRecord(selectedMedicalRecord.id, medicalRecordForm)
-        showNotification("success", "Medical record updated successfully!")
-      } else {
-        medicalRecordService.addRecord(medicalRecordForm as Omit<MedicalRecord, "id" | "createdAt" | "updatedAt">)
-        showNotification("success", "Medical record created successfully!")
+    ;(async () => {
+      try {
+        const method = selectedMedicalRecord ? 'PATCH' : 'POST'
+        const payload = selectedMedicalRecord ? { id: selectedMedicalRecord.id, ...medicalRecordForm } : medicalRecordForm
+        const res = await fetch('/api/admin/medical-records', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+        if (!res.ok) throw new Error('Failed')
+        const listRes = await fetch('/api/admin/medical-records', { cache: 'no-store' })
+        const json = await listRes.json()
+        setMedicalRecords(Array.isArray(json?.records) ? json.records : [])
+        showNotification("success", selectedMedicalRecord ? "Medical record updated successfully!" : "Medical record created successfully!")
+        setIsMedicalRecordModalOpen(false)
+        setMedicalRecordForm({})
+        setSelectedMedicalRecord(null)
+      } catch {
+        showNotification("error", "Failed to save medical record")
+      } finally {
+        setIsLoading(false)
       }
-      
-      setMedicalRecords(medicalRecordService.getAllRecords())
-      setIsMedicalRecordModalOpen(false)
-      setMedicalRecordForm({})
-      setSelectedMedicalRecord(null)
-    } catch (error) {
-      showNotification("error", "Failed to save medical record")
-    } finally {
-      setIsLoading(false)
-    }
+    })()
   }
 
   // Client Management
   const handleClientSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    
-    try {
-      const emailOk = !clientForm.email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientForm.email)
-      const phoneOk = !clientForm.phone || /\+?\d[\d\s-]{6,}$/.test(clientForm.phone)
-      if (!emailOk || !phoneOk) {
-        showNotification("error", "Please enter valid email and phone")
+    ;(async () => {
+      try {
+        const emailOk = !clientForm.email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientForm.email)
+        const phoneOk = !clientForm.phone || /\+?\d[\d\s-]{6,}$/.test(clientForm.phone)
+        if (!emailOk || !phoneOk) {
+          showNotification("error", "Please enter valid email and phone")
+          setIsLoading(false)
+          return
+        }
+        const method = selectedClient ? 'PATCH' : 'POST'
+        const payload = selectedClient ? { id: selectedClient.id, ...clientForm } : clientForm
+        const res = await fetch('/api/admin/clients', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+        if (!res.ok) throw new Error('Failed')
+        await clientService.fetchFromSupabase?.()
+        setClients(clientService.getAllClients())
+        const link = localStorage.getItem('potential_conversation_id')
+        if (!selectedClient && link) {
+          const all = clientService.getAllClients()
+          const created = all[0]
+          socialMediaService.setConversationClient(link, created.id)
+          try { localStorage.removeItem('potential_client_draft'); localStorage.removeItem('potential_conversation_id') } catch {}
+        }
+        showNotification("success", selectedClient ? "Client updated successfully!" : "Client added successfully!")
+        setIsClientModalOpen(false)
+        setClientForm({})
+        setSelectedClient(null)
+      } catch {
+        showNotification("error", "Failed to save client")
+      } finally {
         setIsLoading(false)
-        return
       }
-      if (selectedClient) {
-        clientService.updateClient(selectedClient.id, clientForm)
-        showNotification("success", "Client updated successfully!")
-      } else {
-        clientService.addClient(clientForm as Omit<Client, "id" | "createdAt" | "updatedAt">)
-        showNotification("success", "Client added successfully!")
-      }
-      
-      const all = clientService.getAllClients()
-      setClients(all)
-      const link = localStorage.getItem('potential_conversation_id')
-      if (!selectedClient && link) {
-        const created = all[all.length - 1]
-        socialMediaService.setConversationClient(link, created.id)
-        try { localStorage.removeItem('potential_client_draft'); localStorage.removeItem('potential_conversation_id') } catch {}
-      }
-      setIsClientModalOpen(false)
-      setClientForm({})
-      setSelectedClient(null)
-    } catch (error) {
-      showNotification("error", "Failed to save client")
-    } finally {
-      setIsLoading(false)
-    }
+    })()
   }
 
   const handleStaffSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    try {
-      const emailOk = !staffForm.email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(staffForm.email)
-      const phoneOk = !staffForm.phone || /\+?\d[\d\s-]{6,}$/.test(staffForm.phone)
-      if (!emailOk || !phoneOk) {
-        showNotification("error", "Please enter valid email and phone")
+    ;(async () => {
+      try {
+        const emailOk = !staffForm.email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(staffForm.email))
+        const phoneOk = !staffForm.phone || /\+?\d[\d\s-]{6,}$/.test(String(staffForm.phone))
+        if (!emailOk || !phoneOk) {
+          showNotification("error", "Please enter valid email and phone")
+          setIsLoading(false)
+          return
+        }
+        const method = selectedStaff ? 'PATCH' : 'POST'
+        const payload = selectedStaff ? { id: selectedStaff.id, ...staffForm } : staffForm
+        const res = await fetch('/api/admin/staff', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+        if (!res.ok) throw new Error('Failed')
+        await staffService.fetchFromSupabase?.()
+        setStaff(staffService.getAllStaff())
+        showNotification("success", selectedStaff ? "Staff updated successfully!" : "Staff added successfully!")
+        setIsStaffModalOpen(false)
+        setStaffForm({})
+        setSelectedStaff(null)
+      } catch {
+        showNotification("error", "Failed to save staff")
+      } finally {
         setIsLoading(false)
-        return
       }
-      if (selectedStaff) {
-        staffService.updateStaff(selectedStaff.id, staffForm)
-        showNotification("success", "Staff updated successfully!")
-      } else {
-        staffService.addStaff(staffForm as Omit<Staff, "id" | "createdAt" | "updatedAt">)
-        showNotification("success", "Staff added successfully!")
-      }
-      setStaff(staffService.getAllStaff())
-      setIsStaffModalOpen(false)
-      setStaffForm({})
-      setSelectedStaff(null)
-    } catch {
-      showNotification("error", "Failed to save staff")
-    } finally {
-      setIsLoading(false)
-    }
+    })()
   }
 
   // Social Media Management
@@ -424,49 +438,56 @@ export default function AdminDashboard() {
   const handleInfluencerSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    try {
-      if (!influencerForm.name || !influencerForm.platform) {
-        showNotification('error', 'Please fill required fields')
+    ;(async () => {
+      try {
+        if (!influencerForm.name || !influencerForm.platform) {
+          showNotification('error', 'Please fill required fields')
+          setIsLoading(false)
+          return
+        }
+        const method = selectedInfluencer ? 'PATCH' : 'POST'
+        const payload = selectedInfluencer ? { id: selectedInfluencer.id, ...influencerForm } : influencerForm
+        const res = await fetch('/api/admin/influencers', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+        if (!res.ok) throw new Error('Failed')
+        await influencerService.fetchFromSupabase?.()
+        setInfluencers(influencerService.getAllInfluencers())
+        showNotification('success', selectedInfluencer ? 'Influencer updated successfully!' : 'Influencer added successfully!')
+        setIsInfluencerModalOpen(false)
+        setSelectedInfluencer(null)
+        setInfluencerForm({ commissionRate: 0.10, status: 'active' })
+      } catch {
+        showNotification('error', 'Failed to save influencer')
+      } finally {
         setIsLoading(false)
-        return
       }
-      if (selectedInfluencer) {
-        influencerService.updateInfluencer(selectedInfluencer.id, influencerForm)
-        showNotification('success', 'Influencer updated successfully!')
-      } else {
-        influencerService.addInfluencer(influencerForm as Omit<Influencer, 'id' | 'createdAt' | 'updatedAt' | 'totalCommissionPaid'>)
-        showNotification('success', 'Influencer added successfully!')
-      }
-      setInfluencers(influencerService.getAllInfluencers())
-      setIsInfluencerModalOpen(false)
-      setSelectedInfluencer(null)
-      setInfluencerForm({ commissionRate: 0.10, status: 'active' })
-    } catch {
-      showNotification('error', 'Failed to save influencer')
-    } finally {
-      setIsLoading(false)
-    }
+    })()
   }
 
   const handleReferralSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!selectedInfluencer) return
     setIsLoading(true)
-    try {
-      if (!referralForm.clientName || !referralForm.amount || !referralForm.date) {
-        showNotification('error', 'Please fill referral details')
+    ;(async () => {
+      try {
+        if (!referralForm.clientName || !referralForm.amount || !referralForm.date) {
+          showNotification('error', 'Please fill referral details')
+          setIsLoading(false)
+          return
+        }
+        const payload = { influencer_id: selectedInfluencer.id, client_name: referralForm.clientName!, amount: Number(referralForm.amount), date: referralForm.date!, notes: referralForm.notes }
+        const res = await fetch('/api/admin/influencer-referrals', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+        if (!res.ok) throw new Error('Failed')
+        await influencerService.fetchFromSupabase?.()
+        setInfluencers(influencerService.getAllInfluencers())
+        showNotification('success', 'Referral recorded successfully!')
+        setIsReferralModalOpen(false)
+        setReferralForm({})
+      } catch {
+        showNotification('error', 'Failed to save referral')
+      } finally {
         setIsLoading(false)
-        return
       }
-      influencerService.addReferral({ influencerId: selectedInfluencer.id, clientName: referralForm.clientName!, amount: Number(referralForm.amount), date: referralForm.date!, notes: referralForm.notes })
-      showNotification('success', 'Referral recorded successfully!')
-      setIsReferralModalOpen(false)
-      setReferralForm({})
-    } catch {
-      showNotification('error', 'Failed to save referral')
-    } finally {
-      setIsLoading(false)
-    }
+    })()
   }
 
   const openAppointmentModal = (appointment?: Appointment) => {
@@ -1221,6 +1242,28 @@ export default function AdminDashboard() {
                                 <TableCell>₱{a.price.toLocaleString()}</TableCell>
                                 <TableCell>
                                   <div className="flex items-center gap-2">
+                                    <Button size="sm" variant="outline" onClick={() => {
+                                      const parts = (a.clientName || '').split(' ')
+                                      const firstName = parts[0] || (a.clientName || '')
+                                      const lastName = parts.slice(1).join(' ')
+                                      openClientModal({
+                                        id: '',
+                                        firstName,
+                                        lastName,
+                                        email: a.clientEmail || '',
+                                        phone: a.clientPhone || '',
+                                        medicalHistory: [],
+                                        allergies: [],
+                                        preferences: { communicationMethod: 'email', reminderSettings: true, marketingConsent: false },
+                                        source: 'website',
+                                        status: 'active',
+                                        totalSpent: 0,
+                                        createdAt: '',
+                                        updatedAt: '',
+                                      })
+                                    }}>
+                                      <UserPlus className="w-4 h-4" />
+                                    </Button>
                                     <Button size="sm" variant="outline" onClick={() => openAppointmentModal(a)}>
                                       <Edit className="w-4 h-4" />
                                     </Button>
@@ -1685,7 +1728,12 @@ export default function AdminDashboard() {
                               <Plus className="w-4 h-4 mr-2" />
                               Add Referral
                             </Button>
-                            <Button size="sm" variant="outline" onClick={() => influencerService.payCommission(i.id) && setInfluencers(influencerService.getAllInfluencers())} className="w-full sm:w-auto">
+                            <Button size="sm" variant="outline" onClick={async () => {
+                              const stats = influencerService.getStats(i.id)
+                              const newPaid = (i.totalCommissionPaid || 0) + Math.max(stats.commissionRemaining, 0)
+                              const res = await fetch('/api/admin/influencers', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: i.id, total_commission_paid: newPaid }) })
+                              if (res.ok) { await influencerService.fetchFromSupabase?.(); setInfluencers(influencerService.getAllInfluencers()); showNotification('success', 'Commission paid') } else { showNotification('error', 'Failed to pay commission') }
+                            }} className="w-full sm:w-auto">
                               <DollarSign className="w-4 h-4 mr-2" />
                               Pay Commission
                             </Button>
@@ -1950,7 +1998,7 @@ export default function AdminDashboard() {
 
       {/* Appointment Modal */}
       <Dialog open={isAppointmentModalOpen} onOpenChange={setIsAppointmentModalOpen}>
-        <DialogContent className="max-w-2xl">
+         <DialogContent className="max-w-2xl will-change-transform [backface-visibility:hidden] [transform:translateZ(0)] [contain:layout_paint]">
           <DialogHeader>
             <DialogTitle>
               {selectedAppointment ? 'Edit Appointment' : 'New Appointment'}
@@ -2117,7 +2165,7 @@ export default function AdminDashboard() {
                 <Label htmlFor="clientId">Client</Label>
                 <Select
                   value={paymentForm.clientId || ''}
-                  onValueChange={(value) => setPaymentForm(prev => ({ ...prev, clientId: value }))}
+                  onValueChange={(value) => startTransition(() => setPaymentForm(prev => ({ ...prev, clientId: value })))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select client" />
@@ -2137,7 +2185,7 @@ export default function AdminDashboard() {
                   id="amount"
                   type="number"
                   value={paymentForm.amount || ''}
-                  onChange={(e) => setPaymentForm(prev => ({ ...prev, amount: parseFloat(e.target.value) }))}
+                  onChange={(e) => startTransition(() => setPaymentForm(prev => ({ ...prev, amount: parseFloat(e.target.value) })))}
                   required
                 />
               </div>
@@ -2148,7 +2196,7 @@ export default function AdminDashboard() {
                 <Label htmlFor="method">Payment Method</Label>
                 <Select
                   value={paymentForm.method || ''}
-                  onValueChange={(value) => setPaymentForm(prev => ({ ...prev, method: value as any }))}
+                  onValueChange={(value) => startTransition(() => setPaymentForm(prev => ({ ...prev, method: value as any })))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select method" />
@@ -2165,7 +2213,7 @@ export default function AdminDashboard() {
                 <Label htmlFor="status">Status</Label>
                 <Select
                   value={paymentForm.status || ''}
-                  onValueChange={(value) => setPaymentForm(prev => ({ ...prev, status: value as any }))}
+                  onValueChange={(value) => startTransition(() => setPaymentForm(prev => ({ ...prev, status: value as any })))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select status" />
@@ -2185,7 +2233,7 @@ export default function AdminDashboard() {
               <Input
                 id="transactionId"
                 value={paymentForm.transactionId || ''}
-                onChange={(e) => setPaymentForm(prev => ({ ...prev, transactionId: e.target.value }))}
+                onChange={(e) => startTransition(() => setPaymentForm(prev => ({ ...prev, transactionId: e.target.value })))}
               />
             </div>
 
@@ -2194,7 +2242,7 @@ export default function AdminDashboard() {
               <Textarea
                 id="paymentNotes"
                 value={paymentForm.notes || ''}
-                onChange={(e) => setPaymentForm(prev => ({ ...prev, notes: e.target.value }))}
+                onChange={(e) => startTransition(() => setPaymentForm(prev => ({ ...prev, notes: e.target.value })))}
                 rows={3}
               />
             </div>
@@ -2228,7 +2276,7 @@ export default function AdminDashboard() {
       </Dialog>
 
        <Dialog open={isInfluencerModalOpen} onOpenChange={setIsInfluencerModalOpen}>
-         <DialogContent className="max-w-2xl">
+         <DialogContent className="max-w-2xl will-change-transform [backface-visibility:hidden] [transform:translateZ(0)] [contain:layout_paint]">
            <DialogHeader>
              <DialogTitle>{selectedInfluencer ? 'Edit Influencer' : 'Add New Influencer'}</DialogTitle>
            </DialogHeader>
@@ -2236,17 +2284,17 @@ export default function AdminDashboard() {
              <div className="grid grid-cols-2 gap-4">
                <div>
                  <Label htmlFor="infName">Name</Label>
-                 <Input id="infName" value={influencerForm.name || ''} onChange={(e) => setInfluencerForm(prev => ({ ...prev, name: e.target.value }))} required />
+                 <Input id="infName" value={influencerForm.name || ''} onChange={(e) => startTransition(() => setInfluencerForm(prev => ({ ...prev, name: e.target.value })))} required />
                </div>
                <div>
                  <Label htmlFor="infHandle">Handle</Label>
-                 <Input id="infHandle" value={influencerForm.handle || ''} onChange={(e) => setInfluencerForm(prev => ({ ...prev, handle: e.target.value }))} />
+                 <Input id="infHandle" value={influencerForm.handle || ''} onChange={(e) => startTransition(() => setInfluencerForm(prev => ({ ...prev, handle: e.target.value })))} />
                </div>
              </div>
              <div className="grid grid-cols-2 gap-4">
                <div>
                  <Label htmlFor="infPlatform">Platform</Label>
-                 <Select value={influencerForm.platform || ''} onValueChange={(v) => setInfluencerForm(prev => ({ ...prev, platform: v as Influencer['platform'] }))}>
+                 <Select value={influencerForm.platform || ''} onValueChange={(v) => startTransition(() => setInfluencerForm(prev => ({ ...prev, platform: v as Influencer['platform'] })))}>
                    <SelectTrigger><SelectValue placeholder="Select platform" /></SelectTrigger>
                    <SelectContent>
                      <SelectItem value="instagram">Instagram</SelectItem>
@@ -2259,27 +2307,27 @@ export default function AdminDashboard() {
                </div>
                <div>
                  <Label htmlFor="infReferralCode">Referral Code</Label>
-                 <Input id="infReferralCode" value={influencerForm.referralCode || ''} onChange={(e) => setInfluencerForm(prev => ({ ...prev, referralCode: e.target.value }))} />
+                 <Input id="infReferralCode" value={influencerForm.referralCode || ''} onChange={(e) => startTransition(() => setInfluencerForm(prev => ({ ...prev, referralCode: e.target.value })))} />
                </div>
              </div>
              <div className="grid grid-cols-2 gap-4">
                <div>
                  <Label htmlFor="infEmail">Email</Label>
-                 <Input id="infEmail" type="email" value={influencerForm.email || ''} onChange={(e) => setInfluencerForm(prev => ({ ...prev, email: e.target.value }))} />
+                 <Input id="infEmail" type="email" value={influencerForm.email || ''} onChange={(e) => startTransition(() => setInfluencerForm(prev => ({ ...prev, email: e.target.value })))} />
                </div>
                <div>
                  <Label htmlFor="infPhone">Phone</Label>
-                 <Input id="infPhone" value={influencerForm.phone || ''} onChange={(e) => setInfluencerForm(prev => ({ ...prev, phone: e.target.value }))} />
+                 <Input id="infPhone" value={influencerForm.phone || ''} onChange={(e) => startTransition(() => setInfluencerForm(prev => ({ ...prev, phone: e.target.value })))} />
                </div>
              </div>
              <div className="grid grid-cols-2 gap-4">
                <div>
                  <Label htmlFor="infRate">Commission Rate (%)</Label>
-                 <Input id="infRate" type="number" step="1" value={Math.round((influencerForm.commissionRate || 0.10) * 100)} onChange={(e) => setInfluencerForm(prev => ({ ...prev, commissionRate: Math.max(0, Math.min(100, Number(e.target.value))) / 100 }))} />
+                 <Input id="infRate" type="number" step="1" value={Math.round((influencerForm.commissionRate || 0.10) * 100)} onChange={(e) => startTransition(() => setInfluencerForm(prev => ({ ...prev, commissionRate: Math.max(0, Math.min(100, Number(e.target.value))) / 100 })))} />
                </div>
                <div>
                  <Label htmlFor="infStatus">Status</Label>
-                 <Select value={influencerForm.status || ''} onValueChange={(v) => setInfluencerForm(prev => ({ ...prev, status: v as Influencer['status'] }))}>
+                 <Select value={influencerForm.status || ''} onValueChange={(v) => startTransition(() => setInfluencerForm(prev => ({ ...prev, status: v as Influencer['status'] })))}>
                    <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
                    <SelectContent>
                      <SelectItem value="active">Active</SelectItem>
@@ -2290,7 +2338,7 @@ export default function AdminDashboard() {
              </div>
              <div>
                <Label htmlFor="infNotes">Notes</Label>
-               <Textarea id="infNotes" rows={3} value={influencerForm.notes || ''} onChange={(e) => setInfluencerForm(prev => ({ ...prev, notes: e.target.value }))} />
+               <Textarea id="infNotes" rows={3} value={influencerForm.notes || ''} onChange={(e) => startTransition(() => setInfluencerForm(prev => ({ ...prev, notes: e.target.value })))} />
              </div>
              <div className="flex justify-end gap-2">
                <Button type="button" variant="outline" onClick={() => setIsInfluencerModalOpen(false)}>Cancel</Button>
@@ -2301,7 +2349,7 @@ export default function AdminDashboard() {
        </Dialog>
 
        <Dialog open={isReferralModalOpen} onOpenChange={setIsReferralModalOpen}>
-         <DialogContent className="max-w-lg">
+         <DialogContent className="max-w-lg will-change-transform [backface-visibility:hidden] [transform:translateZ(0)] [contain:layout_paint]">
            <DialogHeader>
              <DialogTitle>Add Referral</DialogTitle>
            </DialogHeader>
@@ -2334,7 +2382,7 @@ export default function AdminDashboard() {
 
       {/* Medical Record Modal */}
       <Dialog open={isMedicalRecordModalOpen} onOpenChange={setIsMedicalRecordModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto will-change-transform [backface-visibility:hidden] [transform:translateZ(0)] [contain:layout_paint]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Shield className="w-5 h-5 text-red-500" />
@@ -2350,7 +2398,7 @@ export default function AdminDashboard() {
                 <Label htmlFor="recordClientId">Client</Label>
                 <Select
                   value={medicalRecordForm.clientId || ''}
-                  onValueChange={(value) => setMedicalRecordForm(prev => ({ ...prev, clientId: value }))}
+                  onValueChange={(value) => startTransition(() => setMedicalRecordForm(prev => ({ ...prev, clientId: value })))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select client" />
@@ -2370,7 +2418,7 @@ export default function AdminDashboard() {
                   id="recordDate"
                   type="date"
                   value={medicalRecordForm.date || ''}
-                  onChange={(e) => setMedicalRecordForm(prev => ({ ...prev, date: e.target.value }))}
+                  onChange={(e) => startTransition(() => setMedicalRecordForm(prev => ({ ...prev, date: e.target.value })))}
                   required
                 />
               </div>
@@ -2381,7 +2429,7 @@ export default function AdminDashboard() {
               <Textarea
                 id="chiefComplaint"
                 value={medicalRecordForm.chiefComplaint || ''}
-                onChange={(e) => setMedicalRecordForm(prev => ({ ...prev, chiefComplaint: e.target.value }))}
+                onChange={(e) => startTransition(() => setMedicalRecordForm(prev => ({ ...prev, chiefComplaint: e.target.value })))}
                 rows={3}
                 required
               />
@@ -2392,10 +2440,10 @@ export default function AdminDashboard() {
               <Textarea
                 id="medicalHistory"
                 value={Array.isArray(medicalRecordForm.medicalHistory) ? medicalRecordForm.medicalHistory.join('\n') : ''}
-                onChange={(e) => setMedicalRecordForm(prev => ({ 
+                onChange={(e) => startTransition(() => setMedicalRecordForm(prev => ({ 
                   ...prev, 
                   medicalHistory: e.target.value.split('\n').filter(item => item.trim()) 
-                }))}
+                })))}
                 rows={3}
               />
             </div>
@@ -2406,10 +2454,10 @@ export default function AdminDashboard() {
                 <Textarea
                   id="allergies"
                   value={Array.isArray(medicalRecordForm.allergies) ? medicalRecordForm.allergies.join('\n') : ''}
-                  onChange={(e) => setMedicalRecordForm(prev => ({ 
+                  onChange={(e) => startTransition(() => setMedicalRecordForm(prev => ({ 
                     ...prev, 
                     allergies: e.target.value.split('\n').filter(item => item.trim()) 
-                  }))}
+                  })))}
                   rows={3}
                 />
               </div>
@@ -2418,10 +2466,10 @@ export default function AdminDashboard() {
                 <Textarea
                   id="currentMedications"
                   value={Array.isArray(medicalRecordForm.currentMedications) ? medicalRecordForm.currentMedications.join('\n') : ''}
-                  onChange={(e) => setMedicalRecordForm(prev => ({ 
+                  onChange={(e) => startTransition(() => setMedicalRecordForm(prev => ({ 
                     ...prev, 
                     currentMedications: e.target.value.split('\n').filter(item => item.trim()) 
-                  }))}
+                  })))}
                   rows={3}
                 />
               </div>
@@ -2432,7 +2480,7 @@ export default function AdminDashboard() {
               <Textarea
                 id="treatmentPlan"
                 value={medicalRecordForm.treatmentPlan || ''}
-                onChange={(e) => setMedicalRecordForm(prev => ({ ...prev, treatmentPlan: e.target.value }))}
+                onChange={(e) => startTransition(() => setMedicalRecordForm(prev => ({ ...prev, treatmentPlan: e.target.value })))}
                 rows={4}
                 required
               />
@@ -2443,7 +2491,7 @@ export default function AdminDashboard() {
               <Textarea
                 id="recordNotes"
                 value={medicalRecordForm.notes || ''}
-                onChange={(e) => setMedicalRecordForm(prev => ({ ...prev, notes: e.target.value }))}
+                onChange={(e) => startTransition(() => setMedicalRecordForm(prev => ({ ...prev, notes: e.target.value })))}
                 rows={3}
               />
             </div>
@@ -2478,7 +2526,7 @@ export default function AdminDashboard() {
 
        {/* Client Modal */}
       <Dialog open={isClientModalOpen} onOpenChange={setIsClientModalOpen}>
-         <DialogContent className="max-w-2xl">
+         <DialogContent className="max-w-2xl will-change-transform [backface-visibility:hidden] [transform:translateZ(0)] [contain:layout_paint]">
            <DialogHeader>
              <DialogTitle>
                {selectedClient ? 'Edit Client' : 'Add New Client'}
@@ -2489,20 +2537,20 @@ export default function AdminDashboard() {
                <div>
                  <Label htmlFor="firstName">First Name</Label>
                  <Input
-                   id="firstName"
-                   value={clientForm.firstName || ''}
-                   onChange={(e) => setClientForm(prev => ({ ...prev, firstName: e.target.value }))}
-                   required
-                 />
+                  id="firstName"
+                  value={clientForm.firstName || ''}
+                  onChange={(e) => startTransition(() => setClientForm(prev => ({ ...prev, firstName: e.target.value })))}
+                  required
+                />
                </div>
                <div>
                  <Label htmlFor="lastName">Last Name</Label>
                  <Input
-                   id="lastName"
-                   value={clientForm.lastName || ''}
-                   onChange={(e) => setClientForm(prev => ({ ...prev, lastName: e.target.value }))}
-                   required
-                 />
+                  id="lastName"
+                  value={clientForm.lastName || ''}
+                  onChange={(e) => startTransition(() => setClientForm(prev => ({ ...prev, lastName: e.target.value })))}
+                  required
+                />
                </div>
              </div>
 
@@ -2510,21 +2558,21 @@ export default function AdminDashboard() {
                <div>
                  <Label htmlFor="email">Email</Label>
                  <Input
-                   id="email"
-                   type="email"
-                   value={clientForm.email || ''}
-                   onChange={(e) => setClientForm(prev => ({ ...prev, email: e.target.value }))}
-                   required
-                 />
+                  id="email"
+                  type="email"
+                  value={clientForm.email || ''}
+                  onChange={(e) => startTransition(() => setClientForm(prev => ({ ...prev, email: e.target.value })))}
+                  required
+                />
                </div>
                <div>
                  <Label htmlFor="phone">Phone</Label>
                  <Input
-                   id="phone"
-                   value={clientForm.phone || ''}
-                   onChange={(e) => setClientForm(prev => ({ ...prev, phone: e.target.value }))}
-                   required
-                 />
+                  id="phone"
+                  value={clientForm.phone || ''}
+                  onChange={(e) => startTransition(() => setClientForm(prev => ({ ...prev, phone: e.target.value })))}
+                  required
+                />
                </div>
              </div>
 
@@ -2533,7 +2581,7 @@ export default function AdminDashboard() {
                <Textarea
                  id="address"
                  value={clientForm.address || ''}
-                 onChange={(e) => setClientForm(prev => ({ ...prev, address: e.target.value }))}
+                 onChange={(e) => startTransition(() => setClientForm(prev => ({ ...prev, address: e.target.value })))}
                  rows={2}
                />
              </div>
@@ -2542,18 +2590,18 @@ export default function AdminDashboard() {
                <div>
                  <Label htmlFor="dateOfBirth">Date of Birth</Label>
                  <Input
-                   id="dateOfBirth"
-                   type="date"
-                   value={clientForm.dateOfBirth || ''}
-                   onChange={(e) => setClientForm(prev => ({ ...prev, dateOfBirth: e.target.value }))}
-                 />
+                  id="dateOfBirth"
+                  type="date"
+                  value={clientForm.dateOfBirth || ''}
+                  onChange={(e) => startTransition(() => setClientForm(prev => ({ ...prev, dateOfBirth: e.target.value })))}
+                />
                </div>
                <div>
                  <Label htmlFor="gender">Gender</Label>
                  <Select
-                   value={clientForm.gender || ''}
-                   onValueChange={(value) => setClientForm(prev => ({ ...prev, gender: value as any }))}
-                 >
+                  value={clientForm.gender || ''}
+                  onValueChange={(value) => startTransition(() => setClientForm(prev => ({ ...prev, gender: value as any })))}
+                >
                    <SelectTrigger>
                      <SelectValue placeholder="Select gender" />
                    </SelectTrigger>
@@ -2568,9 +2616,9 @@ export default function AdminDashboard() {
                <div>
                  <Label htmlFor="clientStatus">Status</Label>
                  <Select
-                   value={clientForm.status || ''}
-                   onValueChange={(value) => setClientForm(prev => ({ ...prev, status: value as any }))}
-                 >
+                  value={clientForm.status || ''}
+                  onValueChange={(value) => startTransition(() => setClientForm(prev => ({ ...prev, status: value as any })))}
+                >
                    <SelectTrigger>
                      <SelectValue placeholder="Select status" />
                    </SelectTrigger>
@@ -2588,7 +2636,7 @@ export default function AdminDashboard() {
                <Input
                  id="emergencyContact"
                  value={clientForm.emergencyContact || ''}
-                 onChange={(e) => setClientForm(prev => ({ ...prev, emergencyContact: e.target.value }))}
+                 onChange={(e) => startTransition(() => setClientForm(prev => ({ ...prev, emergencyContact: e.target.value })))}
                  placeholder="Name and phone number"
                />
              </div>
@@ -2606,7 +2654,7 @@ export default function AdminDashboard() {
       </Dialog>
 
        <Dialog open={isStaffModalOpen} onOpenChange={setIsStaffModalOpen}>
-         <DialogContent className="max-w-2xl">
+         <DialogContent className="max-w-2xl will-change-transform [backface-visibility:hidden] [transform:translateZ(0)] [contain:layout_paint]">
            <DialogHeader>
              <DialogTitle>
                {selectedStaff ? 'Edit Staff' : 'Add New Staff'}
@@ -2616,29 +2664,29 @@ export default function AdminDashboard() {
              <div className="grid grid-cols-2 gap-4">
                <div>
                  <Label htmlFor="staffFirstName">First Name</Label>
-                 <Input id="staffFirstName" value={staffForm.firstName || ''} onChange={(e) => setStaffForm(prev => ({ ...prev, firstName: e.target.value }))} required />
+                 <Input id="staffFirstName" value={staffForm.firstName || ''} onChange={(e) => startTransition(() => setStaffForm(prev => ({ ...prev, firstName: e.target.value })))} required />
                </div>
                <div>
                  <Label htmlFor="staffLastName">Last Name</Label>
-                 <Input id="staffLastName" value={staffForm.lastName || ''} onChange={(e) => setStaffForm(prev => ({ ...prev, lastName: e.target.value }))} required />
+                 <Input id="staffLastName" value={staffForm.lastName || ''} onChange={(e) => startTransition(() => setStaffForm(prev => ({ ...prev, lastName: e.target.value })))} required />
                </div>
              </div>
 
              <div className="grid grid-cols-2 gap-4">
                <div>
                  <Label htmlFor="staffEmail">Email</Label>
-                 <Input id="staffEmail" type="email" value={staffForm.email || ''} onChange={(e) => setStaffForm(prev => ({ ...prev, email: e.target.value }))} required />
+                 <Input id="staffEmail" type="email" value={staffForm.email || ''} onChange={(e) => startTransition(() => setStaffForm(prev => ({ ...prev, email: e.target.value })))} required />
                </div>
                <div>
                  <Label htmlFor="staffPhone">Phone</Label>
-                 <Input id="staffPhone" value={staffForm.phone || ''} onChange={(e) => setStaffForm(prev => ({ ...prev, phone: e.target.value }))} required />
+                 <Input id="staffPhone" value={staffForm.phone || ''} onChange={(e) => startTransition(() => setStaffForm(prev => ({ ...prev, phone: e.target.value })))} required />
                </div>
              </div>
 
              <div className="grid grid-cols-2 gap-4">
                <div>
                  <Label htmlFor="staffPosition">Position</Label>
-                 <Select value={staffForm.position || ''} onValueChange={(value) => setStaffForm(prev => ({ ...prev, position: value as Staff['position'] }))}>
+                 <Select value={staffForm.position || ''} onValueChange={(value) => startTransition(() => setStaffForm(prev => ({ ...prev, position: value as Staff['position'] })))}>
                    <SelectTrigger>
                      <SelectValue placeholder="Select position" />
                    </SelectTrigger>
@@ -2657,25 +2705,25 @@ export default function AdminDashboard() {
                </div>
                <div>
                  <Label htmlFor="staffDepartment">Department</Label>
-                 <Input id="staffDepartment" value={staffForm.department || ''} onChange={(e) => setStaffForm(prev => ({ ...prev, department: e.target.value }))} />
+                 <Input id="staffDepartment" value={staffForm.department || ''} onChange={(e) => startTransition(() => setStaffForm(prev => ({ ...prev, department: e.target.value })))} />
                </div>
              </div>
 
              <div className="grid grid-cols-2 gap-4">
                <div>
                  <Label htmlFor="licenseNumber">License Number</Label>
-                 <Input id="licenseNumber" value={staffForm.licenseNumber || ''} onChange={(e) => setStaffForm(prev => ({ ...prev, licenseNumber: e.target.value }))} />
+                 <Input id="licenseNumber" value={staffForm.licenseNumber || ''} onChange={(e) => startTransition(() => setStaffForm(prev => ({ ...prev, licenseNumber: e.target.value })))} />
                </div>
                <div>
                  <Label htmlFor="hireDate">Hire Date</Label>
-                 <Input id="hireDate" type="date" value={staffForm.hireDate || ''} onChange={(e) => setStaffForm(prev => ({ ...prev, hireDate: e.target.value }))} />
+                 <Input id="hireDate" type="date" value={staffForm.hireDate || ''} onChange={(e) => startTransition(() => setStaffForm(prev => ({ ...prev, hireDate: e.target.value })))} />
                </div>
              </div>
 
              <div className="grid grid-cols-2 gap-4">
                <div>
                  <Label htmlFor="staffStatus">Status</Label>
-                 <Select value={staffForm.status || ''} onValueChange={(value) => setStaffForm(prev => ({ ...prev, status: value as Staff['status'] }))}>
+                 <Select value={staffForm.status || ''} onValueChange={(value) => startTransition(() => setStaffForm(prev => ({ ...prev, status: value as Staff['status'] })))}>
                    <SelectTrigger>
                      <SelectValue placeholder="Select status" />
                    </SelectTrigger>
@@ -2689,13 +2737,13 @@ export default function AdminDashboard() {
                </div>
                <div>
                  <Label htmlFor="specialties">Specialties (one per line)</Label>
-                 <Textarea id="specialties" rows={3} value={Array.isArray(staffForm.specialties) ? staffForm.specialties.join('\n') : ''} onChange={(e) => setStaffForm(prev => ({ ...prev, specialties: e.target.value.split('\n').filter(i => i.trim()) }))} />
+                 <Textarea id="specialties" rows={3} value={Array.isArray(staffForm.specialties) ? staffForm.specialties.join('\n') : ''} onChange={(e) => startTransition(() => setStaffForm(prev => ({ ...prev, specialties: e.target.value.split('\n').filter(i => i.trim()) })))} />
                </div>
              </div>
 
              <div>
                <Label htmlFor="staffNotes">Notes</Label>
-               <Textarea id="staffNotes" rows={3} value={staffForm.notes || ''} onChange={(e) => setStaffForm(prev => ({ ...prev, notes: e.target.value }))} />
+                 <Textarea id="staffNotes" rows={3} value={staffForm.notes || ''} onChange={(e) => startTransition(() => setStaffForm(prev => ({ ...prev, notes: e.target.value })))} />
              </div>
 
              <div className="flex justify-end gap-2">
@@ -2708,7 +2756,7 @@ export default function AdminDashboard() {
 
        {/* Social Media Reply Modal */}
        <Dialog open={isSocialReplyModalOpen} onOpenChange={setIsSocialReplyModalOpen}>
-         <DialogContent className="max-w-lg">
+         <DialogContent className="max-w-lg will-change-transform [backface-visibility:hidden] [transform:translateZ(0)] [contain:layout_paint]">
            <DialogHeader>
              <DialogTitle className="flex items-center gap-2">
                {selectedMessage?.platform === 'instagram' ? (

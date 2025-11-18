@@ -605,6 +605,33 @@ class ClientService {
     return [...this.clients]
   }
 
+  async fetchFromSupabase() {
+    const rows = await supabaseFetchClients()
+    if (!rows) return
+    const normalized: Client[] = rows.map((r: any) => ({
+      id: String(r.id),
+      firstName: String(r.first_name ?? ''),
+      lastName: String(r.last_name ?? ''),
+      email: String(r.email ?? ''),
+      phone: String(r.phone ?? ''),
+      dateOfBirth: r.date_of_birth ? String(r.date_of_birth) : undefined,
+      gender: r.gender ? String(r.gender) : undefined,
+      address: r.address ? String(r.address) : undefined,
+      emergencyContact: r.emergency_contact ?? undefined,
+      medicalHistory: Array.isArray(r.medical_history) ? r.medical_history : [],
+      allergies: Array.isArray(r.allergies) ? r.allergies : [],
+      preferences: r.preferences ?? undefined,
+      source: String(r.source ?? 'website'),
+      status: String(r.status ?? 'active'),
+      totalSpent: Number(r.total_spent ?? 0),
+      lastVisit: r.last_visit ? String(r.last_visit) : undefined,
+      createdAt: String(r.created_at ?? new Date().toISOString()),
+      updatedAt: String(r.updated_at ?? new Date().toISOString()),
+    }))
+    this.clients = normalized
+    this.saveToStorage()
+  }
+
   getClientById(id: string): Client | undefined {
     return this.clients.find(client => client.id === id)
   }
@@ -678,6 +705,58 @@ class StaffService {
     } catch (error) {
       console.error("Error saving staff:", error)
     }
+  }
+
+  async fetchFromSupabase() {
+    const rows = await supabaseFetchStaff()
+    if (!rows) return
+    const normalized: Staff[] = rows.map((r: any) => ({
+      id: String(r.id),
+      firstName: String(r.first_name ?? ''),
+      lastName: String(r.last_name ?? ''),
+      email: String(r.email ?? ''),
+      phone: String(r.phone ?? ''),
+      position: String(r.position ?? 'other'),
+      department: r.department ?? undefined,
+      licenseNumber: r.license_number ?? undefined,
+      specialties: Array.isArray(r.specialties) ? r.specialties : [],
+      hireDate: String(r.hire_date ?? new Date().toISOString().slice(0,10)),
+      status: String(r.status ?? 'active'),
+      avatarUrl: r.avatar_url ?? undefined,
+      notes: r.notes ?? undefined,
+      createdAt: String(r.created_at ?? new Date().toISOString()),
+      updatedAt: String(r.updated_at ?? new Date().toISOString()),
+    }))
+    this.staff = normalized
+    this.saveToStorage()
+  }
+
+  async syncLocalToSupabaseIfEmpty() {
+    try {
+      const res = await fetch('/api/admin/staff', { cache: 'no-store' })
+      const json = await res.json()
+      const existing = Array.isArray(json?.staff) ? json.staff : []
+      if (existing.length === 0 && this.staff.length > 0) {
+        for (const s of this.staff) {
+          const payload = {
+            id: s.id,
+            first_name: s.firstName,
+            last_name: s.lastName,
+            email: s.email,
+            phone: s.phone,
+            position: s.position,
+            department: s.department,
+            license_number: s.licenseNumber,
+            specialties: s.specialties,
+            hire_date: s.hireDate,
+            status: s.status,
+            avatar_url: s.avatarUrl,
+            notes: s.notes,
+          }
+          await fetch('/api/admin/staff', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+        }
+      }
+    } catch {}
   }
 
   private getDefaultStaff(): Staff[] {
@@ -1505,6 +1584,58 @@ class InfluencerService {
     } catch (e) {
       console.error('Error saving influencers:', e)
     }
+  }
+
+  async fetchFromSupabase() {
+    const infl = await supabaseFetchInfluencers()
+    const refs = await supabaseFetchReferrals()
+    if (infl) this.influencers = infl
+    if (refs) this.referrals = refs
+    this.saveToStorage()
+  }
+
+  async syncLocalToSupabaseIfEmpty() {
+    try {
+      const res = await fetch('/api/admin/influencers', { cache: 'no-store' })
+      const json = await res.json()
+      const existing = Array.isArray(json?.influencers) ? json.influencers : []
+      if (existing.length === 0 && this.influencers.length > 0) {
+        for (const i of this.influencers) {
+          const payload = {
+            id: i.id,
+            name: i.name,
+            handle: i.handle,
+            platform: i.platform,
+            email: i.email,
+            phone: i.phone,
+            referral_code: i.referralCode,
+            commission_rate: i.commissionRate,
+            total_commission_paid: i.totalCommissionPaid,
+            status: i.status,
+            notes: i.notes,
+          }
+          await fetch('/api/admin/influencers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+        }
+      }
+      const rres = await fetch('/api/admin/influencer-referrals', { cache: 'no-store' })
+      const rjson = await rres.json()
+      const rexisting = Array.isArray(rjson?.referrals) ? rjson.referrals : []
+      if (rexisting.length === 0 && this.referrals.length > 0) {
+        for (const r of this.referrals) {
+          const payload = {
+            id: r.id,
+            influencer_id: r.influencerId,
+            client_id: r.clientId,
+            client_name: r.clientName,
+            amount: r.amount,
+            date: r.date,
+            appointment_id: r.appointmentId,
+            notes: r.notes,
+          }
+          await fetch('/api/admin/influencer-referrals', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+        }
+      }
+    } catch {}
   }
 
   private getDefaultInfluencers(): Influencer[] {

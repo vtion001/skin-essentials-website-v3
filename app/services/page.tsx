@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Clock, Star, Phone, Award, Shield, Users, CheckCircle, ArrowRight, Calendar, Search, ChevronDown, ChevronUp } from "lucide-react"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import { useState, useEffect } from "react"
 import { MobileNav } from "@/components/mobile-nav"
 import { PullToRefresh } from "@/components/pull-to-refresh"
@@ -48,6 +49,7 @@ export default function ServicesPage() {
   const [activeCategoryId, setActiveCategoryId] = useState<string>("")
   const [query, setQuery] = useState<string>("")
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({})
+  const searchParams = useSearchParams()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -56,6 +58,15 @@ export default function ServicesPage() {
     window.addEventListener("scroll", handleScroll)
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
+
+  useEffect(() => {
+    const open = searchParams?.get('book') === 'true'
+    const svc = searchParams?.get('service') || ''
+    if (open) {
+      setSelectedServiceId(svc)
+      setIsBookingOpen(true)
+    }
+  }, [searchParams])
 
   const toId = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
 
