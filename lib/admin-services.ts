@@ -290,26 +290,23 @@ class AppointmentService {
     }
     this.appointments.push(newAppointment)
     this.saveToStorage()
-    // Fire-and-forget insert to Supabase
-    if (supabaseAvailable()) {
-      const row = {
-        id: newAppointment.id,
-        client_id: newAppointment.clientId,
-        client_name: newAppointment.clientName,
-        client_email: newAppointment.clientEmail,
-        client_phone: newAppointment.clientPhone,
-        service: newAppointment.service,
-        date: newAppointment.date,
-        time: newAppointment.time,
-        status: newAppointment.status,
-        notes: newAppointment.notes,
-        duration: newAppointment.duration,
-        price: newAppointment.price,
-        created_at: newAppointment.createdAt,
-        updated_at: newAppointment.updatedAt,
-      }
-      supabaseInsertAppointment(row).catch(() => {})
+    const row = {
+      id: newAppointment.id,
+      client_id: newAppointment.clientId,
+      client_name: newAppointment.clientName,
+      client_email: newAppointment.clientEmail,
+      client_phone: newAppointment.clientPhone,
+      service: newAppointment.service,
+      date: newAppointment.date,
+      time: newAppointment.time,
+      status: newAppointment.status,
+      notes: newAppointment.notes,
+      duration: newAppointment.duration,
+      price: newAppointment.price,
+      created_at: newAppointment.createdAt,
+      updated_at: newAppointment.updatedAt,
     }
+    supabaseInsertAppointment(row).catch(() => {})
     return newAppointment
   }
 
@@ -323,7 +320,7 @@ class AppointmentService {
       updatedAt: new Date().toISOString(),
     }
     this.saveToStorage()
-    if (supabaseAvailable()) {
+    {
       const { clientId, clientName, clientEmail, clientPhone, service, date, time, status, notes, duration, price, updatedAt } = this.appointments[index]
       const row = { client_id: clientId, client_name: clientName, client_email: clientEmail, client_phone: clientPhone, service, date, time, status, notes, duration, price, updated_at: updatedAt }
       supabaseUpdateAppointment(id, row).catch(() => {})
@@ -337,9 +334,7 @@ class AppointmentService {
 
     this.appointments.splice(index, 1)
     this.saveToStorage()
-    if (supabaseAvailable()) {
-      supabaseDeleteAppointment(id).catch(() => {})
-    }
+    supabaseDeleteAppointment(id).catch(() => {})
     return true
   }
 
@@ -608,6 +603,30 @@ class ClientService {
   async fetchFromSupabase() {
     const rows = await supabaseFetchClients()
     if (!rows) return
+    const toGender = (val: any): Client['gender'] | undefined => {
+      if (!val) return undefined
+      const s = String(val).toLowerCase().trim()
+      if (s === 'male') return 'male'
+      if (s === 'female') return 'female'
+      if (s === 'other') return 'other'
+      if (s === 'prefer-not-to-say' || s === 'prefer_not_to_say' || s === 'prefer not to say') return 'prefer-not-to-say'
+      return undefined
+    }
+    const toSource = (val: any): Client['source'] => {
+      const s = String(val ?? '').toLowerCase().trim()
+      if (s === 'website') return 'website'
+      if (s === 'referral') return 'referral'
+      if (s === 'social_media' || s === 'social-media') return 'social_media'
+      if (s === 'walk_in' || s === 'walk-in') return 'walk_in'
+      return 'website'
+    }
+    const toStatus = (val: any): Client['status'] => {
+      const s = String(val ?? '').toLowerCase().trim()
+      if (s === 'active') return 'active'
+      if (s === 'inactive') return 'inactive'
+      if (s === 'blocked') return 'blocked'
+      return 'active'
+    }
     const normalized: Client[] = rows.map((r: any) => ({
       id: String(r.id),
       firstName: String(r.first_name ?? ''),
@@ -615,14 +634,14 @@ class ClientService {
       email: String(r.email ?? ''),
       phone: String(r.phone ?? ''),
       dateOfBirth: r.date_of_birth ? String(r.date_of_birth) : undefined,
-      gender: r.gender ? String(r.gender) : undefined,
+      gender: toGender(r.gender),
       address: r.address ? String(r.address) : undefined,
       emergencyContact: r.emergency_contact ?? undefined,
       medicalHistory: Array.isArray(r.medical_history) ? r.medical_history : [],
       allergies: Array.isArray(r.allergies) ? r.allergies : [],
       preferences: r.preferences ?? undefined,
-      source: String(r.source ?? 'website'),
-      status: String(r.status ?? 'active'),
+      source: toSource(r.source ?? 'website'),
+      status: toStatus(r.status ?? 'active'),
       totalSpent: Number(r.total_spent ?? 0),
       lastVisit: r.last_visit ? String(r.last_visit) : undefined,
       createdAt: String(r.created_at ?? new Date().toISOString()),

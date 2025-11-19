@@ -15,48 +15,40 @@ export async function supabaseFetchAppointments() {
 }
 
 export async function supabaseInsertAppointment(row: any) {
-  if (!supabaseAvailable()) return false
-  const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/appointments`
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      apikey: String(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
-      Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
-      'Content-Type': 'application/json',
-      Prefer: 'return=representation',
-    },
-    body: JSON.stringify(row),
-  })
-  return res.ok
+  try {
+    const res = await fetch('/api/admin/appointments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(row),
+    })
+    return res.ok
+  } catch {
+    return false
+  }
 }
 
 export async function supabaseUpdateAppointment(id: string, updates: any) {
-  if (!supabaseAvailable()) return false
-  const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/appointments?id=eq.${encodeURIComponent(id)}`
-  const res = await fetch(url, {
-    method: 'PATCH',
-    headers: {
-      apikey: String(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
-      Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
-      'Content-Type': 'application/json',
-      Prefer: 'return=representation',
-    },
-    body: JSON.stringify(updates),
-  })
-  return res.ok
+  try {
+    const res = await fetch('/api/admin/appointments', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, updates }),
+    })
+    return res.ok
+  } catch {
+    return false
+  }
 }
 
 export async function supabaseDeleteAppointment(id: string) {
-  if (!supabaseAvailable()) return false
-  const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/appointments?id=eq.${encodeURIComponent(id)}`
-  const res = await fetch(url, {
-    method: 'DELETE',
-    headers: {
-      apikey: String(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
-      Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
-    },
-  })
-  return res.ok
+  try {
+    const res = await fetch(`/api/admin/appointments?id=${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    })
+    return res.ok
+  } catch {
+    return false
+  }
 }
 
 export async function supabaseFetchClients() {
