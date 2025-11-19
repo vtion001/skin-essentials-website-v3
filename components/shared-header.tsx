@@ -61,11 +61,11 @@ export function SharedHeader({ showBackButton = false, backHref = "/", variant =
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               {showBackButton && (
-                <Link href={backHref} className="flex items-center">
+                <Link href={backHref} prefetch={false} className="flex items-center">
                   <ArrowLeft className="w-5 h-5 text-brand-tan hover:text-brand-rose transition-colors" />
                 </Link>
               )}
-              <Link href="/" className="flex items-center">
+              <Link href="/" prefetch={false} className="flex items-center">
                 <div className="relative group">
                   <div className="absolute inset-0 rounded-2xl bg-brand-gradient opacity-15 blur-xl"></div>
                   <div className="relative rounded-2xl bg-white/70 backdrop-blur-sm shadow-md border border-white/30 px-3 py-2 group-hover:shadow-lg transition-all duration-300">
@@ -89,6 +89,7 @@ export function SharedHeader({ showBackButton = false, backHref = "/", variant =
                 <Link
                   key={item.href}
                   href={item.href}
+                  prefetch={false}
                   className={`transition-all duration-300 font-medium relative group px-3 py-2 rounded-xl ${
                     pathname === item.href
                       ? "text-brand-tan bg-white/60 backdrop-blur-sm shadow-sm"
@@ -136,6 +137,7 @@ export function SharedHeader({ showBackButton = false, backHref = "/", variant =
                   <Link
                     key={item.href}
                     href={item.href}
+                    prefetch={false}
                     className={`transition-all duration-300 py-3 font-medium ${
                       pathname === item.href
                         ? "text-brand-tan"

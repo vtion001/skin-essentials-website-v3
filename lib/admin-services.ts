@@ -1608,8 +1608,36 @@ class InfluencerService {
   async fetchFromSupabase() {
     const infl = await supabaseFetchInfluencers()
     const refs = await supabaseFetchReferrals()
-    if (infl) this.influencers = infl
-    if (refs) this.referrals = refs
+    if (infl) {
+      this.influencers = infl.map((r: any) => ({
+        id: String(r.id),
+        name: String(r.name ?? ''),
+        handle: r.handle ? String(r.handle) : undefined,
+        platform: String(r.platform ?? 'other'),
+        email: r.email ? String(r.email) : undefined,
+        phone: r.phone ? String(r.phone) : undefined,
+        referralCode: r.referral_code ? String(r.referral_code) : undefined,
+        commissionRate: Number(r.commission_rate ?? 0.10),
+        totalCommissionPaid: Number(r.total_commission_paid ?? 0),
+        status: String(r.status ?? 'active'),
+        notes: r.notes ? String(r.notes) : undefined,
+        createdAt: String(r.created_at ?? new Date().toISOString()),
+        updatedAt: String(r.updated_at ?? new Date().toISOString()),
+      }))
+    }
+    if (refs) {
+      this.referrals = refs.map((x: any) => ({
+        id: String(x.id),
+        influencerId: String(x.influencer_id ?? x.influencerId ?? ''),
+        clientId: x.client_id ? String(x.client_id) : undefined,
+        clientName: String(x.client_name ?? ''),
+        amount: Number(x.amount ?? 0),
+        date: String(x.date ?? new Date().toISOString()),
+        appointmentId: x.appointment_id ? String(x.appointment_id) : undefined,
+        notes: x.notes ? String(x.notes) : undefined,
+        createdAt: String(x.created_at ?? new Date().toISOString()),
+      }))
+    }
     this.saveToStorage()
   }
 
@@ -1739,7 +1767,8 @@ class InfluencerService {
     const inf = this.influencers.find(x => x.id === influencerId)
     const rate = inf?.commissionRate ?? 0.10
     const commissionDue = totalRevenue * rate
-    const paid = inf?.totalCommissionPaid ?? 0
+    const paidRaw = inf?.totalCommissionPaid ?? 0
+    const paid = Math.min(Math.max(0, paidRaw), commissionDue)
     const remaining = Math.max(commissionDue - paid, 0)
     return { totalReferrals, totalRevenue, commissionRate: rate, commissionDue, commissionPaid: paid, commissionRemaining: remaining }
   }

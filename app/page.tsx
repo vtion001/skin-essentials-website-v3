@@ -32,19 +32,12 @@ import { SharedHeader } from "@/components/shared-header"
 import { BookingModal } from "@/components/booking-modal"
 
 export default function HomePage() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [isScrolled, setIsScrolled] = useState(false)
   const [isBookingOpen, setIsBookingOpen] = useState(false)
   const [visibleCards, setVisibleCards] = useState<boolean[]>([false, false, false, false])
   const heroVideoUrl = "https://res.cloudinary.com/dbviya1rj/video/upload/v1763293241/qdrmjvsqv6hspdrhzrdf.mp4"
+  const [heroVideoError, setHeroVideoError] = useState(false)
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10)
-    }
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
-  }, [])
+  
 
   // Intersection Observer for card animations
   useEffect(() => {
@@ -160,12 +153,7 @@ export default function HomePage() {
     <>
       <div className="min-h-screen bg-white">
         {/* Header */}
-        <SharedHeader
-          isMenuOpen={isMenuOpen}
-          setIsMenuOpen={setIsMenuOpen}
-          isScrolled={isScrolled}
-          onBookClick={() => setIsBookingOpen(true)}
-        />
+        <SharedHeader />
 
         {/* Booking Modal */}
         <BookingModal
@@ -178,16 +166,17 @@ export default function HomePage() {
           {/* Hero Section */}
           <section className="relative pt-24 md:pt-28 lg:pt-32 pb-20 overflow-hidden">
             <div className="absolute inset-0 z-0">
-              {heroVideoUrl ? (
+              {heroVideoUrl && !heroVideoError ? (
                 <video
                   className="w-full h-full object-cover"
                   autoPlay
                   muted
                   loop
                   playsInline
-                  preload="auto"
+                  preload="metadata"
                   aria-hidden="true"
                   src={heroVideoUrl}
+                  onError={() => setHeroVideoError(true)}
                 />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-brand-rose/5 to-brand-tan/5"></div>

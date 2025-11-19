@@ -35,11 +35,11 @@ export default function SharedFooter() {
           <div className="lg:col-span-3">
             <h3 className="font-bold mb-6 text-lg">Explore</h3>
             <div className="space-y-3 text-gray-300">
-              <Link href="/services#thread-lifts" className="block hover:text-white transition-colors">Thread Lifts</Link>
-              <Link href="/services#dermal-fillers" className="block hover:text-white transition-colors">Dermal Fillers</Link>
-              <Link href="/services#laser-treatments" className="block hover:text-white transition-colors">Laser Treatments</Link>
-              <Link href="/services#skin-treatments" className="block hover:text-white transition-colors">Skin Rejuvenation</Link>
-              <Link href="/portfolio" className="block hover:text-white transition-colors">Portfolio</Link>
+              <Link href="/services#thread-lifts" prefetch={false} className="block hover:text-white transition-colors">Thread Lifts</Link>
+              <Link href="/services#dermal-fillers" prefetch={false} className="block hover:text-white transition-colors">Dermal Fillers</Link>
+              <Link href="/services#laser-treatments" prefetch={false} className="block hover:text-white transition-colors">Laser Treatments</Link>
+              <Link href="/services#skin-treatments" prefetch={false} className="block hover:text-white transition-colors">Skin Rejuvenation</Link>
+              <Link href="/portfolio" prefetch={false} className="block hover:text-white transition-colors">Portfolio</Link>
             </div>
           </div>
           <div className="lg:col-span-4">

@@ -51,6 +51,7 @@ import {
   Activity,
   TrendingUp,
   BarChart3,
+  Camera,
 } from "lucide-react"
 import Image from "next/image"
 import { supabaseAvailable } from "@/lib/supabase"
@@ -340,6 +341,11 @@ export default function AdminDashboard() {
   const [searchQuery, setSearchQuery] = useState("")
   const [filterStatus, setFilterStatus] = useState("all")
 
+  const [clientsStatusFilter, setClientsStatusFilter] = useState<string>("all")
+  const [clientsSourceFilter, setClientsSourceFilter] = useState<string>("all")
+  const [clientsSort, setClientsSort] = useState<string>("name_asc")
+  const [clientDuplicateWarning, setClientDuplicateWarning] = useState<string | null>(null)
+
   const [appointmentsSearch, setAppointmentsSearch] = useState("")
   const [appointmentsStatusFilter, setAppointmentsStatusFilter] = useState<string>("all")
   const [appointmentsServiceFilter, setAppointmentsServiceFilter] = useState<string>("all")
@@ -348,6 +354,14 @@ export default function AdminDashboard() {
   const [appointmentsSort, setAppointmentsSort] = useState<string>("date_desc")
   const [appointmentsPage, setAppointmentsPage] = useState<number>(1)
   const [appointmentsPageSize, setAppointmentsPageSize] = useState<number>(10)
+  const [paymentSearch, setPaymentSearch] = useState("")
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState<string>("all")
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>("all")
+  const [paymentDateFrom, setPaymentDateFrom] = useState<string>("")
+  const [paymentDateTo, setPaymentDateTo] = useState<string>("")
+  const [paymentSort, setPaymentSort] = useState<string>("date_desc")
+  const [paymentPage, setPaymentPage] = useState<number>(1)
+  const [paymentPageSize, setPaymentPageSize] = useState<number>(10)
   const [staffSearch, setStaffSearch] = useState("")
   const [staffPositionFilter, setStaffPositionFilter] = useState<string>("all")
   const [staffStatusFilter, setStaffStatusFilter] = useState<string>("all")
@@ -356,6 +370,14 @@ export default function AdminDashboard() {
   const [influencerStatusFilter, setInfluencerStatusFilter] = useState<string>('all')
   const [analyticsDateFrom, setAnalyticsDateFrom] = useState<string>("")
   const [analyticsDateTo, setAnalyticsDateTo] = useState<string>("")
+
+  const [isReferralDetailsOpen, setIsReferralDetailsOpen] = useState(false)
+  const [referralDetailsSearch, setReferralDetailsSearch] = useState("")
+  const [referralDateFrom, setReferralDateFrom] = useState<string>("")
+  const [referralDateTo, setReferralDateTo] = useState<string>("")
+  const [referralSort, setReferralSort] = useState<string>("date_desc")
+  const [referralPage, setReferralPage] = useState<number>(1)
+  const [referralPageSize, setReferralPageSize] = useState<number>(10)
 
   // Authentication is enforced by middleware; optional client-side redirect kept minimal
   useEffect(() => {
@@ -366,6 +388,10 @@ export default function AdminDashboard() {
   useEffect(() => {
     loadAllData()
   }, [])
+
+  useEffect(() => {
+    setReferralPage(1)
+  }, [referralDetailsSearch, referralDateFrom, referralDateTo, referralSort, selectedInfluencer])
 
   useEffect(() => {
     try {
@@ -417,7 +443,22 @@ export default function AdminDashboard() {
     try {
       const payRes = await fetch('/api/admin/payments', { cache: 'no-store' })
       const payJson = await payRes.json()
-      setPayments(Array.isArray(payJson?.payments) ? payJson.payments : [])
+      const arr = Array.isArray(payJson?.payments) ? payJson.payments : []
+      const normalized = arr.map((p: any) => ({
+        id: String(p.id),
+        appointmentId: p.appointment_id ?? undefined,
+        clientId: String(p.client_id ?? ''),
+        amount: Number(p.amount ?? 0),
+        method: String(p.method ?? 'gcash'),
+        status: String(p.status ?? 'pending'),
+        transactionId: p.transaction_id ?? undefined,
+        receiptUrl: p.receipt_url ?? undefined,
+        uploadedFiles: Array.isArray(p.uploaded_files) ? p.uploaded_files : [],
+        notes: p.notes ?? '',
+        createdAt: String(p.created_at ?? new Date().toISOString()),
+        updatedAt: String(p.updated_at ?? new Date().toISOString()),
+      })) as Payment[]
+      setPayments(normalized)
     } catch {}
     try {
       const recRes = await fetch('/api/admin/medical-records', { cache: 'no-store' })
@@ -456,6 +497,151 @@ export default function AdminDashboard() {
   const supabaseRealtimeEnabled = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
   const supabaseBrowser = supabaseRealtimeEnabled ? createClient(String(process.env.NEXT_PUBLIC_SUPABASE_URL), String(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)) : null
 
+  const paymentFileInputRef = React.useRef<HTMLInputElement | null>(null)
+  const [isCameraDialogOpen, setIsCameraDialogOpen] = useState(false)
+  const videoRef = React.useRef<HTMLVideoElement | null>(null)
+  const canvasRef = React.useRef<HTMLCanvasElement | null>(null)
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null)
+  const [cameraTarget, setCameraTarget] = useState<null | 'payment' | 'medical'>(null)
+  const medicalFileInputRef = React.useRef<HTMLInputElement | null>(null)
+  const [supplierPayAmount, setSupplierPayAmount] = useState<number>(0)
+  const [supplierPayMethod, setSupplierPayMethod] = useState<string>('bank_transfer')
+  const [supplierPayNotes, setSupplierPayNotes] = useState<string>('')
+
+  const uploadReceiptFile = async (file: File) => {
+    try {
+      if (!supabaseBrowser) {
+        showNotification('error', 'Supabase is not configured')
+        return null
+      }
+      const clientId = String(paymentForm.clientId || 'unknown')
+      const today = new Date()
+      const y = today.getFullYear()
+      const m = String(today.getMonth() + 1).padStart(2, '0')
+      const d = String(today.getDate()).padStart(2, '0')
+      const folder = `${clientId}/${y}${m}${d}`
+      const ext = file.name.split('.').pop() || 'jpg'
+      const filename = `receipt_${Date.now()}.${ext}`
+      const path = `${folder}/${filename}`
+      const { error } = await supabaseBrowser.storage.from('payment-receipts').upload(path, file, { upsert: true, contentType: file.type })
+      if (error) {
+        showNotification('error', 'Upload failed')
+        return null
+      }
+      const { data } = supabaseBrowser.storage.from('payment-receipts').getPublicUrl(path)
+      const publicUrl = data.publicUrl
+      const nextFiles = [...(Array.isArray(paymentForm.uploadedFiles) ? paymentForm.uploadedFiles : []), publicUrl]
+      setPaymentForm(prev => ({ ...prev, uploadedFiles: nextFiles, receiptUrl: prev.receiptUrl || publicUrl }))
+      showNotification('success', 'Receipt uploaded')
+      return publicUrl
+    } catch {
+      showNotification('error', 'Upload error')
+      return null
+    }
+  }
+
+  const handleUploadButtonClick = () => {
+    paymentFileInputRef.current?.click()
+  }
+
+  const handleFileInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+    for (const file of Array.from(files)) {
+      await uploadReceiptFile(file)
+    }
+    e.target.value = ''
+  }
+
+  const openCamera = async (target?: 'payment' | 'medical') => {
+    try {
+      if (target) setCameraTarget(target)
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+      setCameraStream(stream)
+      setIsCameraDialogOpen(true)
+      if (videoRef.current) {
+        // @ts-ignore
+        videoRef.current.srcObject = stream
+        videoRef.current.play()
+      }
+    } catch {
+      showNotification('error', 'Camera unavailable')
+    }
+  }
+
+  const closeCamera = () => {
+    try {
+      cameraStream?.getTracks().forEach(t => t.stop())
+    } catch {}
+    setCameraStream(null)
+    setIsCameraDialogOpen(false)
+  }
+
+  const capturePhoto = async () => {
+    if (!videoRef.current) return
+    const video = videoRef.current
+    const canvas = canvasRef.current || document.createElement('canvas')
+    canvas.width = video.videoWidth
+    canvas.height = video.videoHeight
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(b => resolve(b), 'image/jpeg', 0.9))
+    if (!blob) return
+    const file = new File([blob], `camera_${Date.now()}.jpg`, { type: 'image/jpeg' })
+    if (cameraTarget === 'medical') {
+      await uploadMedicalFile(file)
+    } else {
+      await uploadReceiptFile(file)
+    }
+    closeCamera()
+  }
+
+  const uploadMedicalFile = async (file: File) => {
+    try {
+      if (!supabaseBrowser) {
+        showNotification('error', 'Supabase is not configured')
+        return null
+      }
+      const clientId = String(medicalRecordForm.clientId || 'unknown')
+      const today = new Date()
+      const y = today.getFullYear()
+      const m = String(today.getMonth() + 1).padStart(2, '0')
+      const d = String(today.getDate()).padStart(2, '0')
+      const folder = `${clientId}/${y}${m}${d}`
+      const ext = file.name.split('.').pop() || 'jpg'
+      const filename = `attachment_${Date.now()}.${ext}`
+      const path = `${folder}/${filename}`
+      const { error } = await supabaseBrowser.storage.from('medical-attachments').upload(path, file, { upsert: true, contentType: file.type })
+      if (error) {
+        showNotification('error', 'Upload failed')
+        return null
+      }
+      const { data } = supabaseBrowser.storage.from('medical-attachments').getPublicUrl(path)
+      const publicUrl = data.publicUrl
+      const nextFiles = [...(Array.isArray(medicalRecordForm.attachments) ? medicalRecordForm.attachments : []), publicUrl]
+      setMedicalRecordForm(prev => ({ ...prev, attachments: nextFiles }))
+      showNotification('success', 'Attachment uploaded')
+      return publicUrl
+    } catch {
+      showNotification('error', 'Upload error')
+      return null
+    }
+  }
+
+  const handleMedicalUploadButtonClick = () => {
+    medicalFileInputRef.current?.click()
+  }
+
+  const handleMedicalFileInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+    for (const file of Array.from(files)) {
+      await uploadMedicalFile(file)
+    }
+    e.target.value = ''
+  }
+
   const refreshAppointments = async () => {
     await appointmentService.fetchFromSupabase?.()
     setAppointments(appointmentService.getAllAppointments())
@@ -472,7 +658,22 @@ export default function AdminDashboard() {
     try {
       const res = await fetch('/api/admin/payments', { cache: 'no-store' })
       const json = await res.json()
-      setPayments(Array.isArray(json?.payments) ? json.payments : [])
+      const arr = Array.isArray(json?.payments) ? json.payments : []
+      const normalized = arr.map((p: any) => ({
+        id: String(p.id),
+        appointmentId: p.appointment_id ?? undefined,
+        clientId: String(p.client_id ?? ''),
+        amount: Number(p.amount ?? 0),
+        method: String(p.method ?? 'gcash'),
+        status: String(p.status ?? 'pending'),
+        transactionId: p.transaction_id ?? undefined,
+        receiptUrl: p.receipt_url ?? undefined,
+        uploadedFiles: Array.isArray(p.uploaded_files) ? p.uploaded_files : [],
+        notes: p.notes ?? '',
+        createdAt: String(p.created_at ?? new Date().toISOString()),
+        updatedAt: String(p.updated_at ?? new Date().toISOString()),
+      })) as Payment[]
+      setPayments(normalized)
     } catch {}
   }
   const refreshMedical = async () => {
@@ -514,7 +715,7 @@ export default function AdminDashboard() {
       todayAppointments: appointments.filter(apt => apt.date === today).length,
       totalClients: clients.length,
       monthlyRevenue: payments
-        .filter(payment => payment.createdAt.startsWith(thisMonth) && payment.status === 'completed')
+        .filter(payment => String(payment.createdAt || '').startsWith(thisMonth) && payment.status === 'completed')
         .reduce((sum, payment) => sum + payment.amount, 0),
       unreadMessages: socialMessages.filter(msg => !msg.isRead).length,
       pendingPayments: payments.filter(payment => payment.status === 'pending').length,
@@ -609,6 +810,26 @@ export default function AdminDashboard() {
         const phoneOk = !clientForm.phone || /\+?\d[\d\s-]{6,}$/.test(clientForm.phone)
         if (!emailOk || !phoneOk) {
           showNotification("error", "Please enter valid email and phone")
+          setIsLoading(false)
+          return
+        }
+        setClientDuplicateWarning(null)
+        const isEditing = Boolean(selectedClient?.id)
+        const norm = (s: any) => String(s || '').trim().toLowerCase()
+        const email = norm(clientForm.email)
+        const phone = norm(clientForm.phone)
+        const nameKey = `${norm(clientForm.firstName)} ${norm(clientForm.lastName)}`.trim()
+        const duplicate = clients.find(c => {
+          if (isEditing && c.id === selectedClient!.id) return false
+          const cEmail = norm(c.email)
+          const cPhone = norm(c.phone)
+          const cNameKey = `${norm(c.firstName)} ${norm(c.lastName)}`.trim()
+          return (email && cEmail && email === cEmail) || (phone && cPhone && phone === cPhone) || (!email && !phone && nameKey && cNameKey && cNameKey === nameKey)
+        })
+        if (duplicate) {
+          const basis = email ? 'email' : phone ? 'phone' : 'name'
+          setClientDuplicateWarning(`A client with the same ${basis} already exists.`)
+          showNotification("error", "Duplicate contact detected")
           setIsLoading(false)
           return
         }
@@ -846,6 +1067,7 @@ export default function AdminDashboard() {
         updatedAt: '',
       })
     }
+    setClientDuplicateWarning(null)
     setIsClientModalOpen(true)
   }
 
@@ -1543,59 +1765,168 @@ export default function AdminDashboard() {
                 </Button>
               </div>
 
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="relative sm:col-span-2">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
+                    placeholder="Search by client or transaction"
+                    value={paymentSearch}
+                    onChange={(e) => { setPaymentSearch(e.target.value); setPaymentPage(1) }}
+                    className="pl-10"
+                  />
+                </div>
+                <Select value={paymentMethodFilter} onValueChange={(v) => { setPaymentMethodFilter(v); setPaymentPage(1) }}>
+                  <SelectTrigger className="h-9"><SelectValue placeholder="Method" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Methods</SelectItem>
+                    <SelectItem value="gcash">GCash</SelectItem>
+                    <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                    <SelectItem value="cash">Cash</SelectItem>
+                    <SelectItem value="card">Card</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={paymentStatusFilter} onValueChange={(v) => { setPaymentStatusFilter(v); setPaymentPage(1) }}>
+                  <SelectTrigger className="h-9"><SelectValue placeholder="Status" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="failed">Failed</SelectItem>
+                    <SelectItem value="refunded">Refunded</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Input type="date" value={paymentDateFrom} onChange={(e) => { setPaymentDateFrom(e.target.value); setPaymentPage(1) }} className="h-9" />
+                <Input type="date" value={paymentDateTo} onChange={(e) => { setPaymentDateTo(e.target.value); setPaymentPage(1) }} className="h-9" />
+                <Select value={paymentSort} onValueChange={(v) => { setPaymentSort(v); setPaymentPage(1) }}>
+                  <SelectTrigger className="h-9"><SelectValue placeholder="Sort" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="date_desc">Date ↓</SelectItem>
+                    <SelectItem value="date_asc">Date ↑</SelectItem>
+                    <SelectItem value="amount_desc">Amount ↓</SelectItem>
+                    <SelectItem value="amount_asc">Amount ↑</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               <Card className="bg-white/60 backdrop-blur-sm border border-[#fbc6c5]/20">
                 <CardContent className="p-4 sm:p-6">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Client</TableHead>
-                        <TableHead>Amount</TableHead>
-                        <TableHead>Method</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {payments.map((payment) => {
-                        const client = clients.find(c => c.id === payment.clientId)
-                        return (
-                          <TableRow key={payment.id}>
-                            <TableCell>{client ? `${client.firstName} ${client.lastName}` : 'Unknown Client'}</TableCell>
-                            <TableCell>₱{payment.amount.toLocaleString()}</TableCell>
-                            <TableCell className="capitalize">{payment.method.replace('_', ' ')}</TableCell>
-                            <TableCell>
-                              <Badge className={
-                                payment.status === 'completed' ? 'bg-green-100 text-green-800' :
-                                payment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                payment.status === 'failed' ? 'bg-red-100 text-red-800' :
-                                'bg-gray-100 text-gray-800'
-                              }>
-                                {payment.status}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>{new Date(payment.createdAt).toLocaleDateString()}</TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => openPaymentModal(payment)}
-                                >
-                                  <Edit className="w-4 h-4" />
-                                </Button>
-                                {payment.receiptUrl && (
-                                  <Button size="sm" variant="outline">
-                                    <Download className="w-4 h-4" />
-                                  </Button>
-                                )}
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        )
-                      })}
-                    </TableBody>
-                  </Table>
+                  {(() => {
+                    const inRange = (iso: string) => {
+                      if (!paymentDateFrom && !paymentDateTo) return true
+                      const t = new Date(iso).getTime()
+                      const from = paymentDateFrom ? new Date(paymentDateFrom).getTime() : -Infinity
+                      const to = paymentDateTo ? new Date(paymentDateTo).getTime() : Infinity
+                      return t >= from && t <= to
+                    }
+                    const filtered = payments
+                      .filter(p => inRange(p.createdAt))
+                      .filter(p => paymentMethodFilter === 'all' ? true : p.method === paymentMethodFilter)
+                      .filter(p => paymentStatusFilter === 'all' ? true : p.status === paymentStatusFilter)
+                      .filter(p => {
+                        const q = paymentSearch.trim().toLowerCase()
+                        if (!q) return true
+                        const client = clients.find(c => c.id === p.clientId)
+                        const name = client ? `${client.firstName} ${client.lastName}`.toLowerCase() : ''
+                        return name.includes(q) || (p.transactionId || '').toLowerCase().includes(q)
+                      })
+                      .sort((a, b) => {
+                        if (paymentSort === 'date_desc') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                        if (paymentSort === 'date_asc') return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+                        if (paymentSort === 'amount_desc') return b.amount - a.amount
+                        if (paymentSort === 'amount_asc') return a.amount - b.amount
+                        return 0
+                      })
+
+                    const totalPages = Math.max(1, Math.ceil(filtered.length / paymentPageSize))
+                    const page = Math.max(1, Math.min(paymentPage, totalPages))
+                    const start = (page - 1) * paymentPageSize
+                    const pageItems = filtered.slice(start, start + paymentPageSize)
+
+                    return (
+                      <div className="space-y-3">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Client</TableHead>
+                              <TableHead>Amount</TableHead>
+                              <TableHead>Method</TableHead>
+                              <TableHead>Status</TableHead>
+                              <TableHead>Date</TableHead>
+                              <TableHead>Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {pageItems.map((payment) => {
+                              const client = clients.find(c => c.id === payment.clientId)
+                              return (
+                                <TableRow key={payment.id}>
+                                  <TableCell>{client ? `${client.firstName} ${client.lastName}` : 'Unknown Client'}</TableCell>
+                                  <TableCell>₱{payment.amount.toLocaleString()}</TableCell>
+                                  <TableCell className="capitalize">{payment.method.replace('_', ' ')}</TableCell>
+                                  <TableCell>
+                                    <Badge className={
+                                      payment.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                      payment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                      payment.status === 'failed' ? 'bg-red-100 text-red-800' :
+                                      'bg-gray-100 text-gray-800'
+                                    }>
+                                      {payment.status}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>{new Date(payment.createdAt).toLocaleDateString()}</TableCell>
+                                  <TableCell>
+                                    <div className="flex items-center gap-2">
+                                      <Button size="sm" variant="outline" onClick={() => openPaymentModal(payment)}>
+                                        <Edit className="w-4 h-4" />
+                                      </Button>
+                                      {payment.receiptUrl && (
+                                        <Button size="sm" variant="outline">
+                                          <Download className="w-4 h-4" />
+                                        </Button>
+                                      )}
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={async () => {
+                                          if (!confirmTwice('this payment')) return
+                                          try {
+                                            const res = await fetch('/api/admin/payments', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: payment.id }) })
+                                            if (res.ok) { await refreshPayments(); showNotification('success', 'Payment deleted') } else { showNotification('error', 'Failed to delete payment') }
+                                          } catch { showNotification('error', 'Failed to delete payment') }
+                                        }}
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </Button>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              )
+                            })}
+                            {pageItems.length === 0 && (
+                              <TableRow>
+                                <TableCell colSpan={6} className="text-center text-gray-500">No payments</TableCell>
+                              </TableRow>
+                            )}
+                          </TableBody>
+                        </Table>
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm text-gray-600">Page {page} of {totalPages}</div>
+                          <div className="flex items-center gap-2">
+                            <Select value={String(paymentPageSize)} onValueChange={(v) => { setPaymentPageSize(parseInt(v)); setPaymentPage(1) }}>
+                              <SelectTrigger className="w-24 h-9"><SelectValue placeholder="Rows" /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="10">10</SelectItem>
+                                <SelectItem value="25">25</SelectItem>
+                                <SelectItem value="50">50</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Button variant="outline" onClick={() => setPaymentPage(Math.max(1, page - 1))}>Prev</Button>
+                            <Button variant="outline" onClick={() => setPaymentPage(Math.min(totalPages, page + 1))}>Next</Button>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })()}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -1688,80 +2019,110 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {clients
-                  .filter(client => 
-                    searchQuery === '' || 
-                    client.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    client.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    client.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    client.phone.includes(searchQuery)
-                  )
-                  .map((client) => (
-                    <Card key={client.id} className="bg-white/60 backdrop-blur-sm border border-[#fbc6c5]/20">
-                      <CardContent className="p-4 sm:p-6">
-                        <div className="flex items-start justify-between mb-4">
-                          <div>
-                            <h3 className="font-bold text-lg">{client.firstName} {client.lastName}</h3>
-                            <p className="text-sm text-gray-600">{client.email}</p>
-                            <p className="text-sm text-gray-600">{client.phone}</p>
-                          </div>
-                          <Badge className={
-                            client.status === 'active' ? 'bg-green-100 text-green-800' :
-                            client.status === 'inactive' ? 'bg-gray-100 text-gray-800' :
-                            'bg-red-100 text-red-800'
-                          }>
-                            {client.status}
-                          </Badge>
-                        </div>
-                        
-                        <div className="space-y-2 mb-4">
-                          <div className="flex items-center gap-2 text-sm">
-                            <DollarSign className="w-4 h-4 text-gray-500" />
-                            <span>Total Spent: ₱{client.totalSpent.toLocaleString()}</span>
-                          </div>
-                          {client.lastVisit && (
-                            <div className="flex items-center gap-2 text-sm">
-                              <CalendarIcon className="w-4 h-4 text-gray-500" />
-                              <span>Last Visit: {new Date(client.lastVisit).toLocaleDateString()}</span>
-                            </div>
-                          )}
-                          <div className="flex items-center gap-2 text-sm">
-                            <Users className="w-4 h-4 text-gray-500" />
-                            <span>Source: {client.source.replace('_', ' ')}</span>
-                          </div>
-                        </div>
+              <div className="flex flex-wrap gap-3 mb-4">
+                <Select value={clientsStatusFilter} onValueChange={setClientsStatusFilter}>
+                  <SelectTrigger className="h-9"><SelectValue placeholder="Status" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="blocked">Blocked</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={clientsSourceFilter} onValueChange={setClientsSourceFilter}>
+                  <SelectTrigger className="h-9"><SelectValue placeholder="Source" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Sources</SelectItem>
+                    <SelectItem value="website">Website</SelectItem>
+                    <SelectItem value="facebook">Facebook</SelectItem>
+                    <SelectItem value="instagram">Instagram</SelectItem>
+                    <SelectItem value="referral">Referral</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={clientsSort} onValueChange={setClientsSort}>
+                  <SelectTrigger className="h-9"><SelectValue placeholder="Sort" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="name_asc">Name (A→Z)</SelectItem>
+                    <SelectItem value="name_desc">Name (Z→A)</SelectItem>
+                    <SelectItem value="spent_desc">Total Spent (High→Low)</SelectItem>
+                    <SelectItem value="last_visit_desc">Last Visit (Newest)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => openClientModal(client)}
-                            className="flex-1"
-                          >
-                            <Edit className="w-4 h-4 mr-2" />
-                            Edit
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => openMedicalRecordModal(undefined, client.id)}
-                          >
-                            <FileText className="w-4 h-4" />
-                          </Button>
-                          <Button size="sm" variant="outline">
-                            <Phone className="w-4 h-4" />
-                          </Button>
-                          <Button size="sm" variant="outline">
-                            <Mail className="w-4 h-4" />
-                          </Button>
-                          <Button size="sm" variant="outline" onClick={() => setConfirmClient(client)}>
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+              <div className="overflow-x-auto">
+                <Table className="min-w-[700px]">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead scope="col">Name</TableHead>
+                      <TableHead scope="col">Email</TableHead>
+                      <TableHead scope="col">Phone</TableHead>
+                      <TableHead scope="col">Status</TableHead>
+                      <TableHead scope="col">Total Spent</TableHead>
+                      <TableHead scope="col">Last Visit</TableHead>
+                      <TableHead scope="col">Source</TableHead>
+                      <TableHead scope="col" className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {clients
+                      .filter(client => 
+                        searchQuery === '' || 
+                        client.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        client.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        (client.email || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        (client.phone || '').includes(searchQuery)
+                      )
+                      .filter(c => clientsStatusFilter === 'all' ? true : c.status === clientsStatusFilter)
+                      .filter(c => clientsSourceFilter === 'all' ? true : c.source === clientsSourceFilter)
+                      .sort((a, b) => {
+                        if (clientsSort === 'name_asc') return `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`)
+                        if (clientsSort === 'name_desc') return `${b.firstName} ${b.lastName}`.localeCompare(`${a.firstName} ${a.lastName}`)
+                        if (clientsSort === 'spent_desc') return (b.totalSpent || 0) - (a.totalSpent || 0)
+                        if (clientsSort === 'last_visit_desc') return new Date(b.lastVisit || 0).getTime() - new Date(a.lastVisit || 0).getTime()
+                        return 0
+                      })
+                      .map((client) => (
+                        <TableRow key={client.id}>
+                          <TableCell className="font-medium">{client.firstName} {client.lastName}</TableCell>
+                          <TableCell className="truncate max-w-[220px]">{client.email}</TableCell>
+                          <TableCell className="truncate max-w-[160px]">{client.phone}</TableCell>
+                          <TableCell>
+                            <Badge className={
+                              client.status === 'active' ? 'bg-green-100 text-green-800' :
+                              client.status === 'inactive' ? 'bg-gray-100 text-gray-800' :
+                              'bg-red-100 text-red-800'
+                            }>
+                              {client.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>₱{client.totalSpent.toLocaleString()}</TableCell>
+                          <TableCell>{client.lastVisit ? new Date(client.lastVisit).toLocaleDateString() : '-'}</TableCell>
+                          <TableCell>{client.source.replace('_', ' ')}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button size="sm" variant="outline" onClick={() => openClientModal(client)} aria-label="Edit client">
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button size="sm" variant="outline" onClick={() => openMedicalRecordModal(undefined, client.id)} aria-label="Open medical records">
+                                <FileText className="w-4 h-4" />
+                              </Button>
+                              <Button size="sm" variant="outline" aria-label="Call client">
+                                <Phone className="w-4 h-4" />
+                              </Button>
+                              <Button size="sm" variant="outline" aria-label="Email client">
+                                <Mail className="w-4 h-4" />
+                              </Button>
+                              <Button size="sm" variant="outline" onClick={() => setConfirmClient(client)} aria-label="Delete client">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
               </div>
                 </TabsContent>
                 </LazyTabContent>
@@ -1972,6 +2333,10 @@ export default function AdminDashboard() {
                     <SelectItem value="inactive">Inactive</SelectItem>
                   </SelectContent>
                 </Select>
+                <Button size="sm" variant="outline" onClick={() => setIsReferralDetailsOpen(true)} className="h-9 w-full">
+                  <Eye className="w-4 h-4 mr-2" />
+                  View All Referrals
+                </Button>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -2026,15 +2391,7 @@ export default function AdminDashboard() {
                               <Plus className="w-4 h-4 mr-2" />
                               Add Referral
                             </Button>
-                            <Button size="sm" variant="outline" onClick={async () => {
-                              const stats = influencerService.getStats(i.id)
-                              const newPaid = (i.totalCommissionPaid || 0) + Math.max(stats.commissionRemaining, 0)
-                              const res = await fetch('/api/admin/influencers', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: i.id, total_commission_paid: newPaid }) })
-                              if (res.ok) { await influencerService.fetchFromSupabase?.(); setInfluencers(influencerService.getAllInfluencers()); showNotification('success', 'Commission paid') } else { showNotification('error', 'Failed to pay commission') }
-                            }} className="w-full sm:w-auto">
-                              <DollarSign className="w-4 h-4 mr-2" />
-                              Pay Commission
-                            </Button>
+                            
                             <Button size="sm" variant="outline" onClick={async () => {
                               if (!confirmTwice(i.name || 'this influencer')) return
                               const res = await fetch('/api/admin/influencers', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: i.id }) })
@@ -2044,20 +2401,7 @@ export default function AdminDashboard() {
                               Delete
                             </Button>
                           </div>
-                          <div className="space-y-2">
-                            {influencerService.getReferralsByInfluencer(i.id).slice(0,5).map(ref => (
-                              <div key={ref.id} className="flex items-center justify-between p-3 bg-white/50 rounded-lg">
-                                <div>
-                                  <p className="font-medium text-sm">{ref.clientName}</p>
-                                  <p className="text-xs text-gray-500">{new Date(ref.date).toLocaleDateString()}</p>
-                                </div>
-                                <div className="text-sm font-semibold">₱{ref.amount.toLocaleString()}</div>
-                              </div>
-                            ))}
-                            {influencerService.getReferralsByInfluencer(i.id).length === 0 && (
-                              <div className="text-center py-6 text-gray-500">No referrals yet</div>
-                            )}
-                          </div>
+                          
                         </CardContent>
                       </Card>
                     )
@@ -2565,14 +2909,35 @@ export default function AdminDashboard() {
               <div className="mt-2 border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
                 <Upload className="mx-auto h-12 w-12 text-gray-400" />
                 <div className="mt-4">
-                  <Button type="button" variant="outline">
+                  <input ref={paymentFileInputRef} type="file" accept="image/*,application/pdf" multiple className="hidden" onChange={handleFileInputChange} />
+                  <Button type="button" variant="outline" onClick={handleUploadButtonClick} className="mr-2">
                     <Upload className="w-4 h-4 mr-2" />
                     Upload Files
+                  </Button>
+                  <Button type="button" variant="outline" onClick={() => openCamera('payment')}>
+                    <Camera className="w-4 h-4 mr-2" />
+                    Camera
                   </Button>
                 </div>
                 <p className="mt-2 text-sm text-gray-500">
                   PNG, JPG, PDF up to 10MB
                 </p>
+                {Array.isArray(paymentForm.uploadedFiles) && paymentForm.uploadedFiles.length > 0 && (
+                  <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {paymentForm.uploadedFiles.map((url, idx) => (
+                      <div key={idx} className="flex items-center gap-2 bg-white/60 border rounded-md p-2">
+                        <FileImage className="w-4 h-4" />
+                        <a href={url} target="_blank" rel="noreferrer" className="text-sm truncate max-w-[160px]">
+                          {url.split('/').pop()}
+                        </a>
+                        <Button size="sm" variant="outline" className="ml-auto" onClick={() => {
+                          const next = (paymentForm.uploadedFiles || []).filter(u => u !== url)
+                          setPaymentForm(prev => ({ ...prev, uploadedFiles: next, receiptUrl: prev.receiptUrl === url ? next[0] : prev.receiptUrl }))
+                        }}>Remove</Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -2586,6 +2951,24 @@ export default function AdminDashboard() {
             </div>
           </form>
        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isCameraDialogOpen} onOpenChange={(v) => { if (!v) closeCamera(); else setIsCameraDialogOpen(true) }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Capture Receipt</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="rounded-lg overflow-hidden bg-black">
+              <video ref={videoRef} className="w-full h-64 object-contain" playsInline muted />
+              <canvas ref={canvasRef} className="hidden" />
+            </div>
+            <div className="flex items-center justify-end gap-2">
+              <Button type="button" variant="outline" onClick={closeCamera}>Cancel</Button>
+              <Button type="button" onClick={capturePhoto}>Capture</Button>
+            </div>
+          </div>
+        </DialogContent>
       </Dialog>
 
        <Dialog open={isInfluencerModalOpen} onOpenChange={setIsInfluencerModalOpen}>
@@ -2690,6 +3073,217 @@ export default function AdminDashboard() {
                <Button type="submit" disabled={isLoading || !selectedInfluencer}>{isLoading ? 'Saving...' : 'Save Referral'}</Button>
              </div>
            </form>
+       </DialogContent>
+      </Dialog>
+
+       <Dialog open={isReferralDetailsOpen} onOpenChange={setIsReferralDetailsOpen}>
+         <DialogContent className="max-w-3xl will-change-transform [backface-visibility:hidden] [transform:translateZ(0)] [contain:layout_paint]">
+           <DialogHeader>
+             <DialogTitle>{selectedInfluencer ? `Referrals for ${selectedInfluencer.name}` : 'Referrals'}</DialogTitle>
+           </DialogHeader>
+           <div className="space-y-4">
+             <div>
+               <Label>Influencer</Label>
+               <Select value={selectedInfluencer?.id || ''} onValueChange={(v) => {
+                 const found = influencers.find(x => x.id === v) || null
+                 setSelectedInfluencer(found)
+               }}>
+                 <SelectTrigger><SelectValue placeholder="Select influencer" /></SelectTrigger>
+                 <SelectContent>
+                   {influencers.map(inf => (
+                     <SelectItem key={inf.id} value={inf.id}>{inf.name} {inf.handle ? `(${inf.handle})` : ''}</SelectItem>
+                   ))}
+                 </SelectContent>
+               </Select>
+             </div>
+             <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+               <div className="relative sm:col-span-2">
+                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                 <Input placeholder="Search referrals..." value={referralDetailsSearch} onChange={(e) => setReferralDetailsSearch(e.target.value)} className="pl-10" />
+               </div>
+               <Input type="date" value={referralDateFrom} onChange={(e) => setReferralDateFrom(e.target.value)} />
+               <Input type="date" value={referralDateTo} onChange={(e) => setReferralDateTo(e.target.value)} />
+             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Sort</Label>
+                <Select value={referralSort} onValueChange={setReferralSort}>
+                  <SelectTrigger><SelectValue placeholder="Sort" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="date_desc">Date desc</SelectItem>
+                    <SelectItem value="date_asc">Date asc</SelectItem>
+                    <SelectItem value="amount_desc">Amount desc</SelectItem>
+                    <SelectItem value="amount_asc">Amount asc</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Page size</Label>
+                <Select value={String(referralPageSize)} onValueChange={(v) => setReferralPageSize(Number(v))}>
+                  <SelectTrigger><SelectValue placeholder="Page size" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5</SelectItem>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            {selectedInfluencer && (() => {
+              const stats = influencerService.getStats(selectedInfluencer.id)
+              return (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <div className="p-3 rounded-xl bg-white/50">
+                      <p className="text-xs text-gray-500">Commission Rate</p>
+                      <p className="text-lg font-bold">{Math.round(stats.commissionRate * 100)}%</p>
+                    </div>
+                    <div className="p-3 rounded-xl bg-white/50">
+                      <p className="text-xs text-gray-500">Total Revenue</p>
+                      <p className="text-lg font-bold">₱{stats.totalRevenue.toLocaleString()}</p>
+                    </div>
+                    <div className="p-3 rounded-xl bg-white/50">
+                      <p className="text-xs text-gray-500">Commission Due</p>
+                      <p className="text-lg font-bold">₱{stats.commissionDue.toLocaleString()}</p>
+                    </div>
+                    <div className="p-3 rounded-xl bg-white/50">
+                      <p className="text-xs text-gray-500">Paid</p>
+                      <p className="text-lg font-bold">₱{stats.commissionPaid.toLocaleString()}</p>
+                    </div>
+                    <div className="p-3 rounded-xl bg-white/50">
+                      <p className="text-xs text-gray-500">Remaining</p>
+                      <p className="text-lg font-bold">₱{stats.commissionRemaining.toLocaleString()}</p>
+                    </div>
+                  </div>
+                  <div className="rounded-xl border bg-white/60 p-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <Label>Amount to pay (₱)</Label>
+                        <Input type="number" value={supplierPayAmount || stats.commissionRemaining} onChange={(e) => setSupplierPayAmount(Number(e.target.value))} />
+                      </div>
+                      <div>
+                        <Label>Method</Label>
+                        <Select value={supplierPayMethod} onValueChange={setSupplierPayMethod}>
+                          <SelectTrigger><SelectValue placeholder="Method" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                            <SelectItem value="gcash">GCash</SelectItem>
+                            <SelectItem value="cash">Cash</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="mt-3">
+                      <Label>Notes</Label>
+                      <Textarea rows={2} value={supplierPayNotes} onChange={(e) => setSupplierPayNotes(e.target.value)} />
+                    </div>
+                    <div className="mt-3 flex items-center gap-2">
+                      <Button size="sm" variant="outline" onClick={() => setSupplierPayAmount(stats.commissionRemaining)}>Prefill Remaining</Button>
+                      <Button size="sm" onClick={async () => {
+                        if (!selectedInfluencer) return
+                        const amt = supplierPayAmount || stats.commissionRemaining
+                        const newPaid = (selectedInfluencer.totalCommissionPaid || 0) + Math.max(amt, 0)
+                        const res = await fetch('/api/admin/influencers', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: selectedInfluencer.id, total_commission_paid: newPaid }) })
+                        if (res.ok) {
+                          await influencerService.fetchFromSupabase?.()
+                          setInfluencers(influencerService.getAllInfluencers())
+                          showNotification('success', 'Supplier payment registered')
+                          setSupplierPayNotes('')
+                        } else {
+                          showNotification('error', 'Failed to register payment')
+                        }
+                      }}>
+                        <DollarSign className="w-4 h-4 mr-2" />
+                        Register Payment
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )
+            })()}
+             {(() => {
+               const all = selectedInfluencer ? influencerService.getReferralsByInfluencer(selectedInfluencer.id) : []
+               const filtered = all.filter(r => {
+                 const q = referralDetailsSearch.trim().toLowerCase()
+                 const matchQ = q === '' || r.clientName.toLowerCase().includes(q) || (r.notes ?? '').toLowerCase().includes(q)
+                 const d = new Date(r.date)
+                 const fromOk = referralDateFrom ? d >= new Date(referralDateFrom) : true
+                 const toOk = referralDateTo ? d <= new Date(referralDateTo) : true
+                 return matchQ && fromOk && toOk
+               }).sort((a, b) => {
+                 if (referralSort === 'date_desc') return new Date(b.date).getTime() - new Date(a.date).getTime()
+                 if (referralSort === 'date_asc') return new Date(a.date).getTime() - new Date(b.date).getTime()
+                 if (referralSort === 'amount_desc') return b.amount - a.amount
+                 if (referralSort === 'amount_asc') return a.amount - b.amount
+                 return 0
+               })
+               const totalPages = Math.max(1, Math.ceil(filtered.length / referralPageSize))
+               const page = Math.max(1, Math.min(referralPage, totalPages))
+               const start = (page - 1) * referralPageSize
+               const items = filtered.slice(start, start + referralPageSize)
+               return (
+                 <div className="space-y-3">
+                   <Table>
+                     <TableHeader>
+                       <TableRow>
+                         <TableHead>Client</TableHead>
+                         <TableHead>Date</TableHead>
+                         <TableHead>Amount</TableHead>
+                         <TableHead>Notes</TableHead>
+                         <TableHead>Actions</TableHead>
+                       </TableRow>
+                     </TableHeader>
+                     <TableBody>
+                       {items.map(r => (
+                         <TableRow key={r.id}>
+                           <TableCell>{r.clientName}</TableCell>
+                           <TableCell>{new Date(r.date).toLocaleDateString()}</TableCell>
+                           <TableCell>₱{r.amount.toLocaleString()}</TableCell>
+                           <TableCell className="max-w-[300px] truncate">{r.notes || ''}</TableCell>
+                           <TableCell>
+                             <Button
+                               size="sm"
+                               variant="outline"
+                               onClick={async () => {
+                                 if (!confirmTwice('this referral')) return
+                                 const res = await fetch('/api/admin/influencer-referrals', {
+                                   method: 'DELETE',
+                                   headers: { 'Content-Type': 'application/json' },
+                                   body: JSON.stringify({ id: r.id })
+                                 })
+                                 if (res.ok) {
+                                   await influencerService.fetchFromSupabase?.()
+                                   setInfluencers(influencerService.getAllInfluencers())
+                                   showNotification('success', 'Referral deleted')
+                                 } else {
+                                   showNotification('error', 'Failed to delete referral')
+                                 }
+                               }}
+                             >
+                               <Trash2 className="w-4 h-4 mr-2" />
+                               Delete
+                             </Button>
+                           </TableCell>
+                         </TableRow>
+                       ))}
+                       {items.length === 0 && (
+                         <TableRow>
+                           <TableCell colSpan={5} className="text-center text-gray-500">No referrals</TableCell>
+                         </TableRow>
+                       )}
+                     </TableBody>
+                   </Table>
+                   <div className="flex items-center justify-between">
+                     <div className="text-sm text-gray-600">Page {page} of {totalPages}</div>
+                     <div className="flex items-center gap-2">
+                       <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => setReferralPage(p => Math.max(1, p - 1))}>Prev</Button>
+                       <Button size="sm" variant="outline" disabled={page >= totalPages} onClick={() => setReferralPage(p => Math.min(totalPages, p + 1))}>Next</Button>
+                     </div>
+                   </div>
+                 </div>
+               )
+             })()}
+           </div>
          </DialogContent>
        </Dialog>
 
@@ -2814,14 +3408,35 @@ export default function AdminDashboard() {
               <div className="mt-2 border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
                 <FileImage className="mx-auto h-12 w-12 text-gray-400" />
                 <div className="mt-4">
-                  <Button type="button" variant="outline">
+                  <input ref={medicalFileInputRef} type="file" accept="image/*,application/pdf" multiple className="hidden" onChange={handleMedicalFileInputChange} />
+                  <Button type="button" variant="outline" onClick={handleMedicalUploadButtonClick} className="mr-2">
                     <Upload className="w-4 h-4 mr-2" />
                     Upload Medical Files
+                  </Button>
+                  <Button type="button" variant="outline" onClick={() => openCamera('medical')}>
+                    <Camera className="w-4 h-4 mr-2" />
+                    Camera
                   </Button>
                 </div>
                 <p className="mt-2 text-sm text-gray-500">
                   Images, PDFs, and documents up to 10MB each
                 </p>
+                {Array.isArray(medicalRecordForm.attachments) && medicalRecordForm.attachments.length > 0 && (
+                  <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {medicalRecordForm.attachments.map((url, idx) => (
+                      <div key={idx} className="flex items-center gap-2 bg-white/60 border rounded-md p-2">
+                        <FileImage className="w-4 h-4" />
+                        <a href={url} target="_blank" rel="noreferrer" className="text-sm truncate max-w-[160px]">
+                          {url.split('/').pop()}
+                        </a>
+                        <Button size="sm" variant="outline" className="ml-auto" onClick={() => {
+                          const next = (medicalRecordForm.attachments || []).filter(u => u !== url)
+                          setMedicalRecordForm(prev => ({ ...prev, attachments: next }))
+                        }}>Remove</Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -2840,12 +3455,17 @@ export default function AdminDashboard() {
        {/* Client Modal */}
       <Dialog open={isClientModalOpen} onOpenChange={setIsClientModalOpen}>
          <DialogContent className="max-w-2xl will-change-transform [backface-visibility:hidden] [transform:translateZ(0)] [contain:layout_paint]">
-           <DialogHeader>
-             <DialogTitle>
-               {selectedClient ? 'Edit Client' : 'Add New Client'}
-             </DialogTitle>
-           </DialogHeader>
-           <form onSubmit={handleClientSubmit} className="space-y-4">
+      <DialogHeader>
+        <DialogTitle>
+          {selectedClient ? 'Edit Client' : 'Add New Client'}
+        </DialogTitle>
+      </DialogHeader>
+      {clientDuplicateWarning && (
+        <div role="alert" aria-live="polite" className="rounded-md border border-rose-200 bg-rose-50 text-rose-700 p-3 text-sm">
+          {clientDuplicateWarning}
+        </div>
+      )}
+      <form onSubmit={handleClientSubmit} className="space-y-4">
              <div className="grid grid-cols-2 gap-4">
                <div>
                  <Label htmlFor="firstName">First Name</Label>
