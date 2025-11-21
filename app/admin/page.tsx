@@ -1384,8 +1384,8 @@ export default function AdminDashboard() {
         )}
       </AnimatePresence>
 
-      <div className="pt-20 sm:pt-24 pb-10 sm:pb-12 px-4 sm:px-6">
-        <div className="container mx-auto max-w-7xl">
+      <div className="pt-20 sm:pt-24 pb-10 sm:pb-12 px-2 sm:px-4 md:px-6">
+        <div className="mx-auto w-full max-w-screen-2xl">
           {/* Page Header - Glassmorphism effect */}
           <motion.div 
             className="flex items-center justify-between mb-8"
