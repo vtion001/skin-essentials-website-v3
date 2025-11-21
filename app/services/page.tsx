@@ -67,6 +67,21 @@ function ServicesContent() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
   const [preview, setPreview] = useState<{ service: Service; category: ServiceCategory } | null>(null)
   const reduceMotion = useReducedMotion()
+  const [categories, setCategories] = useState<ServiceCategory[]>([])
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetch('/api/services')
+        const j = await res.json()
+        if (j?.ok && Array.isArray(j?.data)) {
+          setCategories(j.data)
+          if (!activeCategoryId && j.data.length) setActiveCategoryId(j.data[0].id)
+        }
+      } catch {}
+    }
+    load()
+  }, [])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -507,9 +522,10 @@ function ServicesContent() {
   ]
 
   useEffect(() => {
-    if (serviceCategories.length && !activeCategoryId) setActiveCategoryId(serviceCategories[0].id)
+    const list = categories.length ? categories : serviceCategories
+    if (list.length && !activeCategoryId) setActiveCategoryId(list[0].id)
     const observers: IntersectionObserver[] = []
-    serviceCategories.forEach((cat) => {
+    list.forEach((cat) => {
       const el = document.getElementById(cat.id)
       if (!el) return
       const obs = new IntersectionObserver(
@@ -524,7 +540,7 @@ function ServicesContent() {
       observers.push(obs)
     })
     return () => observers.forEach((o) => o.disconnect())
-  }, [])
+  }, [categories])
 
   const matchesQuery = (s: Service) => {
     if (!query.trim()) return true
@@ -602,7 +618,7 @@ function ServicesContent() {
             <div className="flex flex-col lg:flex-row justify-between items-center gap-6 mb-8 py-4">
               <div className="flex-1">
                 <div className="hidden md:grid grid-cols-3 lg:grid-cols-5 gap-2">
-                  {serviceCategories.map((cat) => (
+                  {categories.map((cat) => (
                     <motion.a
                       key={cat.id}
                       href={`#${cat.id}`}
@@ -620,7 +636,7 @@ function ServicesContent() {
                 </div>
                 <div className="md:hidden overflow-x-auto scrollbar-hide">
                   <div className="flex gap-2 min-w-max">
-                    {serviceCategories.map((cat) => (
+                    {categories.map((cat) => (
                       <motion.a
                         key={cat.id}
                         href={`#${cat.id}`}
@@ -650,7 +666,7 @@ function ServicesContent() {
                   }}
                   className="bg-white md:bg-white/70 md:backdrop-blur-sm rounded-xl px-3 py-2 shadow-sm border border-gray-300 text-sm text-gray-700"
                 >
-                  {serviceCategories.map((cat) => (
+                   {categories.map((cat) => (
                     <option key={cat.id} value={cat.id}>
                       {cat.category}
                     </option>
@@ -672,7 +688,7 @@ function ServicesContent() {
         </section>
 
         {/* Services by Category */}
-        {serviceCategories.map((category, categoryIndex) => (
+              {categories.map((category, categoryIndex) => (
           <section
             key={category.id}
             id={category.id}

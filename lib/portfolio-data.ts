@@ -8,6 +8,7 @@ export interface PortfolioItem {
   treatment: string
   duration: string
   results: string
+  extraResults?: { beforeImage: string; afterImage: string }[]
 }
 
 const PORTFOLIO_DATA_VERSION = 4
@@ -142,8 +143,20 @@ class PortfolioService {
     const index = this.items.findIndex((item) => item.id === id)
     if (index === -1) return false
 
-    this.items[index] = { ...this.items[index], ...updates }
+    const current = this.items[index]
+    const mergedExtra = updates.extraResults !== undefined ? updates.extraResults : current.extraResults
+    this.items[index] = { ...current, ...updates, extraResults: mergedExtra }
     console.log("Updated portfolio item:", this.items[index].title)
+    this.saveToStorage()
+    return true
+  }
+
+  appendResult(id: string, pair: { beforeImage: string; afterImage: string }): boolean {
+    const index = this.items.findIndex((item) => item.id === id)
+    if (index === -1) return false
+    const curr = this.items[index]
+    const list = Array.isArray(curr.extraResults) ? curr.extraResults : []
+    this.items[index] = { ...curr, extraResults: [...list, pair] }
     this.saveToStorage()
     return true
   }
@@ -194,6 +207,7 @@ class PortfolioService {
         treatment: "Hiko Nose Thread Lift",
         duration: "1 hour",
         results: "1-2 years",
+        extraResults: []
       },
       {
         id: "2",
@@ -205,6 +219,7 @@ class PortfolioService {
         treatment: "Collagen Biostem",
         duration: "1-1.5 hours",
         results: "12-18 months",
+        extraResults: []
       },
       {
         id: "3",
@@ -216,6 +231,7 @@ class PortfolioService {
         treatment: "Dimpleplasty",
         duration: "30 minutes",
         results: "Permanent",
+        extraResults: []
       },
       {
         id: "4",
@@ -227,6 +243,7 @@ class PortfolioService {
         treatment: "Non-Surgical Breast Lift",
         duration: "1 hour",
         results: "12-18 months",
+        extraResults: []
       },
       {
         id: "breast-2",
@@ -238,6 +255,7 @@ class PortfolioService {
         treatment: "Non-Surgical Breast Lift",
         duration: "1 hour",
         results: "12-18 months",
+        extraResults: []
       },
       {
         id: "breast-3",
@@ -249,6 +267,7 @@ class PortfolioService {
         treatment: "Non-Surgical Breast Lift",
         duration: "1 hour",
         results: "12-18 months",
+        extraResults: []
       },
       {
         id: "breast-4",
@@ -260,6 +279,7 @@ class PortfolioService {
         treatment: "Non-Surgical Breast Lift",
         duration: "1 hour",
         results: "12-18 months",
+        extraResults: []
       },
       {
         id: "breast-5",
@@ -282,6 +302,7 @@ class PortfolioService {
         treatment: "COG Thread Lift",
         duration: "45 minutes",
         results: "1-2 years",
+        extraResults: []
       },
 
       // Dermal Fillers & Volume Enhancement
@@ -295,6 +316,7 @@ class PortfolioService {
         treatment: "Lip Fillers",
         duration: "30-45 minutes",
         results: "6-12 months",
+        extraResults: []
       },
       {
         id: "6",
@@ -306,6 +328,7 @@ class PortfolioService {
         treatment: "Non-Surgical Butt Lift",
         duration: "1 hour",
         results: "12-24 months",
+        extraResults: []
       },
            {
         id: "8",
@@ -317,6 +340,7 @@ class PortfolioService {
         treatment: "Non-Surgical Feminine Area Rejuvenation",
         duration: "1 hour",
         results: "12-24 months",
+        extraResults: []
       },
     ]
   }

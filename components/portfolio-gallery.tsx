@@ -407,7 +407,7 @@ export function PortfolioGallery() {
                   <h4 className="font-bold text-gray-900 mb-6 text-xl">Treatment Details</h4>
                   <p className="text-gray-600 mb-8 leading-relaxed text-lg">{selectedItem.description}</p>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                     <div className="text-center p-6 bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200/50 shadow-sm">
                       <div className="bg-rose-100 p-3 rounded-xl w-fit mx-auto mb-4">
                         <Clock className="w-6 h-6 text-rose-600" />
@@ -431,6 +431,42 @@ export function PortfolioGallery() {
                     </div>
                   </div>
                 </div>
+
+                {Array.isArray(selectedItem.extraResults) && selectedItem.extraResults.length > 0 && (
+                  <div className="space-y-6">
+                    <h4 className="font-bold text-gray-900 text-xl">More Results From This Case</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {selectedItem.extraResults.map((pair, idx) => (
+                        <div key={idx} className="group rounded-2xl overflow-hidden border border-gray-200 bg-white/90 backdrop-blur-sm shadow-sm">
+                          <div className="grid grid-cols-2 h-52">
+                            <div className="relative">
+                              <OptimizedImage
+                                src={pair.beforeImage || "/placeholder.svg"}
+                                alt={`Before ${selectedItem.title} ${idx+1}`}
+                                fill
+                                className="object-cover"
+                              />
+                              <div className="absolute top-2 left-2">
+                                <Badge className="bg-red-500/90 text-white text-[10px] font-semibold px-2 py-0.5">Before</Badge>
+                              </div>
+                            </div>
+                            <div className="relative">
+                              <OptimizedImage
+                                src={pair.afterImage || "/placeholder.svg"}
+                                alt={`After ${selectedItem.title} ${idx+1}`}
+                                fill
+                                className="object-cover"
+                              />
+                              <div className="absolute top-2 right-2">
+                                <Badge className="bg-green-500/90 text-white text-[10px] font-semibold px-2 py-0.5">After</Badge>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Similar Results Gallery */}
                 {showSimilar && (

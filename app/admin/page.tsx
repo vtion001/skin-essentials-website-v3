@@ -78,6 +78,7 @@ import { FacebookStatusIndicator } from "@/components/admin/facebook-status-indi
 import { PlatformConnections } from "@/components/admin/platform-connections"
 import { FacebookConnection } from "@/components/admin/facebook-connection"
 import { serviceCategories } from "@/lib/services-data"
+import { portfolioService, type PortfolioItem } from "@/lib/portfolio-data"
 
 const services = [
   "Thread Lifts - Nose Enhancement",
@@ -100,6 +101,7 @@ const services = [
 ]
 
 const procedureOptions = Array.from(new Set(serviceCategories.flatMap(c => c.services.map(s => s.name))))
+const categoryOptions = Array.from(new Set(serviceCategories.map(c => c.category)))
 
 // Enhanced form input component with animations
 const AnimatedInput = memo(({ 
@@ -324,7 +326,7 @@ export default function AdminDashboard() {
   const [selectedMessage, setSelectedMessage] = useState<SocialMessage | null>(null)
   const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null)
   const [selectedInfluencer, setSelectedInfluencer] = useState<Influencer | null>(null)
-  
+
   // Form states
   const [appointmentForm, setAppointmentForm] = useState<Partial<Appointment>>({})
   const [paymentForm, setPaymentForm] = useState<Partial<Payment>>({})
@@ -334,6 +336,53 @@ export default function AdminDashboard() {
   const [staffForm, setStaffForm] = useState<Partial<Staff>>({})
   const [influencerForm, setInfluencerForm] = useState<Partial<Influencer>>({ commissionRate: 0.10, status: 'active' })
   const [referralForm, setReferralForm] = useState<Partial<ReferralRecord>>({})
+  const [emailPreview, setEmailPreview] = useState<Array<{ id: string; from: string; to: string; subject: string; snippet: string }>>([])
+  const [emailLoading, setEmailLoading] = useState(false)
+  const refreshEmailPreview = useCallback(async () => {
+    try {
+      setEmailLoading(true)
+      const resp = await fetch('/api/email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'list' }) })
+      const j = await resp.json()
+      if (j?.ok && Array.isArray(j.messages)) setEmailPreview(j.messages)
+    } finally {
+      setEmailLoading(false)
+    }
+  }, [])
+  useEffect(() => { if (activeTab === 'email') refreshEmailPreview() }, [activeTab, refreshEmailPreview])
+
+  const [contentServices, setContentServices] = useState<{ id: string; category: string; services: any[] }[]>([])
+  const [contentSelectedCategory, setContentSelectedCategory] = useState("")
+  const [contentSubTab, setContentSubTab] = useState<string>("services")
+  const [newServiceForm, setNewServiceForm] = useState<{ name: string; price: string; description: string; duration?: string; results?: string }>({ name: "", price: "", description: "" })
+  const [contentPortfolioItems, setContentPortfolioItems] = useState<PortfolioItem[]>([])
+  const [portfolioForm, setPortfolioForm] = useState<Partial<PortfolioItem>>({})
+  const [editPortfolioItem, setEditPortfolioItem] = useState<PortfolioItem | null>(null)
+  const [editPortfolioForm, setEditPortfolioForm] = useState<Partial<PortfolioItem>>({})
+  const portfolioBeforeFileInputRef = React.useRef<HTMLInputElement | null>(null)
+  const portfolioAfterFileInputRef = React.useRef<HTMLInputElement | null>(null)
+  const editPortfolioBeforeFileInputRef = React.useRef<HTMLInputElement | null>(null)
+  const editPortfolioAfterFileInputRef = React.useRef<HTMLInputElement | null>(null)
+  const [addResultTarget, setAddResultTarget] = useState<PortfolioItem | null>(null)
+  const [addResultForm, setAddResultForm] = useState<{ beforeImage: string; afterImage: string }>({ beforeImage: "", afterImage: "" })
+  const addResultBeforeRef = React.useRef<HTMLInputElement | null>(null)
+  const addResultAfterRef = React.useRef<HTMLInputElement | null>(null)
+  const uploadPortfolioFile = async (file: File, kind: 'before' | 'after', target: 'create' | 'edit' = 'create') => {
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('type', kind)
+      const res = await fetch('/api/upload', { method: 'POST', body: fd })
+      const j = await res.json()
+      const url = j?.url ? String(j.url) : ''
+      if (!url) { showNotification('error', 'Upload failed'); return }
+      if (target === 'create') {
+        setPortfolioForm(prev => ({ ...prev, [kind === 'before' ? 'beforeImage' : 'afterImage']: url }))
+      } else {
+        setEditPortfolioForm(prev => ({ ...prev, [kind === 'before' ? 'beforeImage' : 'afterImage']: url }))
+      }
+      showNotification('success', 'Image uploaded')
+    } catch { showNotification('error', 'Upload failed') }
+  }
 
   // Deletion confirmation (Client)
   const [confirmClient, setConfirmClient] = useState<Client | null>(null)
@@ -456,6 +505,16 @@ export default function AdminDashboard() {
         }
       }
       window.addEventListener('capture_client', onCapture as EventListener)
+      const onBook = () => {
+        const d = localStorage.getItem('appointment_draft')
+        const l = localStorage.getItem('appointment_conversation_id')
+        if (d && l) {
+          const data = JSON.parse(d)
+          setAppointmentForm(data)
+          setIsAppointmentModalOpen(true)
+        }
+      }
+      window.addEventListener('book_appointment', onBook as EventListener)
       return () => window.removeEventListener('storage', onStorage)
     
     } catch {}
@@ -469,6 +528,15 @@ export default function AdminDashboard() {
       } catch {}
     }
   }, [isClientModalOpen])
+
+  useEffect(() => {
+    if (!isAppointmentModalOpen) {
+      try {
+        localStorage.removeItem('appointment_draft')
+        localStorage.removeItem('appointment_conversation_id')
+      } catch {}
+    }
+  }, [isAppointmentModalOpen])
 
   const loadAllData = async () => {
     await appointmentService.fetchFromSupabase?.()
@@ -800,6 +868,28 @@ export default function AdminDashboard() {
       completedAppointments: appointments.filter(apt => apt.status === 'completed').length,
     }
   }
+
+  useEffect(() => {
+    const subs: (() => void)[] = []
+    try {
+      const items = portfolioService.getAllItems()
+      setContentPortfolioItems(items)
+      const unsub = portfolioService.subscribe((updated: PortfolioItem[]) => setContentPortfolioItems(updated))
+      subs.push(unsub)
+    } catch {}
+    ;(async () => {
+      try {
+        const res = await fetch('/api/services')
+        const j = await res.json()
+        if (j?.ok && Array.isArray(j?.data)) {
+          const cats = j.data.map((c: any) => ({ id: c.id, category: c.category, services: c.services }))
+          setContentServices(cats)
+          if (!contentSelectedCategory && cats.length) setContentSelectedCategory(cats[0].id)
+        }
+      } catch {}
+    })()
+    return () => { subs.forEach(fn => fn()) }
+  }, [])
 
   const stats = React.useMemo(() => getDashboardStats(), [appointments, clients, payments, socialMessages])
 
@@ -1409,6 +1499,8 @@ export default function AdminDashboard() {
                     { key: 'influencers', label: 'Influencers', icon: TrendingUp, color: 'from-fuchsia-500 to-violet-600' },
                     { key: 'analytics', label: 'Analytics', icon: BarChart3, color: 'from-blue-600 to-emerald-600' },
                     { key: 'social', label: 'Social Media', icon: MessageSquare, color: 'from-rose-500 to-pink-500' },
+                    { key: 'email', label: 'Email Services', icon: Mail, color: 'from-red-500 to-rose-500' },
+                    { key: 'content', label: 'Content', icon: FileImage, color: 'from-indigo-600 to-pink-600' },
                   ].map(({ key, label, icon: Icon, color }, index) => (
                     <motion.button
                       key={key}
@@ -1457,7 +1549,7 @@ export default function AdminDashboard() {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.3, delay: 0.5 }}
                 >
-                  <TabsList className="bg-white/30 backdrop-blur-xl border border-white/60 shadow-2xl shadow-purple-500/10 h-16 items-center justify-center rounded-3xl p-3 grid w-full grid-cols-6 mb-8 lg:hidden overflow-x-auto scrollbar-none">
+                  <TabsList className="bg-white/30 backdrop-blur-xl border border-white/60 shadow-2xl shadow-purple-500/10 h-16 items-center justify-center rounded-3xl p-3 grid w-full grid-cols-7 mb-8 lg:hidden overflow-x-auto scrollbar-none">
                     {[
                       { value: 'dashboard', icon: BarChart3, label: 'Dashboard', color: 'from-blue-500 to-cyan-500' },
                       { value: 'appointments', icon: CalendarIcon, label: 'Bookings', color: 'from-purple-500 to-pink-500' },
@@ -1465,6 +1557,8 @@ export default function AdminDashboard() {
                       { value: 'medical', icon: FileText, label: 'EMR', color: 'from-orange-500 to-amber-500' },
                       { value: 'clients', icon: Users, label: 'Clients', color: 'from-indigo-500 to-purple-500' },
                       { value: 'staff', icon: Settings, label: 'Staff', color: 'from-slate-500 to-gray-500' },
+                      { value: 'email', icon: Mail, label: 'Email', color: 'from-red-500 to-rose-500' },
+                      { value: 'content', icon: FileImage, label: 'Content', color: 'from-indigo-600 to-pink-600' },
                     ].map((tab, index) => (
                       <motion.div
                         key={tab.value}
@@ -1859,6 +1953,613 @@ export default function AdminDashboard() {
                 </CardContent>
               </Card>
             </TabsContent>
+            </LazyTabContent>
+            <LazyTabContent isActive={activeTab === "email"}>
+              <TabsContent value="email" className="space-y-8">
+                <Card className="border-white/60 bg-white/70 backdrop-blur-xl shadow-xl rounded-3xl">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Mail className="w-5 h-5 text-rose-500" />
+                      Email Services
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div>
+                        <Label>Sender Email (Google)</Label>
+                        <Input placeholder="Configured via environment" disabled />
+                        <p className="text-xs text-gray-500 mt-2">Uses GOOGLE_SENDER_EMAIL with OAuth2 refresh token</p>
+                      </div>
+                      <div>
+                        <Label>AI Auto-Reply</Label>
+                        <div className="flex items-center gap-3">
+                          <Badge className="bg-rose-100 text-rose-700">Enabled when OPENAI_API_KEY is set</Badge>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div className="space-y-3">
+                        <Label>Send Test Email</Label>
+                        <div className="flex items-center gap-3">
+                          <Input value={clientForm.email || ''} onChange={(e) => setClientForm(prev => ({ ...prev, email: e.target.value }))} placeholder="recipient@example.com" />
+                          <Button
+                            onClick={async () => {
+                              try {
+                                const to = String(clientForm.email || '').trim()
+                                if (!to) return
+                                const res = await fetch('/api/email', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ action: 'send', payload: { to, subject: 'Test Email', html: '<div style=\'font-family:system-ui\'>This is a test email from Skin Essentials.</div>' } })
+                                })
+                                const j = await res.json()
+                                showNotification(j?.ok ? 'success' : 'error', j?.ok ? 'Email sent' : 'Failed to send')
+                              } catch {
+                                showNotification('error', 'Failed to send')
+                              }
+                            }}
+                            variant="brand"
+                          >
+                            Send
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        <Label>Process Inbox (AI)</Label>
+                        <div className="flex items-center gap-3">
+                          <Button
+                            onClick={async () => {
+                              try {
+                                const res = await fetch('/api/email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'process' }) })
+                                const j = await res.json()
+                                showNotification(j?.ok ? 'success' : 'error', j?.ok ? `Processed ${j?.processed || 0} emails` : 'Failed to process')
+                              } catch {
+                                showNotification('error', 'Failed to process')
+                              }
+                            }}
+                            variant="brand"
+                          >
+                            Run Now
+                          </Button>
+                        </div>
+                        <p className="text-xs text-gray-500">Composes replies and sends via Gmail</p>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-bold text-gray-900">Inbox Preview</h3>
+                        <Button onClick={refreshEmailPreview} disabled={emailLoading} variant="secondary" className="h-9">
+                          {emailLoading ? 'Loading...' : 'Refresh'}
+                        </Button>
+                      </div>
+                      <div className="rounded-2xl border bg-white/70 p-4">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>From</TableHead>
+                              <TableHead>Subject</TableHead>
+                              <TableHead>Preview</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {emailPreview.map(m => (
+                              <TableRow key={m.id}>
+                                <TableCell className="font-medium">{m.from}</TableCell>
+                                <TableCell className="truncate max-w-[200px]">{m.subject || 'No Subject'}</TableCell>
+                                <TableCell className="text-gray-600 truncate max-w-[320px]">{m.snippet}</TableCell>
+                              </TableRow>
+                            ))}
+                            {emailPreview.length === 0 && (
+                              <TableRow>
+                                <TableCell colSpan={3} className="text-center text-gray-500">No recent messages</TableCell>
+                              </TableRow>
+                            )}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </LazyTabContent>
+            <LazyTabContent isActive={activeTab === "content"}>
+              <TabsContent value="content" className="space-y-8">
+                <Tabs value={contentSubTab} onValueChange={setContentSubTab} className="w-full">
+                  <TabsList className="bg-white/30 backdrop-blur-xl border border-white/60 shadow h-12 items-center justify-center rounded-2xl p-2 grid w-full grid-cols-2 mb-6">
+                    <TabsTrigger value="services" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white text-gray-700 h-9 justify-center rounded-xl border border-transparent px-3 py-2 text-sm font-bold transition-all duration-300 data-[state=active]:border-white/80">Services Manager</TabsTrigger>
+                    <TabsTrigger value="portfolio" className="data-[state=active]:bg-rose-600 data-[state=active]:text-white text-gray-700 h-9 justify-center rounded-xl border border-transparent px-3 py-2 text-sm font-bold transition-all duration-300 data-[state=active]:border-white/80">Portfolio Manager</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="services" className="space-y-8">
+                <Card className="border-white/60 bg-white/70 backdrop-blur-xl shadow-xl rounded-3xl">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileImage className="w-5 h-5 text-indigo-500" />
+                      Services Manager
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="grid md:grid-cols-3 gap-4 items-end">
+                      <div>
+                        <Label>Category</Label>
+                        <Select value={contentSelectedCategory} onValueChange={(v) => setContentSelectedCategory(v)}>
+                          <SelectTrigger className="mt-1"><SelectValue placeholder="Select category" /></SelectTrigger>
+                          <SelectContent>
+                            {contentServices.map((c) => (
+                              <SelectItem key={c.id} value={c.id}>{c.category}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="md:col-span-2 grid grid-cols-3 gap-3">
+                        <div>
+                          <Label>Name</Label>
+                          <Input value={newServiceForm.name} onChange={(e) => setNewServiceForm(prev => ({ ...prev, name: e.target.value }))} placeholder="Service name" />
+                        </div>
+                        <div>
+                          <Label>Price</Label>
+                          <Input value={newServiceForm.price} onChange={(e) => setNewServiceForm(prev => ({ ...prev, price: e.target.value }))} placeholder="₱0" />
+                        </div>
+                        <div>
+                          <Label>Duration</Label>
+                          <Input value={newServiceForm.duration || ''} onChange={(e) => setNewServiceForm(prev => ({ ...prev, duration: e.target.value }))} placeholder="e.g. 45 minutes" />
+                        </div>
+                        <div className="col-span-3">
+                          <Label>Description</Label>
+                          <Textarea value={newServiceForm.description} onChange={(e) => setNewServiceForm(prev => ({ ...prev, description: e.target.value }))} placeholder="Describe the service" />
+                        </div>
+                        <div>
+                          <Label>Results</Label>
+                          <Input value={newServiceForm.results || ''} onChange={(e) => setNewServiceForm(prev => ({ ...prev, results: e.target.value }))} placeholder="e.g. 6-12 months" />
+                        </div>
+                        <div className="col-span-2 flex items-end">
+                          <Button
+                            onClick={async () => {
+                              try {
+                                const id = contentSelectedCategory
+                                if (!id || !newServiceForm.name || !newServiceForm.price) return
+                                const res = await fetch('/api/services', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'addService', categoryId: id, service: newServiceForm }) })
+                                const j = await res.json()
+                                if (j?.ok) {
+                                  const r = await fetch('/api/services')
+                                  const jr = await r.json()
+                                  if (jr?.ok) setContentServices(jr.data.map((c: any) => ({ id: c.id, category: c.category, services: c.services })))
+                                  setNewServiceForm({ name: '', price: '', description: '' })
+                                  showNotification('success', 'Service added')
+                                } else showNotification('error', 'Failed to add service')
+                              } catch { showNotification('error', 'Failed to add service') }
+                            }}
+                            variant="brand"
+                          >
+                            Add Service
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="rounded-2xl border bg-white/70 p-4">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Price</TableHead>
+                            <TableHead>Duration</TableHead>
+                            <TableHead></TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {(contentServices.find(c => c.id === contentSelectedCategory)?.services || []).map((s, i) => (
+                            <TableRow key={i}>
+                              <TableCell className="font-medium">{s.name}</TableCell>
+                              <TableCell>{s.price}</TableCell>
+                              <TableCell>{s.duration || ''}</TableCell>
+                              <TableCell className="text-right">
+                                <Button
+                                  variant="outline"
+                                  onClick={async () => {
+                                    try {
+                                      const res = await fetch('/api/services', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'deleteService', categoryId: contentSelectedCategory, name: s.name }) })
+                                      const j = await res.json()
+                                      if (j?.ok) {
+                                        const r = await fetch('/api/services')
+                                        const jr = await r.json()
+                                        if (jr?.ok) setContentServices(jr.data.map((c: any) => ({ id: c.id, category: c.category, services: c.services })))
+                                        showNotification('success', 'Service removed')
+                                      } else showNotification('error', 'Failed')
+                                    } catch { showNotification('error', 'Failed') }
+                                  }}
+                                >
+                                  Remove
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </CardContent>
+                </Card>
+                  </TabsContent>
+
+                  <TabsContent value="portfolio" className="space-y-8">
+                <Card className="border-white/60 bg-white/70 backdrop-blur-xl shadow-xl rounded-3xl">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileImage className="w-5 h-5 text-rose-500" />
+                      Portfolio Manager
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="grid md:grid-cols-2 gap-4 items-start">
+                      <div className="space-y-4 rounded-2xl border bg-white/70 p-4">
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <AnimatedInput
+                            id="pf-title"
+                            label="Title"
+                            value={portfolioForm.title || ''}
+                            onChange={(e) => setPortfolioForm(prev => ({ ...prev, title: e.target.value }))}
+                            placeholder="Case title"
+                            required
+                          />
+                          <AnimatedSelect
+                            value={portfolioForm.category || ''}
+                            onValueChange={(v) => setPortfolioForm(prev => ({ ...prev, category: v }))}
+                            placeholder="Select category"
+                            options={categoryOptions.map(c => ({ value: c, label: c }))}
+                            label="Category"
+                          />
+                          <AnimatedSelect
+                            value={portfolioForm.treatment || ''}
+                            onValueChange={(v) => setPortfolioForm(prev => ({ ...prev, treatment: v }))}
+                            placeholder="Select treatment"
+                            options={procedureOptions.map(p => ({ value: p, label: p }))}
+                            label="Treatment"
+                          />
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium text-gray-700">Description</Label>
+                            <Textarea
+                              value={portfolioForm.description || ''}
+                              onChange={(e) => setPortfolioForm(prev => ({ ...prev, description: e.target.value }))}
+                              placeholder="Describe the transformation"
+                              rows={3}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <AnimatedInput
+                              id="pf-before"
+                              label="Before Image URL"
+                              value={portfolioForm.beforeImage || ''}
+                              onChange={(e) => setPortfolioForm(prev => ({ ...prev, beforeImage: e.target.value }))}
+                              placeholder="https://..."
+                              required
+                            />
+                            <div className="flex gap-2">
+                              <Button variant="outline" onClick={() => portfolioBeforeFileInputRef.current?.click()}>
+                                <Upload className="w-4 h-4 mr-2" /> Upload Before
+                              </Button>
+                              <input
+                                ref={portfolioBeforeFileInputRef}
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadPortfolioFile(f, 'before', 'create'); e.currentTarget.value = '' }}
+                              />
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <AnimatedInput
+                              id="pf-after"
+                              label="After Image URL"
+                              value={portfolioForm.afterImage || ''}
+                              onChange={(e) => setPortfolioForm(prev => ({ ...prev, afterImage: e.target.value }))}
+                              placeholder="https://..."
+                              required
+                            />
+                            <div className="flex gap-2">
+                              <Button variant="outline" onClick={() => portfolioAfterFileInputRef.current?.click()}>
+                                <Upload className="w-4 h-4 mr-2" /> Upload After
+                              </Button>
+                              <input
+                                ref={portfolioAfterFileInputRef}
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadPortfolioFile(f, 'after', 'create'); e.currentTarget.value = '' }}
+                              />
+                            </div>
+                          </div>
+                          <AnimatedInput
+                            id="pf-duration"
+                            label="Duration"
+                            value={portfolioForm.duration || ''}
+                            onChange={(e) => setPortfolioForm(prev => ({ ...prev, duration: e.target.value }))}
+                            placeholder="e.g. 1 hour"
+                          />
+                          <AnimatedInput
+                            id="pf-results"
+                            label="Results"
+                            value={portfolioForm.results || ''}
+                            onChange={(e) => setPortfolioForm(prev => ({ ...prev, results: e.target.value }))}
+                            placeholder="e.g. 12-18 months"
+                          />
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Button
+                            onClick={() => {
+                              const f = portfolioForm
+                              if (!f.title || !f.category || !f.beforeImage || !f.afterImage) { showNotification('error', 'Please fill required fields'); return }
+                              try {
+                                portfolioService.addItem({
+                                  title: String(f.title),
+                                  category: String(f.category),
+                                  beforeImage: String(f.beforeImage),
+                                  afterImage: String(f.afterImage),
+                                  description: String(f.description || ''),
+                                  treatment: String(f.treatment || ''),
+                                  duration: String(f.duration || ''),
+                                  results: String(f.results || ''),
+                                })
+                                setPortfolioForm({})
+                                showNotification('success', 'Portfolio item added')
+                              } catch { showNotification('error', 'Failed to add item') }
+                            }}
+                            variant="brand"
+                          >
+                            Add Item
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="md:col-span-1 rounded-2xl border bg-white/70 p-4 md:col-span-2">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Title</TableHead>
+                              <TableHead>Category</TableHead>
+                              <TableHead>Treatment</TableHead>
+                              <TableHead></TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {contentPortfolioItems.map((p) => (
+                              <TableRow key={p.id}>
+                                <TableCell className="font-medium">{p.title}</TableCell>
+                                <TableCell>{p.category}</TableCell>
+                                <TableCell>{p.treatment}</TableCell>
+                                <TableCell className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
+                                  <div className="flex items-center justify-end gap-2">
+                                    <Button
+                                      variant="outline"
+                                      onClick={() => { setEditPortfolioItem(p); setEditPortfolioForm({ ...p }) }}
+                                    >
+                                      Edit
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      onClick={() => { setAddResultTarget(p); setAddResultForm({ beforeImage: '', afterImage: '' }) }}
+                                    >
+                                      Add Result
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      onClick={() => {
+                                        try {
+                                          portfolioService.deleteItem(p.id)
+                                          showNotification('success', 'Removed')
+                                        } catch { showNotification('error', 'Failed') }
+                                      }}
+                                    >
+                                      Remove
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </div>
+                    <Dialog open={!!addResultTarget} onOpenChange={(v) => { if (!v) setAddResultTarget(null) }}>
+                      <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                          <DialogTitle>Add Result</DialogTitle>
+                        </DialogHeader>
+                        {addResultTarget && (
+                          <div className="space-y-4">
+                            <div className="grid md:grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <AnimatedInput
+                                  id="arf-before"
+                                  label="Before Image URL"
+                                  value={addResultForm.beforeImage}
+                                  onChange={(e) => setAddResultForm(prev => ({ ...prev, beforeImage: e.target.value }))}
+                                  required
+                                />
+                                <div className="flex gap-2">
+                                  <Button variant="outline" onClick={() => addResultBeforeRef.current?.click()}>
+                                    <Upload className="w-4 h-4 mr-2" /> Upload Before
+                                  </Button>
+                                  <input
+                                    ref={addResultBeforeRef}
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={async (e) => { const f = e.target.files?.[0]; if (f) { await uploadPortfolioFile(f, 'before', 'edit'); setAddResultForm(prev => ({ ...prev, beforeImage: editPortfolioForm.beforeImage || prev.beforeImage })) } e.currentTarget.value = '' }}
+                                  />
+                                </div>
+                              </div>
+                              <div className="space-y-2">
+                                <AnimatedInput
+                                  id="arf-after"
+                                  label="After Image URL"
+                                  value={addResultForm.afterImage}
+                                  onChange={(e) => setAddResultForm(prev => ({ ...prev, afterImage: e.target.value }))}
+                                  required
+                                />
+                                <div className="flex gap-2">
+                                  <Button variant="outline" onClick={() => addResultAfterRef.current?.click()}>
+                                    <Upload className="w-4 h-4 mr-2" /> Upload After
+                                  </Button>
+                                  <input
+                                    ref={addResultAfterRef}
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={async (e) => { const f = e.target.files?.[0]; if (f) { await uploadPortfolioFile(f, 'after', 'edit'); setAddResultForm(prev => ({ ...prev, afterImage: editPortfolioForm.afterImage || prev.afterImage })) } e.currentTarget.value = '' }}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex justify-end gap-3">
+                              <Button variant="outline" onClick={() => setAddResultTarget(null)}>Cancel</Button>
+                              <Button
+                                variant="brand"
+                                onClick={() => {
+                                  if (!addResultTarget) return
+                                  const b = String(addResultForm.beforeImage || '')
+                                  const a = String(addResultForm.afterImage || '')
+                                  if (!b || !a) { showNotification('error', 'Please provide both images'); return }
+                                  try {
+                                    const curr = portfolioService.getItemById(addResultTarget.id)
+                                    const list = Array.isArray(curr?.extraResults) ? curr!.extraResults! : []
+                                    portfolioService.updateItem(addResultTarget.id, { extraResults: [...list, { beforeImage: b, afterImage: a }] })
+                                    setAddResultTarget(null)
+                                    setAddResultForm({ beforeImage: '', afterImage: '' })
+                                    showNotification('success', 'Result added')
+                                  } catch { showNotification('error', 'Failed to add result') }
+                                }}
+                              >
+                                Add
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </DialogContent>
+                    </Dialog>
+                    <Dialog open={!!editPortfolioItem} onOpenChange={(v) => { if (!v) setEditPortfolioItem(null) }}>
+                      <DialogContent className="sm:max-w-lg">
+                        <DialogHeader>
+                          <DialogTitle>Edit Portfolio Item</DialogTitle>
+                        </DialogHeader>
+                        {editPortfolioItem && (
+                          <div className="space-y-4">
+                            <div className="grid md:grid-cols-2 gap-4">
+                              <AnimatedInput
+                                id="epf-title"
+                                label="Title"
+                                value={editPortfolioForm.title || ''}
+                                onChange={(e) => setEditPortfolioForm(prev => ({ ...prev, title: e.target.value }))}
+                                required
+                              />
+                              <AnimatedSelect
+                                value={editPortfolioForm.category || ''}
+                                onValueChange={(v) => setEditPortfolioForm(prev => ({ ...prev, category: v }))}
+                                placeholder="Select category"
+                                options={categoryOptions.map(c => ({ value: c, label: c }))}
+                                label="Category"
+                              />
+                              <AnimatedSelect
+                                value={editPortfolioForm.treatment || ''}
+                                onValueChange={(v) => setEditPortfolioForm(prev => ({ ...prev, treatment: v }))}
+                                placeholder="Select treatment"
+                                options={procedureOptions.map(p => ({ value: p, label: p }))}
+                                label="Treatment"
+                              />
+                              <div className="space-y-2 md:col-span-2">
+                                <Label className="text-sm font-medium text-gray-700">Description</Label>
+                                <Textarea
+                                  value={editPortfolioForm.description || ''}
+                                  onChange={(e) => setEditPortfolioForm(prev => ({ ...prev, description: e.target.value }))}
+                                  rows={3}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <AnimatedInput
+                                  id="epf-before"
+                                  label="Before Image URL"
+                                  value={editPortfolioForm.beforeImage || ''}
+                                  onChange={(e) => setEditPortfolioForm(prev => ({ ...prev, beforeImage: e.target.value }))}
+                                  required
+                                />
+                                <div className="flex gap-2">
+                                  <Button variant="outline" onClick={() => editPortfolioBeforeFileInputRef.current?.click()}>
+                                    <Upload className="w-4 h-4 mr-2" /> Upload Before
+                                  </Button>
+                                  <input
+                                    ref={editPortfolioBeforeFileInputRef}
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadPortfolioFile(f, 'before', 'edit'); e.currentTarget.value = '' }}
+                                  />
+                                </div>
+                              </div>
+                              <div className="space-y-2">
+                                <AnimatedInput
+                                  id="epf-after"
+                                  label="After Image URL"
+                                  value={editPortfolioForm.afterImage || ''}
+                                  onChange={(e) => setEditPortfolioForm(prev => ({ ...prev, afterImage: e.target.value }))}
+                                  required
+                                />
+                                <div className="flex gap-2">
+                                  <Button variant="outline" onClick={() => editPortfolioAfterFileInputRef.current?.click()}>
+                                    <Upload className="w-4 h-4 mr-2" /> Upload After
+                                  </Button>
+                                  <input
+                                    ref={editPortfolioAfterFileInputRef}
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadPortfolioFile(f, 'after', 'edit'); e.currentTarget.value = '' }}
+                                  />
+                                </div>
+                              </div>
+                              <AnimatedInput
+                                id="epf-duration"
+                                label="Duration"
+                                value={editPortfolioForm.duration || ''}
+                                onChange={(e) => setEditPortfolioForm(prev => ({ ...prev, duration: e.target.value }))}
+                              />
+                              <AnimatedInput
+                                id="epf-results"
+                                label="Results"
+                                value={editPortfolioForm.results || ''}
+                                onChange={(e) => setEditPortfolioForm(prev => ({ ...prev, results: e.target.value }))}
+                              />
+                            </div>
+                            <div className="flex justify-end gap-3">
+                              <Button variant="outline" onClick={() => setEditPortfolioItem(null)}>Cancel</Button>
+                              <Button
+                                variant="brand"
+                                onClick={() => {
+                                  if (!editPortfolioItem) return
+                                  try {
+                                    portfolioService.updateItem(editPortfolioItem.id, {
+                                      title: String(editPortfolioForm.title || editPortfolioItem.title),
+                                      category: String(editPortfolioForm.category || editPortfolioItem.category),
+                                      treatment: String(editPortfolioForm.treatment || editPortfolioItem.treatment),
+                                      description: String(editPortfolioForm.description || editPortfolioItem.description),
+                                      beforeImage: String(editPortfolioForm.beforeImage || editPortfolioItem.beforeImage),
+                                      afterImage: String(editPortfolioForm.afterImage || editPortfolioItem.afterImage),
+                                      duration: String(editPortfolioForm.duration || editPortfolioItem.duration),
+                                      results: String(editPortfolioForm.results || editPortfolioItem.results),
+                                    })
+                                    setEditPortfolioItem(null)
+                                    setEditPortfolioForm({})
+                                    showNotification('success', 'Changes saved')
+                                  } catch { showNotification('error', 'Failed to save changes') }
+                                }}
+                              >
+                                Save Changes
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </DialogContent>
+                    </Dialog>
+                  </CardContent>
+                </Card>
+                  </TabsContent>
+                </Tabs>
+              </TabsContent>
             </LazyTabContent>
 
             {/* Payment Processing - Premium Animated */}

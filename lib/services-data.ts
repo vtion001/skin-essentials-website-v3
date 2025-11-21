@@ -472,3 +472,97 @@ export const serviceCategories: ServiceCategory[] = [
     ],
   },
 ]
+
+class ServicesDataService {
+  private key = "services_data"
+  private initialized = false
+  private data: ServiceCategory[] = []
+  private subscribers: ((data: ServiceCategory[]) => void)[] = []
+
+  private load() {
+    if (this.initialized) return
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem(this.key)
+        this.data = raw ? JSON.parse(raw) : serviceCategories
+      } catch {
+        this.data = serviceCategories
+      }
+    } else {
+      this.data = serviceCategories
+    }
+    this.initialized = true
+  }
+
+  private save() {
+    try {
+      if (typeof window !== "undefined") {
+        localStorage.setItem(this.key, JSON.stringify(this.data))
+        window.dispatchEvent(new CustomEvent("services_data_updated", { detail: { data: this.data } }))
+      }
+    } catch {}
+    this.subscribers.forEach(cb => {
+      try { cb([...this.data]) } catch {}
+    })
+  }
+
+  subscribe(cb: (data: ServiceCategory[]) => void) {
+    this.subscribers.push(cb)
+    return () => {
+      const i = this.subscribers.indexOf(cb)
+      if (i > -1) this.subscribers.splice(i, 1)
+    }
+  }
+
+  getAllCategories(): ServiceCategory[] {
+    this.load()
+    return [...this.data]
+  }
+
+  upsertCategory(cat: ServiceCategory) {
+    this.load()
+    const idx = this.data.findIndex(c => c.id === cat.id)
+    if (idx >= 0) this.data[idx] = cat
+    else this.data.push(cat)
+    this.save()
+    return cat
+  }
+
+  deleteCategory(id: string) {
+    this.load()
+    this.data = this.data.filter(c => c.id !== id)
+    this.save()
+    return true
+  }
+
+  addService(categoryId: string, svc: Service) {
+    this.load()
+    const cat = this.data.find(c => c.id === categoryId)
+    if (!cat) return false
+    cat.services.push(svc)
+    this.save()
+    return true
+  }
+
+  updateService(categoryId: string, name: string, updates: Partial<Service>) {
+    this.load()
+    const cat = this.data.find(c => c.id === categoryId)
+    if (!cat) return false
+    const idx = cat.services.findIndex(s => s.name === name)
+    if (idx < 0) return false
+    cat.services[idx] = { ...cat.services[idx], ...updates }
+    this.save()
+    return true
+  }
+
+  deleteService(categoryId: string, name: string) {
+    this.load()
+    const cat = this.data.find(c => c.id === categoryId)
+    if (!cat) return false
+    cat.services = cat.services.filter(s => s.name !== name)
+    this.save()
+    return true
+  }
+}
+
+export const servicesDataService = new ServicesDataService()

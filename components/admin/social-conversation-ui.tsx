@@ -13,6 +13,7 @@ import {
   Instagram, 
   RefreshCw, 
   Settings,
+  Calendar,
   Plus,
   Search,
   MoreVertical,
@@ -28,7 +29,7 @@ interface SocialConversationUIProps {
 }
 
 export function SocialConversationUI({ socialMediaService }: SocialConversationUIProps) {
-  const DEFAULT_POLL_MS = 10000
+  const DEFAULT_POLL_MS = 5000
   const [conversations, setConversations] = useState<SocialConversation[]>([])
   const [selectedConversation, setSelectedConversation] = useState<SocialConversation | null>(null)
   const [messages, setMessages] = useState<SocialMessage[]>([])
@@ -38,10 +39,11 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
   const [searchQuery, setSearchQuery] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [initialLoading, setInitialLoading] = useState(true)
-  const [showDetails, setShowDetails] = useState(true)
+  const [showDetails, setShowDetails] = useState(false)
   const [brokenAvatars, setBrokenAvatars] = useState<Record<string, boolean>>({})
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const autoTimer = useRef<NodeJS.Timeout | null>(null)
+  const convoTimer = useRef<NodeJS.Timeout | null>(null)
   const refreshing = useRef(false)
   const formatTimestamp = (iso: string) => {
     const d = new Date(iso)
@@ -97,18 +99,40 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
         refreshing.current = false
       }
     }, getPollMs())
+    const onVisible = () => { if (document.visibilityState === 'visible') handleRefresh().catch(() => {}) }
+    const onFocus = () => handleRefresh().catch(() => {})
+    const onOnline = () => handleRefresh().catch(() => {})
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('focus', onFocus)
+    window.addEventListener('online', onOnline)
     return () => {
       window.removeEventListener('storage', onStorage)
       clearInterval(interval)
       if (autoTimer.current) clearInterval(autoTimer.current)
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('focus', onFocus)
+      window.removeEventListener('online', onOnline)
     }
   }, [])
 
   useEffect(() => {
     if (selectedConversation) {
       loadMessages(selectedConversation.id)
+      if (convoTimer.current) clearInterval(convoTimer.current)
+      convoTimer.current = setInterval(async () => {
+        const platform = selectedConversation.platform
+        await socialMediaService.syncMessagesFromPlatform(platform)
+        loadMessages(selectedConversation.id)
+      }, 3000)
+    } else {
+      if (convoTimer.current) { clearInterval(convoTimer.current); convoTimer.current = null }
     }
+    return () => { if (convoTimer.current) { clearInterval(convoTimer.current); convoTimer.current = null } }
   }, [selectedConversation])
+
+  useEffect(() => {
+    handleRefresh().catch(() => {})
+  }, [activeTab])
 
   useEffect(() => {
     scrollToBottom()
@@ -170,6 +194,32 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleBookAppointment = () => {
+    if (!selectedConversation) return
+    try {
+      const msgs = socialMediaService.getMessagesByConversation(selectedConversation.id) as SocialMessage[]
+      const text = msgs.map(m => m.message).join(' ')
+      const emailMatch = text.match(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/)
+      const phoneMatch = text.match(/\+?\d[\d\s-]{6,}/)
+      const name = selectedConversation.participantName
+      const draft = {
+        clientName: name,
+        clientEmail: emailMatch ? emailMatch[0] : '',
+        clientPhone: phoneMatch ? phoneMatch[0].replace(/\s+/g, '') : '',
+        service: '',
+        date: '',
+        time: '',
+        duration: 60,
+        price: 0
+      }
+      localStorage.setItem('appointment_draft', JSON.stringify(draft))
+      localStorage.setItem('appointment_conversation_id', selectedConversation.id)
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('book_appointment'))
+      }
+    } catch {}
   }
 
   const handleConversationSelect = (conversation: SocialConversation) => {
@@ -236,7 +286,7 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
   }
 
   return (
-    <div className="flex min-h-[60vh] sm:min-h-[70vh] lg:min-h-[600px] border rounded-xl overflow-hidden bg-gradient-to-br from-white to-white/60 shadow-sm">
+    <div className="flex flex-col lg:flex-row w-full max-w-full min-h-[60vh] sm:min-h-[70vh] lg:min-h-[70vh] xl:min-h-[78vh] border rounded-xl overflow-hidden bg-gradient-to-br from-white to-white/60 shadow-sm">
       <div className="hidden sm:flex w-14 bg-white/80 backdrop-blur-sm border-r flex-col items-center gap-4 py-4">
         <div className="h-10 w-10 rounded-full bg-gray-100 grid place-items-center">
           <MessageCircle className="h-5 w-5 text-gray-700" />
@@ -249,7 +299,7 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
         </div>
       </div>
       {/* Conversations Sidebar */}
-      <div className="w-full sm:w-1/3 border-r bg-white/70 backdrop-blur-sm">
+      <div className="w-full lg:w-[360px] xl:w-[400px] lg:shrink-0 border-r bg-white/70 backdrop-blur-sm flex flex-col min-w-0">
         <div className="p-3 sm:p-4 border-b bg-white/80">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-lg tracking-tight">Conversations</h3>
@@ -308,7 +358,7 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
           </Tabs>
         </div>
 
-        <div className="flex-1 overflow-y-auto" role="list" aria-label="Conversation list">
+        <div className="flex-1 overflow-y-auto min-h-0" role="list" aria-label="Conversation list">
           <div className="p-2">
             {initialLoading && filteredConversations.length === 0 ? (
               <div className="space-y-2">
@@ -379,7 +429,7 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
       </div>
 
       {/* Chat Area */}
-      <div className="flex-1 flex flex-col bg-white/70 backdrop-blur-sm">
+      <div className="w-full lg:flex-1 min-w-0 flex flex-col bg-white/70 backdrop-blur-sm">
         {selectedConversation ? (
           <>
             {/* Chat Header */}
@@ -416,6 +466,9 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
                   <Button variant="outline" size="sm" onClick={() => setShowDetails(v => !v)}>
                     <Settings className="h-4 w-4" />
                   </Button>
+                  <Button variant="outline" size="sm" aria-label="Book appointment" onClick={handleBookAppointment}>
+                    <Calendar className="h-4 w-4" />
+                  </Button>
                   {selectedConversation && (
                     <Button
                       variant="outline"
@@ -428,16 +481,16 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
                               }
                             } catch {}
                           }}
-                        >
-                          Capture Client
-                        </Button>
+                      >
+                        Capture Client
+                      </Button>
                   )}
                 </div>
               </div>
             </div>
 
             {/* Messages */}
-            <div className="flex-1 p-3 sm:p-4 overflow-y-auto" aria-live="polite" role="list">
+            <div className="flex-1 p-3 sm:p-4 overflow-y-auto min-h-0" aria-live="polite" role="list">
               <div className="space-y-4">
                 {messages.map((message, idx) => (
                   <div
@@ -515,7 +568,7 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
           </div>
         )}
       </div>
-      <div className={`${showDetails ? 'hidden sm:block' : 'hidden'} w-full sm:w-80 bg-white/80 backdrop-blur-sm border-l p-3 sm:p-4 space-y-4`}>
+      <div className={`${showDetails ? 'hidden xl:block' : 'hidden'} w-full xl:w-80 xl:shrink-0 bg-white/80 backdrop-blur-sm border-l p-3 sm:p-4 space-y-4`}>
         <div className="flex items-center justify-between">
           <h4 className="font-semibold">Chat details</h4>
           <Button variant="outline" size="sm" onClick={() => setShowDetails(false)}>

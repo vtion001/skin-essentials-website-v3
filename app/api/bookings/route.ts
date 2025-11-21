@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
     } catch {}
 
     // Insert appointment
-    const { error } = await admin.from('appointments').insert({
+  const { error } = await admin.from('appointments').insert({
       id: appointmentId,
       client_id: clientId,
       client_name: name,
@@ -73,11 +73,32 @@ export async function POST(req: NextRequest) {
       influencer_name: influencerName ?? null,
       referral_code: referralCode ?? null,
       discount_applied: Boolean(discountApplied ?? false),
-    })
+  })
 
-    if (error) {
-      return NextResponse.json({ success: false, error: error.message }, { status: 500 })
-    }
+  if (error) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+  }
+    try {
+      if (email) {
+        const details = {
+          to: email,
+          subject: `Your Appointment is Scheduled: ${service}`,
+          html: `<div style="font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1f2937">`+
+                `<h2 style="margin:0 0 12px;font-size:20px;color:#111827">Thank you, ${name}</h2>`+
+                `<p style="margin:0 0 12px">Your booking has been received.</p>`+
+                `<p style="margin:0 0 12px"><strong>Service:</strong> ${service}</p>`+
+                `<p style="margin:0 0 12px"><strong>Date:</strong> ${date}</p>`+
+                `<p style="margin:0 0 12px"><strong>Time:</strong> ${time}</p>`+
+                `<p style="margin:16px 0 0">If you need to make changes, reply to this email.</p>`+
+                `</div>`
+        }
+        await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || ''}/api/email`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'send', payload: details })
+        }).catch(() => {})
+      }
+    } catch {}
 
     return NextResponse.json({ success: true, id: appointmentId })
   } catch (e) {
