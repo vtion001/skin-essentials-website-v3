@@ -349,6 +349,16 @@ export default function AdminDashboard() {
     }
   }, [])
   useEffect(() => { if (activeTab === 'email') refreshEmailPreview() }, [activeTab, refreshEmailPreview])
+  const [smsForm, setSmsForm] = useState<{ to: string; message: string }>({ to: '', message: '' })
+  const [smsStatus, setSmsStatus] = useState<{ configured: boolean; sender?: string } | null>(null)
+  const refreshSmsStatus = useCallback(async () => {
+    try {
+      const r = await fetch('/api/sms')
+      const j = await r.json()
+      setSmsStatus(j)
+    } catch {}
+  }, [])
+  useEffect(() => { if (activeTab === 'sms') refreshSmsStatus() }, [activeTab, refreshSmsStatus])
 
   const [contentServices, setContentServices] = useState<{ id: string; category: string; services: any[] }[]>([])
   const [contentSelectedCategory, setContentSelectedCategory] = useState("")
@@ -1489,19 +1499,20 @@ export default function AdminDashboard() {
                   Navigation
                 </motion.div>
                 <div className="space-y-2">
-                  {[
-                    { key: 'dashboard', label: 'Dashboard', icon: BarChart3, color: 'from-blue-500 to-cyan-500' },
-                    { key: 'appointments', label: 'Bookings', icon: CalendarIcon, color: 'from-purple-500 to-pink-500' },
-                    { key: 'payments', label: 'Payments', icon: CreditCard, color: 'from-green-500 to-emerald-500' },
-                    { key: 'medical', label: 'EMR', icon: FileText, color: 'from-orange-500 to-amber-500' },
-                    { key: 'clients', label: 'Clients', icon: Users, color: 'from-indigo-500 to-purple-500' },
-                    { key: 'staff', label: 'Staff', icon: Settings, color: 'from-slate-500 to-gray-500' },
-                    { key: 'influencers', label: 'Influencers', icon: TrendingUp, color: 'from-fuchsia-500 to-violet-600' },
-                    { key: 'analytics', label: 'Analytics', icon: BarChart3, color: 'from-blue-600 to-emerald-600' },
-                    { key: 'social', label: 'Social Media', icon: MessageSquare, color: 'from-rose-500 to-pink-500' },
-                    { key: 'email', label: 'Email Services', icon: Mail, color: 'from-red-500 to-rose-500' },
-                    { key: 'content', label: 'Content', icon: FileImage, color: 'from-indigo-600 to-pink-600' },
-                  ].map(({ key, label, icon: Icon, color }, index) => (
+                    {[
+                      { key: 'dashboard', label: 'Dashboard', icon: BarChart3, color: 'from-blue-500 to-cyan-500' },
+                      { key: 'appointments', label: 'Bookings', icon: CalendarIcon, color: 'from-purple-500 to-pink-500' },
+                      { key: 'payments', label: 'Payments', icon: CreditCard, color: 'from-green-500 to-emerald-500' },
+                      { key: 'medical', label: 'EMR', icon: FileText, color: 'from-orange-500 to-amber-500' },
+                      { key: 'clients', label: 'Clients', icon: Users, color: 'from-indigo-500 to-purple-500' },
+                      { key: 'staff', label: 'Staff', icon: Settings, color: 'from-slate-500 to-gray-500' },
+                      { key: 'sms', label: 'SMS Services', icon: MessageSquare, color: 'from-emerald-500 to-teal-500' },
+                      { key: 'influencers', label: 'Influencers', icon: TrendingUp, color: 'from-fuchsia-500 to-violet-600' },
+                      { key: 'analytics', label: 'Analytics', icon: BarChart3, color: 'from-blue-600 to-emerald-600' },
+                      { key: 'social', label: 'Social Media', icon: MessageSquare, color: 'from-rose-500 to-pink-500' },
+                      { key: 'email', label: 'Email Services', icon: Mail, color: 'from-red-500 to-rose-500' },
+                      { key: 'content', label: 'Content', icon: FileImage, color: 'from-indigo-600 to-pink-600' },
+                    ].map(({ key, label, icon: Icon, color }, index) => (
                     <motion.button
                       key={key}
                       onClick={() => setActiveTab(key)}
@@ -1549,7 +1560,7 @@ export default function AdminDashboard() {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.3, delay: 0.5 }}
                 >
-                  <TabsList className="bg-white/30 backdrop-blur-xl border border-white/60 shadow-2xl shadow-purple-500/10 h-16 items-center justify-center rounded-3xl p-3 grid w-full grid-cols-7 mb-8 lg:hidden overflow-x-auto scrollbar-none">
+                  <TabsList className="bg-white/30 backdrop-blur-xl border border-white/60 shadow-2xl shadow-purple-500/10 h-16 items-center justify-center rounded-3xl p-3 grid w-full grid-cols-8 mb-8 lg:hidden overflow-x-auto scrollbar-none">
                     {[
                       { value: 'dashboard', icon: BarChart3, label: 'Dashboard', color: 'from-blue-500 to-cyan-500' },
                       { value: 'appointments', icon: CalendarIcon, label: 'Bookings', color: 'from-purple-500 to-pink-500' },
@@ -1557,6 +1568,7 @@ export default function AdminDashboard() {
                       { value: 'medical', icon: FileText, label: 'EMR', color: 'from-orange-500 to-amber-500' },
                       { value: 'clients', icon: Users, label: 'Clients', color: 'from-indigo-500 to-purple-500' },
                       { value: 'staff', icon: Settings, label: 'Staff', color: 'from-slate-500 to-gray-500' },
+                      { value: 'sms', icon: MessageSquare, label: 'SMS', color: 'from-emerald-500 to-teal-500' },
                       { value: 'email', icon: Mail, label: 'Email', color: 'from-red-500 to-rose-500' },
                       { value: 'content', icon: FileImage, label: 'Content', color: 'from-indigo-600 to-pink-600' },
                     ].map((tab, index) => (
@@ -2057,6 +2069,75 @@ export default function AdminDashboard() {
                           </TableBody>
                         </Table>
                       </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </LazyTabContent>
+            <LazyTabContent isActive={activeTab === "sms"}>
+              <TabsContent value="sms" className="space-y-8">
+                <Card className="border-white/60 bg-white/70 backdrop-blur-xl shadow-xl rounded-3xl">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <MessageSquare className="w-5 h-5 text-emerald-600" />
+                      SMS Services
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div>
+                        <Label>Sender ID</Label>
+                        <Input value={smsStatus?.sender || 'iprogtech'} disabled />
+                        <p className="text-xs text-gray-500 mt-2">Uses IPROG SMS provider</p>
+                      </div>
+                      <div>
+                        <Label>Status</Label>
+                        <div className="flex items-center gap-3">
+                          <Badge className={smsStatus?.configured ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}>
+                            {smsStatus?.configured ? 'Configured' : 'Not Configured'}
+                          </Badge>
+                          <Button variant="secondary" onClick={refreshSmsStatus}>Refresh</Button>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div className="space-y-3">
+                        <Label>Recipient Phone</Label>
+                        <Input value={smsForm.to} onChange={(e) => setSmsForm(prev => ({ ...prev, to: e.target.value }))} placeholder="e.g. +63XXXXXXXXXX" />
+                      </div>
+                      <div className="space-y-3 md:col-span-1">
+                        <Label>Message</Label>
+                        <Textarea value={smsForm.message} onChange={(e) => setSmsForm(prev => ({ ...prev, message: e.target.value }))} placeholder="Type your message" />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Button
+                        onClick={async () => {
+                          try {
+                            const to = String(smsForm.to || '').trim()
+                            const message = String(smsForm.message || '').trim()
+                            if (!to || !message) { showNotification('error', 'Please enter phone and message'); return }
+                            const res = await fetch('/api/sms', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ to, message }) })
+                            const j = await res.json()
+                            showNotification(j?.ok ? 'success' : 'error', j?.ok ? 'SMS sent' : (j?.error || 'Failed to send'))
+                          } catch { showNotification('error', 'Failed to send') }
+                        }}
+                        variant="brand"
+                      >
+                        Send SMS
+                      </Button>
+                      <Button
+                        onClick={async () => {
+                          try {
+                            const res = await fetch('/api/automation/sms-reminders', { method: 'POST', headers: { 'x-automation-secret': String(process.env.NEXT_PUBLIC_SMS_AUTOMATION_SECRET || '') } })
+                            const j = await res.json()
+                            showNotification(j?.ok ? 'success' : 'error', j?.ok ? `Reminders sent: ${j?.sent || 0}` : (j?.error || 'Failed to run'))
+                          } catch { showNotification('error', 'Failed to run automation') }
+                        }}
+                        variant="outline"
+                      >
+                        Run Reminder Scan
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>

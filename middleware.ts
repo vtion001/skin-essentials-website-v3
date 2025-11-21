@@ -11,10 +11,17 @@ const rateMap: Map<string, { count: number; ts: number }> = new Map()
 
 export async function middleware(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith("/admin")) {
-    if (request.nextUrl.pathname === "/admin/login") {
-      return NextResponse.next()
-    }
     const response = NextResponse.next()
+    // Ensure CSRF token exists for all admin pages, including login
+    const cookies = request.cookies
+    const csrf = cookies.get('csrf_token')?.value
+    if (!csrf) {
+      const token = generateCsrfToken()
+      response.cookies.set('csrf_token', token, { httpOnly: false, sameSite: 'strict', path: '/' })
+    }
+    if (request.nextUrl.pathname === "/admin/login") {
+      return response
+    }
     const supabase = createMiddlewareClient({ req: request, res: response })
     const {
       data: { user },
@@ -31,12 +38,6 @@ export async function middleware(request: NextRequest) {
       const url = new URL("/admin/login", request.url)
       url.searchParams.set("error", "not_admin")
       return NextResponse.redirect(url)
-    }
-    const cookies = request.cookies
-    const csrf = cookies.get('csrf_token')?.value
-    if (!csrf) {
-      const token = generateCsrfToken()
-      response.cookies.set('csrf_token', token, { httpOnly: false, sameSite: 'strict', path: '/' })
     }
     response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload')
     const mfaOk = cookies.get('mfa_ok')?.value === '1'

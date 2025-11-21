@@ -1,0 +1,11 @@
+HTTP/1.1 200 OK
+set-cookie: csrf_token=3e7fe850d98919b405d4a009edc0fd68064834c803cf8911e4ae3f7936b0c81b; Path=/; SameSite=strict
+Vary: RSC, Next-Router-State-Tree, Next-Router-Prefetch, Next-Router-Segment-Prefetch, Accept-Encoding
+link: </_next/static/media/e4af272ccee01ff0-s.p.woff2>; rel=preload; as="font"; crossorigin=""; type="font/woff2"
+Cache-Control: no-store, must-revalidate
+Content-Type: text/html; charset=utf-8
+Date: Fri, 21 Nov 2025 22:52:06 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+Transfer-Encoding: chunked
+
