@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs"
-import { generateCsrfToken } from "@/lib/utils"
+function generateCsrfToken() {
+  const bytes = new Uint8Array(32)
+  crypto.getRandomValues(bytes)
+  return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('')
+}
 
 const rateMap: Map<string, { count: number; ts: number }> = new Map()
 
