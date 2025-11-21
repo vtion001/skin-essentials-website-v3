@@ -67,6 +67,7 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
   useEffect(() => {
     loadConversations()
     loadPlatformConnections()
+    setTimeout(() => { handleRefresh().catch(() => {}) }, 0)
     const onStorage = (e: StorageEvent) => {
       if (e.key === 'social_connections_data' || e.key === 'facebook_connection') {
         console.log('[SM_UI] storage change detected, reloading')

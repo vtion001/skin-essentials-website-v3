@@ -2237,23 +2237,28 @@ export default function AdminDashboard() {
                 </Select>
               </div>
 
+              {(() => {
+                const filteredStaff = useMemo(() => {
+                  const q = staffSearch.toLowerCase()
+                  return staff
+                    .filter(s => staffStatusFilter === 'all' ? true : s.status === staffStatusFilter)
+                    .filter(s => staffPositionFilter === 'all' ? true : s.position === staffPositionFilter)
+                    .filter(s =>
+                      q === '' ||
+                      s.firstName.toLowerCase().includes(q) ||
+                      s.lastName.toLowerCase().includes(q) ||
+                      s.email.toLowerCase().includes(q) ||
+                      s.phone.includes(staffSearch)
+                    )
+                }, [staff, staffStatusFilter, staffPositionFilter, staffSearch])
+                return (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {staff
-                  .filter(s => staffStatusFilter === 'all' ? true : s.status === staffStatusFilter)
-                  .filter(s => staffPositionFilter === 'all' ? true : s.position === staffPositionFilter)
-                  .filter(s => 
-                    staffSearch === '' ||
-                    s.firstName.toLowerCase().includes(staffSearch.toLowerCase()) ||
-                    s.lastName.toLowerCase().includes(staffSearch.toLowerCase()) ||
-                    s.email.toLowerCase().includes(staffSearch.toLowerCase()) ||
-                    s.phone.includes(staffSearch)
-                  )
-                  .map((s) => (
-                    <Card key={s.id} className="bg-gradient-to-br from-slate-50/40 via-white/60 to-gray-50/30 backdrop-blur-2xl border border-white/70 shadow-2xl shadow-slate-500/10 transition-all duration-500 hover:shadow-slate-500/20 hover:scale-[1.02]">
-                      <CardContent className="p-6">
-                        <div className="flex items-start justify-between mb-4">
-                          <div>
-                            <h3 className="font-bold text-lg">{s.firstName} {s.lastName}</h3>
+                {filteredStaff.map((s) => (
+                  <Card key={s.id} className="bg-gradient-to-br from-slate-50/40 via-white/60 to-gray-50/30 backdrop-blur-2xl border border-white/70 shadow-2xl shadow-slate-500/10 transition-all duration-500 hover:shadow-slate-500/20 hover:scale-[1.02]">
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between mb-4">
+                        <div>
+                          <h3 className="font-bold text-lg">{s.firstName} {s.lastName}</h3>
                             <p className="text-sm text-gray-600">{s.email}</p>
                             <p className="text-sm text-gray-600">{s.phone}</p>
                           </div>
@@ -2290,10 +2295,12 @@ export default function AdminDashboard() {
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
+              )
+              })()}
             </TabsContent>
             </LazyTabContent>
 
@@ -2339,11 +2346,17 @@ export default function AdminDashboard() {
                 </Button>
               </div>
 
+              {(() => {
+                const q = influencerSearch.toLowerCase()
+                const filteredInfluencers = useMemo(() => {
+                  return influencers
+                    .filter(i => influencerStatusFilter === 'all' ? true : i.status === influencerStatusFilter)
+                    .filter(i => influencerPlatformFilter === 'all' ? true : i.platform === influencerPlatformFilter)
+                    .filter(i => q === '' || i.name.toLowerCase().includes(q) || (i.handle ?? '').toLowerCase().includes(q))
+                }, [influencers, influencerStatusFilter, influencerPlatformFilter, influencerSearch])
+                return (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {influencers
-                  .filter(i => influencerStatusFilter === 'all' ? true : i.status === influencerStatusFilter)
-                  .filter(i => influencerPlatformFilter === 'all' ? true : i.platform === influencerPlatformFilter)
-                  .filter(i => influencerSearch === '' || i.name.toLowerCase().includes(influencerSearch.toLowerCase()) || (i.handle ?? '').toLowerCase().includes(influencerSearch.toLowerCase()))
+                {filteredInfluencers
                   .map((i) => {
                     const stats = influencerService.getStats(i.id)
                     return (
@@ -2407,6 +2420,8 @@ export default function AdminDashboard() {
                     )
                   })}
               </div>
+              )
+              })()}
             </TabsContent>
             </LazyTabContent>
 

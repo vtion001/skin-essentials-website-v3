@@ -1310,6 +1310,15 @@ class SocialMediaService {
               this.messages.push(newMessage)
             }
           }
+          const c = this.conversations.find(c => c.id === fbConversation.id && c.platform === 'facebook')
+          if (c) {
+            const msgs = this.messages.filter(m => m.conversationId === fbConversation.id).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+            const last = msgs[msgs.length - 1]
+            if (last) {
+              c.lastMessage = last.message || (last.attachments.length ? 'Media message' : '')
+              c.lastMessageTimestamp = last.timestamp
+            }
+          }
         } catch (messageError) {
           console.error(`Error fetching messages for conversation ${fbConversation.id}:`, messageError);
           // Continue with other conversations even if one fails
@@ -1389,6 +1398,15 @@ class SocialMediaService {
               isFromPage: igMessage.from.id === igAccount.id
             }
             this.messages.push(newMessage)
+          }
+        }
+        const c = this.conversations.find(c => c.id === igConversation.id && c.platform === 'instagram')
+        if (c) {
+          const msgs = this.messages.filter(m => m.conversationId === igConversation.id).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+          const last = msgs[msgs.length - 1]
+          if (last) {
+            c.lastMessage = last.message || (last.attachments.length ? 'Media message' : '')
+            c.lastMessageTimestamp = last.timestamp
           }
         }
       }
