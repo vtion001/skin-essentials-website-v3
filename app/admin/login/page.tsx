@@ -24,9 +24,16 @@ export default function AdminLoginPage() {
   const search = useSearchParams()
   const initialError = search.get('error') === 'not_admin' ? 'You are not authorized to access the admin dashboard' : ''
   const [initialized, setInitialized] = useState(false)
-  if (!initialized && initialError) {
-    setError(initialError)
-    setInitialized(true)
+  if (!initialized) {
+    const err = search.get('error')
+    if (err === 'mfa_required') {
+      setMfaRequired(true)
+      setMessage('Enter your MFA code')
+      setInitialized(true)
+    } else if (initialError) {
+      setError(initialError)
+      setInitialized(true)
+    }
   }
 
   useEffect(() => {

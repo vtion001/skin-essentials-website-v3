@@ -1506,18 +1506,18 @@ export default function AdminDashboard() {
                       { key: 'medical', label: 'EMR', icon: FileText, color: 'from-orange-500 to-amber-500' },
                       { key: 'clients', label: 'Clients', icon: Users, color: 'from-indigo-500 to-purple-500' },
                       { key: 'staff', label: 'Staff', icon: Settings, color: 'from-slate-500 to-gray-500' },
+                      { key: 'content', label: 'Content', icon: FileImage, color: 'from-indigo-600 to-pink-600' },
+                      { key: 'email', label: 'Email Services', icon: Mail, color: 'from-red-500 to-rose-500' },
                       { key: 'sms', label: 'SMS Services', icon: MessageSquare, color: 'from-emerald-500 to-teal-500' },
                       { key: 'influencers', label: 'Influencers', icon: TrendingUp, color: 'from-fuchsia-500 to-violet-600' },
                       { key: 'analytics', label: 'Analytics', icon: BarChart3, color: 'from-blue-600 to-emerald-600' },
                       { key: 'social', label: 'Social Media', icon: MessageSquare, color: 'from-rose-500 to-pink-500' },
-                      { key: 'email', label: 'Email Services', icon: Mail, color: 'from-red-500 to-rose-500' },
-                      { key: 'content', label: 'Content', icon: FileImage, color: 'from-indigo-600 to-pink-600' },
                     ].map(({ key, label, icon: Icon, color }, index) => (
-                    <motion.button
-                      key={key}
-                      onClick={() => setActiveTab(key)}
-                      aria-current={activeTab === key ? 'page' : undefined}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-300 motion-safe:hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                      <motion.button
+                        key={key}
+                        onClick={() => setActiveTab(key)}
+                        aria-current={activeTab === key ? 'page' : undefined}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-300 motion-safe:hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                         activeTab === key
                           ? `bg-gradient-to-r ${color} text-white shadow-xl shadow-${color.split('-')[1]}-500/30 border border-white/80 transform scale-105`
                           : 'text-gray-700 hover:bg-white/60 hover:shadow-md'
@@ -1568,9 +1568,9 @@ export default function AdminDashboard() {
                       { value: 'medical', icon: FileText, label: 'EMR', color: 'from-orange-500 to-amber-500' },
                       { value: 'clients', icon: Users, label: 'Clients', color: 'from-indigo-500 to-purple-500' },
                       { value: 'staff', icon: Settings, label: 'Staff', color: 'from-slate-500 to-gray-500' },
-                      { value: 'sms', icon: MessageSquare, label: 'SMS', color: 'from-emerald-500 to-teal-500' },
-                      { value: 'email', icon: Mail, label: 'Email', color: 'from-red-500 to-rose-500' },
                       { value: 'content', icon: FileImage, label: 'Content', color: 'from-indigo-600 to-pink-600' },
+                      { value: 'email', icon: Mail, label: 'Email', color: 'from-red-500 to-rose-500' },
+                      { value: 'sms', icon: MessageSquare, label: 'SMS', color: 'from-emerald-500 to-teal-500' },
                     ].map((tab, index) => (
                       <motion.div
                         key={tab.value}

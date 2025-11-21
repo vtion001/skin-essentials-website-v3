@@ -40,8 +40,9 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(url)
     }
     response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload')
+    const requireMfa = Boolean(process.env.ADMIN_MFA_CODE)
     const mfaOk = cookies.get('mfa_ok')?.value === '1'
-    if (!mfaOk) {
+    if (requireMfa && !mfaOk) {
       const url = new URL("/admin/login", request.url)
       url.searchParams.set("error", "mfa_required")
       return NextResponse.redirect(url)
