@@ -30,9 +30,9 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const cookiesMap = new Map<string, string>()
-    cookieStore.getAll().forEach(c => cookiesMap.set(c.name, c.value))
+    cookieStore.getAll().forEach((c: any) => cookiesMap.set(c.name, c.value))
     if (!verifyCsrfToken(req.headers, cookiesMap)) {
       return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 })
     }
@@ -62,6 +62,24 @@ export async function POST(req: Request) {
       last_visit: raw.lastVisit ?? raw.last_visit ?? null,
     }
     const admin = supabaseAdminClient()
+
+    // Duplicate prevention: check existing clients by normalized email/phone/name
+    const norm = (v: any) => String(v || '').trim().toLowerCase()
+    const emailNorm = norm(raw.email)
+    const phoneNorm = norm(raw.phone)
+    const nameKey = `${norm(raw.firstName ?? raw.first_name)} ${norm(raw.lastName ?? raw.last_name)}`.trim()
+    const { data: existing } = await admin.from('clients').select('id, first_name, last_name, email, phone').limit(10000)
+    if (Array.isArray(existing)) {
+      for (const c of existing) {
+        const cEmail = norm(aesDecryptFromString(c.email) ?? '')
+        const cPhone = norm(aesDecryptFromString(c.phone) ?? '')
+        const cNameKey = `${norm(c.first_name)} ${norm(c.last_name)}`.trim()
+        const dup = (emailNorm && cEmail && emailNorm === cEmail) || (phoneNorm && cPhone && phoneNorm === cPhone) || (!emailNorm && !phoneNorm && nameKey && cNameKey && nameKey === cNameKey)
+        if (dup) {
+          return NextResponse.json({ error: 'Duplicate client' }, { status: 409 })
+        }
+      }
+    }
     const { data, error } = await admin.from('clients').insert(payload).select('*').single()
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     const client = {
@@ -82,9 +100,9 @@ export async function POST(req: Request) {
 
 export async function PATCH(req: Request) {
   try {
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const cookiesMap = new Map<string, string>()
-    cookieStore.getAll().forEach(c => cookiesMap.set(c.name, c.value))
+    cookieStore.getAll().forEach((c: any) => cookiesMap.set(c.name, c.value))
     if (!verifyCsrfToken(req.headers, cookiesMap)) {
       return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 })
     }
@@ -116,6 +134,27 @@ export async function PATCH(req: Request) {
       updated_at: new Date().toISOString(),
     }
     const admin = supabaseAdminClient()
+
+    // Duplicate prevention on update
+    const norm = (v: any) => String(v || '').trim().toLowerCase()
+    const emailNorm = body.email !== undefined ? norm(body.email) : undefined
+    const phoneNorm = body.phone !== undefined ? norm(body.phone) : undefined
+    const nameKey = `${norm(body.firstName ?? body.first_name)} ${norm(body.lastName ?? body.last_name)}`.trim()
+    if (emailNorm !== undefined || phoneNorm !== undefined) {
+      const { data: existing } = await admin.from('clients').select('id, first_name, last_name, email, phone').limit(10000)
+      if (Array.isArray(existing)) {
+        for (const c of existing) {
+          if (c.id === id) continue
+          const cEmail = norm(aesDecryptFromString(c.email) ?? '')
+          const cPhone = norm(aesDecryptFromString(c.phone) ?? '')
+          const cNameKey = `${norm(c.first_name)} ${norm(c.last_name)}`.trim()
+          const dup = (emailNorm && cEmail && emailNorm === cEmail) || (phoneNorm && cPhone && phoneNorm === cPhone) || (!emailNorm && !phoneNorm && nameKey && cNameKey && nameKey === cNameKey)
+          if (dup) {
+            return NextResponse.json({ error: 'Duplicate client' }, { status: 409 })
+          }
+        }
+      }
+    }
     const { data, error } = await admin.from('clients').update(updates).eq('id', id).select('*').single()
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     const client = {

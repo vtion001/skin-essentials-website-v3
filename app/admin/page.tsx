@@ -77,6 +77,7 @@ import { SocialConversationUI } from "@/components/admin/social-conversation-ui"
 import { FacebookStatusIndicator } from "@/components/admin/facebook-status-indicator"
 import { PlatformConnections } from "@/components/admin/platform-connections"
 import { FacebookConnection } from "@/components/admin/facebook-connection"
+import { serviceCategories } from "@/lib/services-data"
 
 const services = [
   "Thread Lifts - Nose Enhancement",
@@ -97,6 +98,8 @@ const services = [
   "Specialized Treatments - Body Enhancement",
   "Specialized Treatments - Wellness",
 ]
+
+const procedureOptions = Array.from(new Set(serviceCategories.flatMap(c => c.services.map(s => s.name))))
 
 // Enhanced form input component with animations
 const AnimatedInput = memo(({ 
@@ -371,6 +374,20 @@ export default function AdminDashboard() {
   const [analyticsDateFrom, setAnalyticsDateFrom] = useState<string>("")
   const [analyticsDateTo, setAnalyticsDateTo] = useState<string>("")
 
+  const filteredStaff = React.useMemo(() => {
+    const q = staffSearch.toLowerCase()
+    return staff
+      .filter(s => staffStatusFilter === 'all' ? true : s.status === staffStatusFilter)
+      .filter(s => staffPositionFilter === 'all' ? true : s.position === staffPositionFilter)
+      .filter(s => (
+        q === '' ||
+        s.firstName.toLowerCase().includes(q) ||
+        s.lastName.toLowerCase().includes(q) ||
+        s.email.toLowerCase().includes(q) ||
+        s.phone.includes(staffSearch)
+      ))
+  }, [staff, staffStatusFilter, staffPositionFilter, staffSearch])
+
   const [isReferralDetailsOpen, setIsReferralDetailsOpen] = useState(false)
   const [referralDetailsSearch, setReferralDetailsSearch] = useState("")
   const [referralDateFrom, setReferralDateFrom] = useState<string>("")
@@ -383,6 +400,23 @@ export default function AdminDashboard() {
   useEffect(() => {
     // No-op: relying on middleware and Supabase session
   }, [router])
+
+  useEffect(() => {
+    try {
+      const original = window.fetch
+      window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = typeof input === 'string' ? input : String(input)
+        const method = (init?.method || 'GET').toUpperCase()
+        if (url.startsWith('/api/admin') && method !== 'GET') {
+          const csrf = document.cookie.match(/(?:^|; )csrf_token=([^;]+)/)?.[1] || ''
+          const headers = new Headers(init?.headers || {})
+          if (!headers.get('x-csrf-token')) headers.set('x-csrf-token', csrf)
+          return original(input, { ...init, headers })
+        }
+        return original(input, init)
+      }
+    } catch {}
+  }, [])
 
   // Load data
   useEffect(() => {
@@ -440,6 +474,7 @@ export default function AdminDashboard() {
     await appointmentService.fetchFromSupabase?.()
     setAppointments(appointmentService.getAllAppointments())
     await clientService.fetchFromSupabase?.()
+    setClients(clientService.getAllClients())
     try {
       const payRes = await fetch('/api/admin/payments', { cache: 'no-store' })
       const payJson = await payRes.json()
@@ -463,9 +498,26 @@ export default function AdminDashboard() {
     try {
       const recRes = await fetch('/api/admin/medical-records', { cache: 'no-store' })
       const recJson = await recRes.json()
-      setMedicalRecords(Array.isArray(recJson?.records) ? recJson.records : [])
+      const arr = Array.isArray(recJson?.records) ? recJson.records : []
+      const normalized = arr.map((r: any) => ({
+        id: String(r.id),
+        clientId: String(r.client_id ?? r.clientId ?? ''),
+        appointmentId: r.appointment_id ?? r.appointmentId ?? undefined,
+        date: String(r.date ?? ''),
+        chiefComplaint: String(r.chief_complaint ?? r.chiefComplaint ?? ''),
+        medicalHistory: Array.isArray(r.medical_history) ? r.medical_history : [],
+        allergies: Array.isArray(r.allergies) ? r.allergies : [],
+        currentMedications: Array.isArray(r.current_medications) ? r.current_medications : [],
+        treatmentPlan: String(r.treatment_plan ?? r.treatmentPlan ?? ''),
+        notes: String(r.notes ?? ''),
+        attachments: Array.isArray(r.attachments) ? r.attachments : [],
+        createdBy: String(r.created_by ?? r.createdBy ?? ''),
+        createdAt: String(r.created_at ?? new Date().toISOString()),
+        updatedAt: String(r.updated_at ?? new Date().toISOString()),
+        isConfidential: Boolean(r.is_confidential ?? r.isConfidential ?? false),
+      })) as MedicalRecord[]
+      setMedicalRecords(normalized)
     } catch {}
-    setClients(clientService.getAllClients())
     setSocialMessages(socialMediaService.getAllMessages())
     await staffService.syncLocalToSupabaseIfEmpty?.()
     await staffService.fetchFromSupabase?.()
@@ -680,7 +732,25 @@ export default function AdminDashboard() {
     try {
       const res = await fetch('/api/admin/medical-records', { cache: 'no-store' })
       const json = await res.json()
-      setMedicalRecords(Array.isArray(json?.records) ? json.records : [])
+      const arr = Array.isArray(json?.records) ? json.records : []
+      const normalized = arr.map((r: any) => ({
+        id: String(r.id),
+        clientId: String(r.client_id ?? r.clientId ?? ''),
+        appointmentId: r.appointment_id ?? r.appointmentId ?? undefined,
+        date: String(r.date ?? ''),
+        chiefComplaint: String(r.chief_complaint ?? r.chiefComplaint ?? ''),
+        medicalHistory: Array.isArray(r.medical_history) ? r.medical_history : [],
+        allergies: Array.isArray(r.allergies) ? r.allergies : [],
+        currentMedications: Array.isArray(r.current_medications) ? r.current_medications : [],
+        treatmentPlan: String(r.treatment_plan ?? r.treatmentPlan ?? ''),
+        notes: String(r.notes ?? ''),
+        attachments: Array.isArray(r.attachments) ? r.attachments : [],
+        createdBy: String(r.created_by ?? r.createdBy ?? ''),
+        createdAt: String(r.created_at ?? new Date().toISOString()),
+        updatedAt: String(r.updated_at ?? new Date().toISOString()),
+        isConfidential: Boolean(r.is_confidential ?? r.isConfidential ?? false),
+      })) as MedicalRecord[]
+      setMedicalRecords(normalized)
     } catch {}
   }
   const refreshInfluencers = async () => {
@@ -874,6 +944,20 @@ export default function AdminDashboard() {
         status: 'active',
         totalSpent: 0,
       }
+      const norm = (s: any) => String(s || '').trim().toLowerCase()
+      const email = norm(payload.email)
+      const phone = norm(payload.phone)
+      const nameKey = `${norm(payload.firstName)} ${norm(payload.lastName)}`.trim()
+      const duplicate = clients.find(c => {
+        const cEmail = norm(c.email)
+        const cPhone = norm(c.phone)
+        const cNameKey = `${norm(c.firstName)} ${norm(c.lastName)}`.trim()
+        return (email && cEmail && email === cEmail) || (phone && cPhone && phone === cPhone) || (!email && !phone && nameKey && cNameKey && cNameKey === nameKey)
+      })
+      if (duplicate) {
+        showNotification('error', 'Duplicate contact detected')
+        return
+      }
       const res = await fetch('/api/admin/clients', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
       if (!res.ok) throw new Error('Failed')
       await clientService.fetchFromSupabase?.()
@@ -902,6 +986,15 @@ export default function AdminDashboard() {
         const payload = selectedStaff ? { id: selectedStaff.id, ...staffForm } : staffForm
         const res = await fetch('/api/admin/staff', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
         if (!res.ok) throw new Error('Failed')
+        try {
+          const json = await res.json()
+          if (method === 'POST' && json?.staff?.id) {
+            staffService.updateStaff(json.staff.id, { treatments: staffForm.treatments || [] })
+          }
+          if (method === 'PATCH' && selectedStaff?.id) {
+            staffService.updateStaff(selectedStaff.id, { treatments: staffForm.treatments || [] })
+          }
+        } catch {}
         await staffService.fetchFromSupabase?.()
         setStaff(staffService.getAllStaff())
         showNotification("success", selectedStaff ? "Staff updated successfully!" : "Staff added successfully!")
@@ -1088,7 +1181,8 @@ export default function AdminDashboard() {
         specialties: [],
         hireDate: new Date().toISOString().split('T')[0],
         status: 'active',
-        notes: ''
+        notes: '',
+        treatments: []
       })
     }
     setIsStaffModalOpen(true)
@@ -2051,8 +2145,10 @@ export default function AdminDashboard() {
                 </Select>
               </div>
 
-              <div className="overflow-x-auto">
-                <Table className="min-w-[700px]">
+              <Card className="bg-white/60 backdrop-blur-sm border border-white/70 shadow-2xl">
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto">
+                    <Table className="min-w-[700px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead scope="col">Name</TableHead>
@@ -2122,8 +2218,10 @@ export default function AdminDashboard() {
                         </TableRow>
                       ))}
                   </TableBody>
-                </Table>
-              </div>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
                 </TabsContent>
                 </LazyTabContent>
 
@@ -2237,70 +2335,80 @@ export default function AdminDashboard() {
                 </Select>
               </div>
 
-              {(() => {
-                const filteredStaff = useMemo(() => {
-                  const q = staffSearch.toLowerCase()
-                  return staff
-                    .filter(s => staffStatusFilter === 'all' ? true : s.status === staffStatusFilter)
-                    .filter(s => staffPositionFilter === 'all' ? true : s.position === staffPositionFilter)
-                    .filter(s =>
-                      q === '' ||
-                      s.firstName.toLowerCase().includes(q) ||
-                      s.lastName.toLowerCase().includes(q) ||
-                      s.email.toLowerCase().includes(q) ||
-                      s.phone.includes(staffSearch)
-                    )
-                }, [staff, staffStatusFilter, staffPositionFilter, staffSearch])
-                return (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredStaff.map((s) => (
-                  <Card key={s.id} className="bg-gradient-to-br from-slate-50/40 via-white/60 to-gray-50/30 backdrop-blur-2xl border border-white/70 shadow-2xl shadow-slate-500/10 transition-all duration-500 hover:shadow-slate-500/20 hover:scale-[1.02]">
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div>
-                          <h3 className="font-bold text-lg">{s.firstName} {s.lastName}</h3>
-                            <p className="text-sm text-gray-600">{s.email}</p>
-                            <p className="text-sm text-gray-600">{s.phone}</p>
-                          </div>
-                          <Badge className="bg-gradient-to-r from-slate-600 to-gray-700 text-white">{s.position.replace('_', ' ')}</Badge>
-                        </div>
-                        <div className="space-y-2 mb-4">
-                          {s.department && (
-                            <div className="flex items-center gap-2 text-sm">
-                              <Settings className="w-4 h-4 text-gray-500" />
-                              <span>Department: {s.department}</span>
+              <Card className="bg-white/60 backdrop-blur-sm border border-white/70 shadow-2xl">
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Staff</TableHead>
+                        <TableHead>Position</TableHead>
+                        <TableHead>Department</TableHead>
+                        <TableHead>License</TableHead>
+                        <TableHead>Hired</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Treatments</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredStaff.map((s) => (
+                        <TableRow key={s.id}>
+                          <TableCell>
+                            <div className="font-medium">{s.firstName} {s.lastName}</div>
+                            <div className="text-xs text-gray-500">{s.email}</div>
+                            <div className="text-xs text-gray-500">{s.phone}</div>
+                          </TableCell>
+                          <TableCell className="capitalize">{s.position.replace('_', ' ')}</TableCell>
+                          <TableCell>{s.department ?? '-'}</TableCell>
+                          <TableCell>{s.licenseNumber ?? '-'}</TableCell>
+                          <TableCell>{new Date(s.hireDate).toLocaleDateString()}</TableCell>
+                          <TableCell>
+                          <Badge className="bg-gradient-to-r from-slate-600 to-gray-700 text-white">{s.status}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            {Array.isArray(s.treatments) && s.treatments.length > 0 ? (
+                              <Table className="bg-transparent">
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead className="text-xs">Procedure</TableHead>
+                                    <TableHead className="text-xs">Client</TableHead>
+                                    <TableHead className="text-xs">Total</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {s.treatments.map((t, i) => (
+                                    <TableRow key={i}>
+                                      <TableCell className="text-xs max-w-[12rem] truncate">{t.procedure}</TableCell>
+                                      <TableCell className="text-xs max-w-[12rem] truncate">{t.clientName || '-'}</TableCell>
+                                      <TableCell className="text-xs font-medium">{t.total}</TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            ) : (
+                              <span className="text-xs text-gray-500">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2 justify-end">
+                              <Button size="sm" variant="outline" onClick={() => openStaffModal(s)}>
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button size="sm" variant="outline" onClick={async () => {
+                                if (!confirmTwice(`${s.firstName} ${s.lastName}`.trim() || 'this staff')) return
+                                const res = await fetch('/api/admin/staff', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: s.id }) })
+                                if (res.ok) { await staffService.fetchFromSupabase?.(); setStaff(staffService.getAllStaff()); showNotification('success', 'Staff deleted') } else { showNotification('error', 'Failed to delete staff') }
+                              }}>
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
                             </div>
-                          )}
-                          {s.licenseNumber && (
-                            <div className="flex items-center gap-2 text-sm">
-                              <Shield className="w-4 h-4 text-gray-500" />
-                              <span>License: {s.licenseNumber}</span>
-                            </div>
-                          )}
-                          <div className="flex items-center gap-2 text-sm">
-                            <CalendarIcon className="w-4 h-4 text-gray-500" />
-                            <span>Hired: {new Date(s.hireDate).toLocaleDateString()}</span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button size="sm" variant="outline" onClick={() => openStaffModal(s)} className="flex-1">
-                            <Edit className="w-4 h-4 mr-2" />
-                            Edit
-                          </Button>
-                          <Button size="sm" variant="outline" onClick={async () => {
-                            if (!confirmTwice(`${s.firstName} ${s.lastName}`.trim() || 'this staff')) return
-                            const res = await fetch('/api/admin/staff', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: s.id }) })
-                            if (res.ok) { await staffService.fetchFromSupabase?.(); setStaff(staffService.getAllStaff()); showNotification('success', 'Staff deleted') } else { showNotification('error', 'Failed to delete staff') }
-                          }}>
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-              )
-              })()}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
             </TabsContent>
             </LazyTabContent>
 
@@ -2348,78 +2456,71 @@ export default function AdminDashboard() {
 
               {(() => {
                 const q = influencerSearch.toLowerCase()
-                const filteredInfluencers = useMemo(() => {
-                  return influencers
-                    .filter(i => influencerStatusFilter === 'all' ? true : i.status === influencerStatusFilter)
-                    .filter(i => influencerPlatformFilter === 'all' ? true : i.platform === influencerPlatformFilter)
-                    .filter(i => q === '' || i.name.toLowerCase().includes(q) || (i.handle ?? '').toLowerCase().includes(q))
-                }, [influencers, influencerStatusFilter, influencerPlatformFilter, influencerSearch])
+                const filteredInfluencers = influencers
+                  .filter(i => influencerStatusFilter === 'all' ? true : i.status === influencerStatusFilter)
+                  .filter(i => influencerPlatformFilter === 'all' ? true : i.platform === influencerPlatformFilter)
+                  .filter(i => q === '' || i.name.toLowerCase().includes(q) || (i.handle ?? '').toLowerCase().includes(q))
                 return (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredInfluencers
-                  .map((i) => {
-                    const stats = influencerService.getStats(i.id)
-                    return (
-                      <Card key={i.id} className="bg-gradient-to-br from-fuchsia-50/40 via-white/60 to-violet-50/30 backdrop-blur-2xl border border-white/70 shadow-2xl shadow-fuchsia-500/10 transition-all duration-500 hover:shadow-fuchsia-500/20 hover:scale-[1.02]">
-                        <CardContent className="p-6">
-                          <div className="flex items-start justify-between mb-4">
-                            <div>
-                              <h3 className="font-bold text-lg">{i.name} {i.handle && <span className="text-sm text-gray-500">({i.handle})</span>}</h3>
-                              <p className="text-sm text-gray-600 capitalize">{i.platform}</p>
-                              {i.email && <p className="text-sm text-gray-600">{i.email}</p>}
-                              {i.phone && <p className="text-sm text-gray-600">{i.phone}</p>}
-                            </div>
-                            <Badge className="bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white">{i.status}</Badge>
-                          </div>
-                          <div className="grid grid-cols-3 gap-4 mb-4">
-                            <div className="p-3 rounded-xl bg-white/50">
-                              <p className="text-xs text-gray-500">Referrals</p>
-                              <p className="text-xl font-bold">{stats.totalReferrals}</p>
-                            </div>
-                            <div className="p-3 rounded-xl bg-white/50">
-                              <p className="text-xs text-gray-500">Revenue</p>
-                              <p className="text-xl font-bold">₱{stats.totalRevenue.toLocaleString()}</p>
-                            </div>
-                            <div className="p-3 rounded-xl bg-white/50">
-                              <p className="text-xs text-gray-500">Commission ({Math.round(stats.commissionRate*100)}%)</p>
-                              <p className="text-xl font-bold">₱{stats.commissionDue.toLocaleString()}</p>
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-2 gap-4 mb-4">
-                            <div className="p-3 rounded-xl bg-white/50">
-                              <p className="text-xs text-gray-500">Paid</p>
-                              <p className="text-lg font-bold">₱{stats.commissionPaid.toLocaleString()}</p>
-                            </div>
-                            <div className="p-3 rounded-xl bg-white/50">
-                              <p className="text-xs text-gray-500">Remaining</p>
-                              <p className="text-lg font-bold">₱{stats.commissionRemaining.toLocaleString()}</p>
-                            </div>
-                          </div>
-                          <div className="flex flex-wrap items-center gap-2 mb-4">
-                            <Button size="sm" variant="outline" onClick={() => openInfluencerModal(i)} className="w-full sm:w-auto">
-                              <Edit className="w-4 h-4 mr-2" />
-                              Edit
-                            </Button>
-                            <Button size="sm" variant="outline" onClick={() => { setSelectedInfluencer(i); setIsReferralModalOpen(true) }} className="w-full sm:w-auto">
-                              <Plus className="w-4 h-4 mr-2" />
-                              Add Referral
-                            </Button>
-                            
-                            <Button size="sm" variant="outline" onClick={async () => {
-                              if (!confirmTwice(i.name || 'this influencer')) return
-                              const res = await fetch('/api/admin/influencers', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: i.id }) })
-                              if (res.ok) { await influencerService.fetchFromSupabase?.(); setInfluencers(influencerService.getAllInfluencers()); showNotification('success', 'Influencer deleted') } else { showNotification('error', 'Failed to delete influencer') }
-                            }} className="w-full sm:w-auto">
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Delete
-                            </Button>
-                          </div>
-                          
-                        </CardContent>
-                      </Card>
-                    )
-                  })}
-              </div>
+              <Card className="bg-white/60 backdrop-blur-sm border border-white/70 shadow-2xl">
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Influencer</TableHead>
+                        <TableHead>Platform</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Referrals</TableHead>
+                        <TableHead>Revenue</TableHead>
+                        <TableHead>Commission Due</TableHead>
+                        <TableHead>Paid</TableHead>
+                        <TableHead>Remaining</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredInfluencers.map(i => {
+                        const stats = influencerService.getStats(i.id)
+                        return (
+                          <TableRow key={i.id}>
+                            <TableCell>
+                              <div className="font-medium">{i.name}</div>
+                              {i.handle && <div className="text-xs text-gray-500">{i.handle}</div>}
+                              {i.email && <div className="text-xs text-gray-500">{i.email}</div>}
+                              {i.phone && <div className="text-xs text-gray-500">{i.phone}</div>}
+                            </TableCell>
+                            <TableCell className="capitalize">{i.platform}</TableCell>
+                            <TableCell>
+                              <Badge className="bg-gradient-to-r from-slate-600 to-gray-700 text-white">{i.status}</Badge>
+                            </TableCell>
+                            <TableCell>{stats.totalReferrals}</TableCell>
+                            <TableCell>₱{stats.totalRevenue.toLocaleString()}</TableCell>
+                            <TableCell>₱{stats.commissionDue.toLocaleString()}</TableCell>
+                            <TableCell>₱{stats.commissionPaid.toLocaleString()}</TableCell>
+                            <TableCell>₱{stats.commissionRemaining.toLocaleString()}</TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2 justify-end">
+                                <Button size="sm" variant="outline" onClick={() => openInfluencerModal(i)}>
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                                <Button size="sm" variant="outline" onClick={() => { setSelectedInfluencer(i); setIsReferralModalOpen(true) }}>
+                                  <Plus className="w-4 h-4" />
+                                </Button>
+                                <Button size="sm" variant="outline" onClick={async () => {
+                                  if (!confirmTwice(i.name || 'this influencer')) return
+                                  const res = await fetch('/api/admin/influencers', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: i.id }) })
+                                  if (res.ok) { await influencerService.fetchFromSupabase?.(); setInfluencers(influencerService.getAllInfluencers()); showNotification('success', 'Influencer deleted') } else { showNotification('error', 'Failed to delete influencer') }
+                                }}>
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
               )
               })()}
             </TabsContent>
@@ -3695,6 +3796,53 @@ export default function AdminDashboard() {
                </div>
              </div>
 
+              <div className="space-y-3">
+                <Label>Treatment Tracking</Label>
+                {Array.isArray(staffForm.treatments) && staffForm.treatments.map((t, idx) => (
+                  <div key={idx} className="grid grid-cols-12 gap-2 items-end">
+                    <div className="col-span-5">
+                      <Label htmlFor={`t_procedure_${idx}`}>Procedure</Label>
+                      <Select value={t?.procedure || ''} onValueChange={(value) => setStaffForm(prev => ({ ...prev, treatments: (prev.treatments || []).map((x, i) => i === idx ? { ...x, procedure: value } : x) }))}>
+                        <SelectTrigger id={`t_procedure_${idx}`}>
+                          <SelectValue placeholder="Select procedure" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {procedureOptions.map(name => (
+                            <SelectItem key={name} value={name}>{name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="col-span-4">
+                      <Label htmlFor={`t_client_${idx}`}>Client</Label>
+                      <Select value={t?.clientName || ''} onValueChange={(value) => setStaffForm(prev => ({ ...prev, treatments: (prev.treatments || []).map((x, i) => i === idx ? { ...x, clientName: value } : x) }))}>
+                        <SelectTrigger id={`t_client_${idx}`}>
+                          <SelectValue placeholder="Select client" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {clients.map(c => (
+                            <SelectItem key={c.id} value={`${c.firstName} ${c.lastName}`.trim()}>{`${c.firstName} ${c.lastName}`.trim()}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="col-span-3">
+                      <Label htmlFor={`t_total_${idx}`}>Total</Label>
+                      <Input id={`t_total_${idx}`} type="number" value={typeof t?.total === 'number' ? t.total : 0} onChange={(e) => setStaffForm(prev => ({ ...prev, treatments: (prev.treatments || []).map((x, i) => i === idx ? { ...x, total: Number(e.target.value || 0) } : x) }))} />
+                    </div>
+                    <div className="col-span-12 flex justify-end">
+                      <Button type="button" variant="outline" onClick={() => setStaffForm(prev => ({ ...prev, treatments: (prev.treatments || []).filter((_, i) => i !== idx) }))}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                <Button type="button" variant="outline" onClick={() => setStaffForm(prev => ({ ...prev, treatments: [ ...(prev.treatments || []), { procedure: '', clientName: '', total: 0 } ] }))}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Treatment
+                </Button>
+              </div>
+
              <div>
                <Label htmlFor="staffNotes">Notes</Label>
                  <Textarea id="staffNotes" rows={3} value={staffForm.notes || ''} onChange={(e) => setStaffForm(prev => ({ ...prev, notes: e.target.value }))} />
@@ -3767,19 +3915,3 @@ export default function AdminDashboard() {
     </>
   )
 }
-  useEffect(() => {
-    try {
-      const original = window.fetch
-      window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
-        const url = typeof input === 'string' ? input : String(input)
-        const method = (init?.method || 'GET').toUpperCase()
-        if (url.startsWith('/api/admin') && method !== 'GET') {
-          const csrf = document.cookie.match(/(?:^|; )csrf_token=([^;]+)/)?.[1] || ''
-          const headers = new Headers(init?.headers || {})
-          if (!headers.get('x-csrf-token')) headers.set('x-csrf-token', csrf)
-          return original(input, { ...init, headers })
-        }
-        return original(input, init)
-      }
-    } catch {}
-  }, [])

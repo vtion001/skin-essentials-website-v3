@@ -99,6 +99,7 @@ export interface Staff {
   status: 'active' | 'on_leave' | 'inactive' | 'terminated'
   avatarUrl?: string
   notes?: string
+  treatments?: { procedure: string; clientName?: string; total: number }[]
   createdAt: string
   updatedAt: string
 }
@@ -729,6 +730,9 @@ class StaffService {
   async fetchFromSupabase() {
     const rows = await supabaseFetchStaff()
     if (!rows) return
+    const existingMap = new Map<string, { procedure: string; clientName?: string; total: number }[]>(
+      this.staff.map(s => [s.id, Array.isArray(s.treatments) ? s.treatments : []])
+    )
     const normalized: Staff[] = rows.map((r: any) => ({
       id: String(r.id),
       firstName: String(r.first_name ?? ''),
@@ -743,6 +747,7 @@ class StaffService {
       status: String(r.status ?? 'active'),
       avatarUrl: r.avatar_url ?? undefined,
       notes: r.notes ?? undefined,
+      treatments: Array.isArray(r.treatments) ? r.treatments : (existingMap.get(String(r.id)) || []),
       createdAt: String(r.created_at ?? new Date().toISOString()),
       updatedAt: String(r.updated_at ?? new Date().toISOString()),
     }))
@@ -794,6 +799,7 @@ class StaffService {
         status: "active",
         avatarUrl: undefined,
         notes: "Senior aesthetic surgeon",
+        treatments: [],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       },
@@ -811,6 +817,7 @@ class StaffService {
         status: "active",
         avatarUrl: undefined,
         notes: "Available Tue/Thu",
+        treatments: [],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       }

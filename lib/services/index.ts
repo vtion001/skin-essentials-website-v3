@@ -1,0 +1,2 @@
+export { appointmentService, paymentService, medicalRecordService, clientService, socialMediaService, staffService, influencerService } from '../admin-services'
+export type { Appointment, Payment, MedicalRecord, Client, SocialMessage, SocialConversation, SocialPlatformConnection, Staff, Influencer, ReferralRecord } from '../admin-services'
