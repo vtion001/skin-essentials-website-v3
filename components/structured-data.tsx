@@ -9,25 +9,36 @@ interface StructuredDataProps {
 
 export function StructuredData({ type = "organization", data }: StructuredDataProps) {
   const getStructuredData = () => {
+    const name = process.env.NEXT_PUBLIC_BUSINESS_NAME || "Skin Essentials by HER"
+    const telephone = process.env.NEXT_PUBLIC_BUSINESS_PHONE || "+63 917 123 4567"
+    const email = process.env.NEXT_PUBLIC_BUSINESS_EMAIL || "info@skinessentialsbyher.com"
+    const street = process.env.NEXT_PUBLIC_BUSINESS_STREET || "Quezon City"
+    const locality = process.env.NEXT_PUBLIC_BUSINESS_LOCALITY || "Quezon City"
+    const region = process.env.NEXT_PUBLIC_BUSINESS_REGION || "Metro Manila"
+    const postalCode = process.env.NEXT_PUBLIC_BUSINESS_POSTAL || "1100"
+    const country = process.env.NEXT_PUBLIC_BUSINESS_COUNTRY || "PH"
+    const url = process.env.NEXT_PUBLIC_BASE_URL || "https://www.skinessentialsbyher.com"
+    const logo = `${url}/images/skinessentials-logo.png`
+
     const baseData = {
       "@context": "https://schema.org",
       "@type": "MedicalBusiness",
-      "name": "Skin Essentials by HER",
+      "name": name,
       "description": "Premier aesthetic clinic in Quezon City specializing in Hiko nose lifts, thread lifts, dermal fillers, laser treatments and medical aesthetics.",
-      "url": "https://www.skinessentialsbyher.com",
-      "logo": "https://www.skinessentialsbyher.com/images/skinessentials-logo.png",
+      "url": url,
+      "logo": logo,
       "image": [
-        "https://www.skinessentialsbyher.com/images/skinessentials-logo.png"
+        logo
       ],
-      "telephone": "+63-XXX-XXX-XXXX",
-      "email": "info@skinessentialsbyher.com",
+      "telephone": telephone,
+      "email": email,
       "address": {
         "@type": "PostalAddress",
-        "streetAddress": "Quezon City",
-        "addressLocality": "Quezon City",
-        "addressRegion": "Metro Manila",
-        "postalCode": "1100",
-        "addressCountry": "PH"
+        "streetAddress": street,
+        "addressLocality": locality,
+        "addressRegion": region,
+        "postalCode": postalCode,
+        "addressCountry": country
       },
       "geo": {
         "@type": "GeoCoordinates",

@@ -69,10 +69,20 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <meta name="theme-color" content="#fbc6c5" />
         <meta name="msapplication-TileColor" content="#fbc6c5" />
         <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#fbc6c5" />
+        <link rel="icon" type="image/png" sizes="16x16" href="https://res.cloudinary.com/dbviya1rj/image/upload/c_fill,w_16,h_16/v1763694737/jneevo5qj2skirxgww0c.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="https://res.cloudinary.com/dbviya1rj/image/upload/c_fill,w_32,h_32/v1763694737/jneevo5qj2skirxgww0c.png" />
+        <link rel="icon" type="image/png" sizes="48x48" href="https://res.cloudinary.com/dbviya1rj/image/upload/c_fill,w_48,h_48/v1763694737/jneevo5qj2skirxgww0c.png" />
+        <link rel="icon" type="image/png" sizes="64x64" href="https://res.cloudinary.com/dbviya1rj/image/upload/c_fill,w_64,h_64/v1763694737/jneevo5qj2skirxgww0c.png" />
+        <link rel="icon" type="image/png" sizes="128x128" href="https://res.cloudinary.com/dbviya1rj/image/upload/c_fill,w_128,h_128/v1763694737/jneevo5qj2skirxgww0c.png" />
+        <link rel="icon" type="image/png" sizes="256x256" href="https://res.cloudinary.com/dbviya1rj/image/upload/c_fill,w_256,h_256/v1763694737/jneevo5qj2skirxgww0c.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="https://res.cloudinary.com/dbviya1rj/image/upload/c_fill,w_180,h_180/v1763694737/jneevo5qj2skirxgww0c.png" />
+        <link rel="shortcut icon" href="https://res.cloudinary.com/dbviya1rj/image/upload/c_fill,w_32,h_32/v1763694737/jneevo5qj2skirxgww0c.png" />
+        <link rel="canonical" href="https://www.skinessentialsbyher.com" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="//fonts.googleapis.com" />

@@ -19,3 +19,7 @@ Allow: /faq
 
 # Crawl delay (optional)
 Crawl-delay: 1
+User-agent: *
+Allow: /
+
+Sitemap: https://www.skinessentialsbyher.com/sitemap.xml
