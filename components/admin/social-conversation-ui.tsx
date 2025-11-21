@@ -286,7 +286,7 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
   }
 
   return (
-    <div className="flex flex-col lg:flex-row w-full max-w-full min-h-[60vh] sm:min-h-[70vh] lg:min-h-[70vh] xl:min-h-[78vh] border rounded-xl overflow-hidden bg-gradient-to-br from-white to-white/60 shadow-sm">
+    <div className="flex flex-col lg:flex-row w-full max-w-full h-[68vh] sm:h-[72vh] lg:h-[74vh] xl:h-[78vh] border rounded-xl overflow-hidden bg-gradient-to-br from-white to-white/60 shadow-sm">
       <div className="hidden sm:flex w-14 bg-white/80 backdrop-blur-sm border-r flex-col items-center gap-4 py-4">
         <div className="h-10 w-10 rounded-full bg-gray-100 grid place-items-center">
           <MessageCircle className="h-5 w-5 text-gray-700" />
@@ -299,7 +299,7 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
         </div>
       </div>
       {/* Conversations Sidebar */}
-      <div className="w-full lg:w-[360px] xl:w-[400px] lg:shrink-0 border-r bg-white/70 backdrop-blur-sm flex flex-col min-w-0">
+      <div className="w-full lg:w-[360px] xl:w-[400px] lg:shrink-0 border-r bg-white/70 backdrop-blur-sm flex flex-col min-w-0 h-full">
         <div className="p-3 sm:p-4 border-b bg-white/80">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-lg tracking-tight">Conversations</h3>
@@ -429,7 +429,7 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
       </div>
 
       {/* Chat Area */}
-      <div className="w-full lg:flex-1 min-w-0 flex flex-col bg-white/70 backdrop-blur-sm">
+      <div className="w-full lg:flex-1 min-w-0 flex flex-col bg-white/70 backdrop-blur-sm h-full">
         {selectedConversation ? (
           <>
             {/* Chat Header */}
