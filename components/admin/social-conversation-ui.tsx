@@ -491,7 +491,7 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
 
             {/* Messages */}
             <div className="flex-1 p-3 sm:p-4 overflow-y-auto min-h-0" aria-live="polite" role="list">
-              <div className="space-y-4">
+              <div className="space-y-2 sm:space-y-3">
                 {messages.map((message, idx) => (
                   <div
                     key={message.id}
@@ -499,13 +499,13 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
                     role="listitem"
                   >
                     <div
-                      className={`max-w-[70%] rounded-lg p-3 ${
+                      className={`max-w-[60%] sm:max-w-[55%] lg:max-w-[45%] xl:max-w-[40%] break-words rounded-lg p-3 ${
                         message.isFromPage
                           ? "bg-blue-500 text-white motion-safe:transition-all motion-safe:hover:brightness-105"
                           : "bg-gray-100 text-gray-900 motion-safe:transition-all motion-safe:hover:shadow-sm"
                       }`}
                     >
-                      <p className="text-sm">{message.message || (message.messageType === 'image' ? 'Media message' : '')}</p>
+                      <p className="text-sm leading-snug">{message.message || (message.messageType === 'image' ? 'Media message' : '')}</p>
                       {idx === 0 || new Date(message.timestamp).toDateString() !== new Date(messages[idx - 1].timestamp).toDateString() ? (
                         <div className="text-center text-xs text-gray-500 mt-2">
                           {new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).format(new Date(message.timestamp))}
