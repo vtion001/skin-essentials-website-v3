@@ -13,6 +13,8 @@ import { useRouter, useSearchParams } from "next/navigation"
 export default function AdminLoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [mfaCode, setMfaCode] = useState("")
+  const [mfaRequired, setMfaRequired] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState("")
   const [message, setMessage] = useState("")
@@ -44,10 +46,12 @@ export default function AdminLoginPage() {
     setMessage("")
 
     try {
+      const csrf = typeof document !== 'undefined' ? (document.cookie.match(/(?:^|; )csrf_token=([^;]+)/)?.[1] || '') : ''
       const response = await fetch("/api/admin/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "x-csrf-token": csrf,
         },
         credentials: 'include',
         body: JSON.stringify({ email, password }),
@@ -55,7 +59,10 @@ export default function AdminLoginPage() {
 
       if (response.ok) {
         const data = await response.json()
-        if (data.success) {
+        if (data.success && data.mfa_required) {
+          setMfaRequired(true)
+          setMessage("Enter your MFA code")
+        } else if (data.success) {
           setMessage("Signed in successfully. Redirecting...")
           try {
             if (rememberMe) {
@@ -76,6 +83,26 @@ export default function AdminLoginPage() {
       setError("Network error. Please check your connection.")
     }
 
+    setIsLoading(false)
+  }
+
+  const handleVerifyMfa = async () => {
+    setIsLoading(true)
+    setError("")
+    const csrf = typeof document !== 'undefined' ? (document.cookie.match(/(?:^|; )csrf_token=([^;]+)/)?.[1] || '') : ''
+    const resp = await fetch('/api/admin/mfa', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrf },
+      credentials: 'include',
+      body: JSON.stringify({ code: mfaCode })
+    })
+    const json = await resp.json().catch(() => ({}))
+    if (resp.ok && json.success) {
+      setMessage("MFA verified. Redirecting...")
+      setTimeout(() => router.replace('/admin'), 100)
+    } else {
+      setError(json?.error || 'MFA verification failed')
+    }
     setIsLoading(false)
   }
 
@@ -151,6 +178,7 @@ export default function AdminLoginPage() {
               </div>
             )}
 
+            {!mfaRequired && (
             <Button
               type="submit"
               disabled={isLoading}
@@ -164,7 +192,18 @@ export default function AdminLoginPage() {
               ) : (
                 "Sign In"
               )}
-            </Button>
+            </Button>)}
+            {mfaRequired && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="mfa" className="text-gray-700 font-medium">MFA Code</Label>
+                  <Input id="mfa" type="text" value={mfaCode} onChange={(e) => setMfaCode(e.target.value)} placeholder="Enter 6-digit code" required />
+                </div>
+                <Button type="button" onClick={handleVerifyMfa} disabled={isLoading} className="w-full bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] hover:from-[#d09d80] hover:to-[#fbc6c5] text-white font-medium py-3">
+                  Verify MFA
+                </Button>
+              </div>
+            )}
             <div className="mt-2 flex items-center gap-2">
               <input id="remember" type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} />
               <label htmlFor="remember" className="text-sm text-gray-700">Remember email</label>

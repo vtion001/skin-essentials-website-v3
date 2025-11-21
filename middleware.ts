@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs"
+import { generateCsrfToken } from "@/lib/utils"
+
+const rateMap: Map<string, { count: number; ts: number }> = new Map()
 
 export async function middleware(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith("/admin")) {
@@ -25,11 +28,46 @@ export async function middleware(request: NextRequest) {
       url.searchParams.set("error", "not_admin")
       return NextResponse.redirect(url)
     }
+    const cookies = request.cookies
+    const csrf = cookies.get('csrf_token')?.value
+    if (!csrf) {
+      const token = generateCsrfToken()
+      response.cookies.set('csrf_token', token, { httpOnly: false, sameSite: 'strict', path: '/' })
+    }
+    response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload')
+    const mfaOk = cookies.get('mfa_ok')?.value === '1'
+    if (!mfaOk) {
+      const url = new URL("/admin/login", request.url)
+      url.searchParams.set("error", "mfa_required")
+      return NextResponse.redirect(url)
+    }
+    return response
+  }
+  if (request.nextUrl.pathname.startsWith("/api/admin")) {
+    if (request.method !== 'GET') {
+      const header = request.headers.get('x-csrf-token') || ''
+      const cookie = request.cookies.get('csrf_token')?.value || ''
+      if (!header || !cookie || header !== cookie) {
+        return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 })
+      }
+      const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'local'
+      const now = Date.now()
+      const slot = Math.floor(now / 60000)
+      const key = `${ip}:${slot}`
+      const cur = rateMap.get(key) || { count: 0, ts: slot }
+      cur.count += 1
+      rateMap.set(key, cur)
+      if (cur.count > 60) {
+        return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 })
+      }
+    }
+    const response = NextResponse.next()
+    response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload')
     return response
   }
   return NextResponse.next()
 }
 
 export const config = {
-  matcher: "/admin/:path*",
+  matcher: ["/admin/:path*", "/api/admin/:path*"],
 }

@@ -3767,3 +3767,19 @@ export default function AdminDashboard() {
     </>
   )
 }
+  useEffect(() => {
+    try {
+      const original = window.fetch
+      window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = typeof input === 'string' ? input : String(input)
+        const method = (init?.method || 'GET').toUpperCase()
+        if (url.startsWith('/api/admin') && method !== 'GET') {
+          const csrf = document.cookie.match(/(?:^|; )csrf_token=([^;]+)/)?.[1] || ''
+          const headers = new Headers(init?.headers || {})
+          if (!headers.get('x-csrf-token')) headers.set('x-csrf-token', csrf)
+          return original(input, { ...init, headers })
+        }
+        return original(input, init)
+      }
+    } catch {}
+  }, [])

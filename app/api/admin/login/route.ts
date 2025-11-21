@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { supabaseAdminClient } from "@/lib/supabase-admin"
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
 import { cookies } from "next/headers"
+import { verifyCsrfToken } from "@/lib/utils"
 
 function supabaseEnvOk() {
   return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
@@ -9,6 +10,12 @@ function supabaseEnvOk() {
 
 export async function POST(request: Request) {
   try {
+    const cookieStore = cookies()
+    const cookiesMap = new Map<string, string>()
+    cookieStore.getAll().forEach(c => cookiesMap.set(c.name, c.value))
+    if (!verifyCsrfToken(request.headers, cookiesMap)) {
+      return NextResponse.json({ success: false, error: 'Invalid CSRF token' }, { status: 403 })
+    }
     if (!supabaseEnvOk()) {
       return NextResponse.json(
         { success: false, error: "Supabase configuration missing. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY." },
@@ -39,6 +46,10 @@ export async function POST(request: Request) {
         return NextResponse.json({ success: false, error: 'Not authorized' }, { status: 403 })
       }
     } catch {}
+    const requireMfa = Boolean(process.env.ADMIN_MFA_CODE)
+    if (requireMfa) {
+      return NextResponse.json({ success: true, mfa_required: true })
+    }
     return NextResponse.json({ success: true, user: { id: data.user?.id, email: data.user?.email } })
   } catch (error) {
     return NextResponse.json({ success: false, error: "Invalid request payload" }, { status: 400 })

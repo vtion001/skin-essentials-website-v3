@@ -1,14 +1,27 @@
 import { NextResponse } from "next/server"
 import { supabaseAdminClient } from "@/lib/supabase-admin"
+import { aesEncryptToString, aesDecryptFromString, verifyCsrfToken } from "@/lib/utils"
+import { cookies } from "next/headers"
 
 export async function GET() {
   const admin = supabaseAdminClient()
   const { data, error } = await admin.from('payments').select('*').order('created_at', { ascending: false })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ payments: data || [] })
+  const payments = (data || []).map((p: any) => ({
+    ...p,
+    transaction_id: aesDecryptFromString(p.transaction_id) ?? p.transaction_id,
+    notes: aesDecryptFromString(p.notes) ?? p.notes,
+  }))
+  return NextResponse.json({ payments })
 }
 
 export async function POST(req: Request) {
+  const cookieStore = cookies()
+  const cookiesMap = new Map<string, string>()
+  cookieStore.getAll().forEach(c => cookiesMap.set(c.name, c.value))
+  if (!verifyCsrfToken(req.headers, cookiesMap)) {
+    return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 })
+  }
   const raw = await req.json()
   const admin = supabaseAdminClient()
   const payload = {
@@ -18,17 +31,28 @@ export async function POST(req: Request) {
     amount: raw.amount,
     method: raw.method,
     status: raw.status,
-    transaction_id: raw.transactionId ?? null,
+    transaction_id: aesEncryptToString(raw.transactionId ?? null),
     receipt_url: raw.receiptUrl ?? null,
     uploaded_files: Array.isArray(raw.uploadedFiles) ? raw.uploadedFiles : [],
-    notes: raw.notes ?? null,
+    notes: aesEncryptToString(raw.notes ?? null),
   }
   const { data, error } = await admin.from('payments').insert(payload).select('*').single()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ payment: data })
+  const payment = {
+    ...data,
+    transaction_id: aesDecryptFromString(data.transaction_id) ?? data.transaction_id,
+    notes: aesDecryptFromString(data.notes) ?? data.notes,
+  }
+  return NextResponse.json({ payment })
 }
 
 export async function PATCH(req: Request) {
+  const cookieStore = cookies()
+  const cookiesMap = new Map<string, string>()
+  cookieStore.getAll().forEach(c => cookiesMap.set(c.name, c.value))
+  if (!verifyCsrfToken(req.headers, cookiesMap)) {
+    return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 })
+  }
   const raw = await req.json()
   const { id } = raw || {}
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
@@ -39,15 +63,20 @@ export async function PATCH(req: Request) {
     amount: raw.amount ?? undefined,
     method: raw.method ?? undefined,
     status: raw.status ?? undefined,
-    transaction_id: raw.transactionId ?? undefined,
+    transaction_id: raw.transactionId !== undefined ? aesEncryptToString(raw.transactionId) : undefined,
     receipt_url: raw.receiptUrl ?? undefined,
     uploaded_files: Array.isArray(raw.uploadedFiles) ? raw.uploadedFiles : undefined,
-    notes: raw.notes ?? undefined,
+    notes: raw.notes !== undefined ? aesEncryptToString(raw.notes) : undefined,
     updated_at: new Date().toISOString(),
   }
   const { data, error } = await admin.from('payments').update(updates).eq('id', id).select('*').single()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ payment: data })
+  const payment = {
+    ...data,
+    transaction_id: aesDecryptFromString(data.transaction_id) ?? data.transaction_id,
+    notes: aesDecryptFromString(data.notes) ?? data.notes,
+  }
+  return NextResponse.json({ payment })
 }
 
 export async function DELETE(req: Request) {
