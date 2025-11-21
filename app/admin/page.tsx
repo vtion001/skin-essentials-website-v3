@@ -499,6 +499,9 @@ export default function AdminDashboard() {
       const recRes = await fetch('/api/admin/medical-records', { cache: 'no-store' })
       const recJson = await recRes.json()
       const arr = Array.isArray(recJson?.records) ? recJson.records : []
+      const localMap = new Map<string, { date: string; procedure: string; aestheticianId?: string }[]>(
+        medicalRecordService.getAllRecords().map(r => [r.id, Array.isArray(r.treatments) ? r.treatments! : []])
+      )
       const normalized = arr.map((r: any) => ({
         id: String(r.id),
         clientId: String(r.client_id ?? r.clientId ?? ''),
@@ -515,6 +518,7 @@ export default function AdminDashboard() {
         createdAt: String(r.created_at ?? new Date().toISOString()),
         updatedAt: String(r.updated_at ?? new Date().toISOString()),
         isConfidential: Boolean(r.is_confidential ?? r.isConfidential ?? false),
+        treatments: localMap.get(String(r.id)) || []
       })) as MedicalRecord[]
       setMedicalRecords(normalized)
     } catch {}
@@ -733,6 +737,9 @@ export default function AdminDashboard() {
       const res = await fetch('/api/admin/medical-records', { cache: 'no-store' })
       const json = await res.json()
       const arr = Array.isArray(json?.records) ? json.records : []
+      const localMap = new Map<string, { date: string; procedure: string; aestheticianId?: string }[]>(
+        medicalRecordService.getAllRecords().map(r => [r.id, Array.isArray(r.treatments) ? r.treatments! : []])
+      )
       const normalized = arr.map((r: any) => ({
         id: String(r.id),
         clientId: String(r.client_id ?? r.clientId ?? ''),
@@ -749,6 +756,7 @@ export default function AdminDashboard() {
         createdAt: String(r.created_at ?? new Date().toISOString()),
         updatedAt: String(r.updated_at ?? new Date().toISOString()),
         isConfidential: Boolean(r.is_confidential ?? r.isConfidential ?? false),
+        treatments: localMap.get(String(r.id)) || []
       })) as MedicalRecord[]
       setMedicalRecords(normalized)
     } catch {}
@@ -855,9 +863,16 @@ export default function AdminDashboard() {
         const payload = selectedMedicalRecord ? { id: selectedMedicalRecord.id, ...medicalRecordForm } : medicalRecordForm
         const res = await fetch('/api/admin/medical-records', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
         if (!res.ok) throw new Error('Failed')
-        const listRes = await fetch('/api/admin/medical-records', { cache: 'no-store' })
-        const json = await listRes.json()
-        setMedicalRecords(Array.isArray(json?.records) ? json.records : [])
+        try {
+          const json = await res.json()
+          if (method === 'POST' && json?.record?.id) {
+            medicalRecordService.updateRecord(json.record.id, { treatments: medicalRecordForm.treatments || [] })
+          }
+          if (method === 'PATCH' && selectedMedicalRecord?.id) {
+            medicalRecordService.updateRecord(selectedMedicalRecord.id, { treatments: medicalRecordForm.treatments || [] })
+          }
+        } catch {}
+        await refreshMedical()
         showNotification("success", selectedMedicalRecord ? "Medical record updated successfully!" : "Medical record created successfully!")
         setIsMedicalRecordModalOpen(false)
         setMedicalRecordForm({})
@@ -1129,6 +1144,7 @@ export default function AdminDashboard() {
         attachments: [],
         isConfidential: true,
         createdBy: 'Admin',
+        treatments: []
       })
     }
     setIsMedicalRecordModalOpen(true)
@@ -3507,6 +3523,83 @@ export default function AdminDashboard() {
                 rows={4}
                 required
               />
+            </div>
+
+            <div className="space-y-3">
+              <Label>Treatment Tracking</Label>
+              {Array.isArray(medicalRecordForm.treatments) && medicalRecordForm.treatments.map((t, idx) => (
+                <div key={idx} className="grid grid-cols-12 gap-2 items-end">
+                  <div className="col-span-3">
+                    <Label htmlFor={`mr_t_date_${idx}`}>Date of Treatment</Label>
+                    <Input
+                      id={`mr_t_date_${idx}`}
+                      type="date"
+                      value={t?.date || ''}
+                      onChange={(e) => setMedicalRecordForm(prev => ({
+                        ...prev,
+                        treatments: (prev.treatments || []).map((x, i) => i === idx ? { ...x, date: e.target.value } : x)
+                      }))}
+                    />
+                  </div>
+                  <div className="col-span-5">
+                    <Label htmlFor={`mr_t_proc_${idx}`}>Treatment Procedure</Label>
+                    <Select
+                      value={t?.procedure || ''}
+                      onValueChange={(value) => setMedicalRecordForm(prev => ({
+                        ...prev,
+                        treatments: (prev.treatments || []).map((x, i) => i === idx ? { ...x, procedure: value } : x)
+                      }))}
+                    >
+                      <SelectTrigger id={`mr_t_proc_${idx}`}>
+                        <SelectValue placeholder="Select procedure" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {procedureOptions.map(name => (
+                          <SelectItem key={name} value={name}>{name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="col-span-4">
+                    <Label htmlFor={`mr_t_staff_${idx}`}>Aesthetician</Label>
+                    <Select
+                      value={t?.aestheticianId || ''}
+                      onValueChange={(value) => setMedicalRecordForm(prev => ({
+                        ...prev,
+                        treatments: (prev.treatments || []).map((x, i) => i === idx ? { ...x, aestheticianId: value } : x)
+                      }))}
+                    >
+                      <SelectTrigger id={`mr_t_staff_${idx}`}>
+                        <SelectValue placeholder="Select staff" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {staff.map(s => (
+                          <SelectItem key={s.id} value={s.id}>{`${s.firstName} ${s.lastName}`.trim()}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="col-span-12 flex justify-end">
+                    <Button type="button" variant="outline" onClick={() => setMedicalRecordForm(prev => ({
+                      ...prev,
+                      treatments: (prev.treatments || []).filter((_, i) => i !== idx)
+                    }))}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setMedicalRecordForm(prev => ({
+                  ...prev,
+                  treatments: [ ...(prev.treatments || []), { date: new Date().toISOString().split('T')[0], procedure: '', aestheticianId: '' } ]
+                }))}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Treatment
+              </Button>
             </div>
 
             <div>

@@ -52,6 +52,7 @@ export interface MedicalRecord {
   createdAt: string
   updatedAt: string
   isConfidential: boolean
+  treatments?: { date: string; procedure: string; aestheticianId?: string }[]
 }
 
 const AVATAR_PLACEHOLDER = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="40" height="40" rx="8" fill="%23f3f4f6"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%239ca3af" font-family="Arial" font-size="12">IMG</text></svg>'
