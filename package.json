@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "next build",
-    "dev": "next dev -p 3001",
+    "dev": "bash -lc 'for p in 3001 3002 3003 3004 3005; do if ! lsof -nP -iTCP:$p | grep LISTEN >/dev/null; then echo Starting dev on port $p; PORT=$p next dev -p $p; exit 0; fi; done; echo \"No free dev port found (3001-3005)\"; exit 1'",
     "lint": "next lint",
     "start": "next start"
   },

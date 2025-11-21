@@ -14,6 +14,11 @@ export async function POST(req: NextRequest) {
       notes = "",
       price = 0,
       duration = 60,
+      sourcePlatform,
+      influencerId,
+      influencerName,
+      referralCode,
+      discountApplied,
     } = body || {}
 
     if (!name || !phone || !date || !time || !service) {
@@ -63,6 +68,11 @@ export async function POST(req: NextRequest) {
       notes,
       duration,
       price,
+      source_platform: sourcePlatform ?? 'website',
+      influencer_id: influencerId ?? null,
+      influencer_name: influencerName ?? null,
+      referral_code: referralCode ?? null,
+      discount_applied: Boolean(discountApplied ?? false),
     })
 
     if (error) {

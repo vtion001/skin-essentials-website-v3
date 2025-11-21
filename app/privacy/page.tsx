@@ -783,8 +783,9 @@ export default function PrivacyPolicyPage() {
                                 <h4 className="font-medium text-gray-900">Clinic Address</h4>
                                 <p className="text-sm text-gray-600">
                                   Skin Essentials by HER<br />
-                                  123 Beauty Street, Quezon City<br />
-                                  Metro Manila, Philippines 1100
+                                  Granda Building, Road 8 Project 6<br />
+                                  Quezon City, Metro Manila<br />
+                                  Philippines 1100
                                 </p>
                               </div>
                             </div>
@@ -793,7 +794,7 @@ export default function PrivacyPolicyPage() {
                               <Phone className="w-5 h-5 text-[#d09d80] mt-1 flex-shrink-0" />
                               <div>
                                 <h4 className="font-medium text-gray-900">Phone</h4>
-                                <p className="text-sm text-gray-600">+63 (2) 8123-4567</p>
+                                <p className="text-sm text-gray-600">0995-260-3451<br />+63 2 8123 4567</p>
                               </div>
                             </div>
                             
@@ -801,7 +802,7 @@ export default function PrivacyPolicyPage() {
                               <Mail className="w-5 h-5 text-[#d09d80] mt-1 flex-shrink-0" />
                               <div>
                                 <h4 className="font-medium text-gray-900">Email</h4>
-                                <p className="text-sm text-gray-600">privacy@skinessentialsbyher.com</p>
+                                <p className="text-sm text-gray-600">info@skinessentialsbyher.com</p>
                               </div>
                             </div>
                           </div>
@@ -827,7 +828,7 @@ export default function PrivacyPolicyPage() {
                               <p><strong>Saturday:</strong> 9:00 AM - 5:00 PM</p>
                             </div>
                             <div>
-                              <p><strong>Sunday:</strong> 10:00 AM - 4:00 PM</p>
+                              <p><strong>Sunday:</strong> 10:00 AM - 5:00 PM</p>
                               <p><strong>Holidays:</strong> By appointment only</p>
                             </div>
                           </div>

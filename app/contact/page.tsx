@@ -34,6 +34,8 @@ export default function ContactPage() {
     phone: "",
     service: "",
     message: "",
+    date: "",
+    time: "",
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
@@ -59,21 +61,39 @@ export default function ContactPage() {
     if (!formData.name.trim()) newErrors.name = "Full name is required"
     if (!formData.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = "Enter a valid email"
     if (!formData.message.trim()) newErrors.message = "Message is required"
+    if (!formData.phone.trim()) newErrors.phone = "Phone is required"
+    if (!formData.service.trim()) newErrors.service = "Please select a service"
+    if (!formData.date.trim()) newErrors.date = "Preferred date is required"
+    if (!formData.time.trim()) newErrors.time = "Preferred time is required"
     setErrors(newErrors)
     if (Object.keys(newErrors).length > 0) {
       setIsSubmitting(false)
       return
     }
-    
-    // Simulate form submission
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    
+    try {
+      const res = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          service: formData.service || 'Consultation',
+          date: formData.date,
+          time: formData.time,
+          notes: formData.message,
+          duration: 60,
+          price: 0,
+          sourcePlatform: 'website'
+        })
+      })
+      if (res.ok) {
+        setIsSubmitted(true)
+        setFormData({ name: "", email: "", phone: "", service: "", message: "", date: "", time: "" })
+        setTimeout(() => setIsSubmitted(false), 5000)
+      }
+    } catch {}
     setIsSubmitting(false)
-    setIsSubmitted(true)
-    setFormData({ name: "", email: "", phone: "", service: "", message: "" })
-    
-    // Reset success message after 5 seconds
-    setTimeout(() => setIsSubmitted(false), 5000)
   }
 
   const contactInfo = [
@@ -280,6 +300,9 @@ export default function ContactPage() {
                             placeholder="+63 917 123 4567"
                             className="border-[#fbc6c5]/30 focus:border-[#d09d80]"
                           />
+                          {errors.phone && (
+                            <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
+                          )}
                         </div>
                         <div>
                           <label htmlFor="service" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -299,6 +322,45 @@ export default function ContactPage() {
                               </option>
                             ))}
                           </select>
+                          {errors.service && (
+                            <p className="mt-1 text-sm text-red-600">{errors.service}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                          <label htmlFor="date" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Preferred Date *
+                          </label>
+                          <Input
+                            id="date"
+                            name="date"
+                            type="date"
+                            required
+                            value={formData.date}
+                            onChange={handleInputChange}
+                            className="border-[#fbc6c5]/30 focus:border-[#d09d80]"
+                          />
+                          {errors.date && (
+                            <p className="mt-1 text-sm text-red-600">{errors.date}</p>
+                          )}
+                        </div>
+                        <div>
+                          <label htmlFor="time" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Preferred Time *
+                          </label>
+                          <Input
+                            id="time"
+                            name="time"
+                            type="time"
+                            required
+                            value={formData.time}
+                            onChange={handleInputChange}
+                            className="border-[#fbc6c5]/30 focus:border-[#d09d80]"
+                          />
+                          {errors.time && (
+                            <p className="mt-1 text-sm text-red-600">{errors.time}</p>
+                          )}
                         </div>
                       </div>
                       <div>

@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion"
 import { Clock, Star, Phone, Award, Shield, Users, CheckCircle, ArrowRight, Calendar, Search, ChevronDown, ChevronUp } from "lucide-react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
@@ -62,6 +64,9 @@ function ServicesContent() {
   const [activeCategoryId, setActiveCategoryId] = useState<string>("")
   const [query, setQuery] = useState<string>("")
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({})
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
+  const [preview, setPreview] = useState<{ service: Service; category: ServiceCategory } | null>(null)
+  const reduceMotion = useReducedMotion()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -592,45 +597,48 @@ function ServicesContent() {
           </div>
         </section>
 
-        {/* Services Navigator */}
-        <section className="sticky md:top-16 top-0 z-40 border-b border-gray-100 bg-white md:bg-white/80 md:backdrop-blur-xl">
+        <section className={`border-b border-gray-200 bg-white ${isScrolled ? "shadow-sm" : ""}`}>
           <div className="container mx-auto px-4">
-            <div className="flex items-center justify-between py-4 gap-4">
+            <div className="flex flex-col lg:flex-row justify-between items-center gap-6 mb-8 py-4">
               <div className="flex-1">
                 <div className="hidden md:grid grid-cols-3 lg:grid-cols-5 gap-2">
                   {serviceCategories.map((cat) => (
-                    <a
+                    <motion.a
                       key={cat.id}
                       href={`#${cat.id}`}
-                      className={`px-4 py-2 rounded-xl transition-[color,box-shadow] duration-300 text-center ${
+                      className={`px-4 py-3 rounded-xl transition-all duration-300 text-center border ${
                         activeCategoryId === cat.id
-                          ? "bg-white/70 shadow-sm text-brand-tan"
-                          : "bg-white hover:bg-white/60 text-gray-700"
+                          ? "bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-lg border-transparent"
+                          : "bg-white/80 backdrop-blur-sm hover:bg-gray-50 text-gray-700 border-gray-200"
                       }`}
+                      whileHover={reduceMotion ? undefined : { scale: 1.02 }}
+                      whileTap={reduceMotion ? undefined : { scale: 0.98 }}
                     >
                       {cat.category}
-                    </a>
+                    </motion.a>
                   ))}
                 </div>
                 <div className="md:hidden overflow-x-auto scrollbar-hide">
                   <div className="flex gap-2 min-w-max">
                     {serviceCategories.map((cat) => (
-                      <a
+                      <motion.a
                         key={cat.id}
                         href={`#${cat.id}`}
-                        className={`px-4 py-2 rounded-xl transition-[color,box-shadow] duration-300 text-center ${
+                        className={`px-4 py-2 rounded-xl transition-all duration-300 text-center ${
                           activeCategoryId === cat.id
-                            ? "bg-white shadow-sm text-brand-tan"
-                            : "bg-white text-gray-700"
+                            ? "bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-lg"
+                            : "bg-white text-gray-700 hover:bg-gray-50"
                         }`}
+                        whileHover={reduceMotion ? undefined : { scale: 1.02 }}
+                        whileTap={reduceMotion ? undefined : { scale: 0.98 }}
                       >
                         {cat.category}
-                      </a>
+                      </motion.a>
                     ))}
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center space-x-3">
                 <select
                   aria-label="Jump to category"
                   value={activeCategoryId}
@@ -640,7 +648,7 @@ function ServicesContent() {
                     const el = document.getElementById(id)
                     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" })
                   }}
-                  className="bg-white md:bg-white/70 md:backdrop-blur-sm rounded-xl px-3 py-2 shadow-sm border border-white/30 text-sm text-gray-700"
+                  className="bg-white md:bg-white/70 md:backdrop-blur-sm rounded-xl px-3 py-2 shadow-sm border border-gray-300 text-sm text-gray-700"
                 >
                   {serviceCategories.map((cat) => (
                     <option key={cat.id} value={cat.id}>
@@ -648,13 +656,14 @@ function ServicesContent() {
                     </option>
                   ))}
                 </select>
-                <div className="flex items-center bg-white md:bg-white/70 md:backdrop-blur-sm rounded-xl px-3 py-2 shadow-sm border border-white/30">
+                <div className="flex items-center border border-gray-300 rounded-xl p-1 bg-white/80 backdrop-blur-sm" role="search">
                   <Search className="w-4 h-4 text-gray-500 mr-2" />
                   <input
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="Search services..."
                     className="bg-transparent outline-none text-sm text-gray-700 placeholder:text-gray-400"
+                    aria-label="Search services"
                   />
                 </div>
               </div>
@@ -678,8 +687,9 @@ function ServicesContent() {
                 <div className="flex items-center justify-center gap-3">
                   <Button
                     variant="brand-outline"
-                    className="rounded-xl"
+                    className="rounded-xl active:scale-[0.98] transition-transform"
                     onClick={() => toggleCategory(category.id)}
+                    aria-expanded={!!expandedCategories[category.id]}
                   >
                     {expandedCategories[category.id] ? (
                       <>
@@ -696,137 +706,39 @@ function ServicesContent() {
                 </div>
               </div>
 
-              {/* Services Grid */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 max-w-7xl mx-auto">
+              <div className="max-w-4xl mx-auto bg-white rounded-2xl border border-gray-200 divide-y" role="list">
                 {category.services
                   .filter(matchesQuery)
                   .slice(0, expandedCategories[category.id] ? category.services.length : 6)
                   .map((service, serviceIndex) => (
-                  <Card
-                    key={serviceIndex}
-                    className="group hover-lift transition-optimized rounded-3xl overflow-hidden border-0 bg-white hover:shadow-2xl"
-                  >
-                    <div className="h-2 bg-brand-gradient"></div>
-
-                    <CardHeader className="pb-4">
-                      <div className="flex items-start justify-between mb-3">
-                        <CardTitle className="text-xl font-bold text-gray-900 leading-tight pr-2">
-                          {service.name}
-                        </CardTitle>
-                        {service.badge && (
-                          <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs flex-shrink-0">
-                            {service.badge}
-                          </Badge>
-                        )}
-                      </div>
-
-                      <div className="flex items-center space-x-2">
-                        <CardDescription className="text-2xl font-bold bg-gradient-to-r from-[#d09d80] to-[#fbc6c5] bg-clip-text text-transparent">
-                          {service.price}
-                        </CardDescription>
-                        {service.originalPrice && (
-                          <span className="text-lg text-gray-400 line-through">{service.originalPrice}</span>
-                        )}
-                      </div>
-                    </CardHeader>
-
-                    <CardContent className="pt-0 space-y-6">
-                      <p className="text-gray-600 leading-relaxed">{service.description}</p>
-
-                      {service.pricing && (
-                        <div className="bg-gray-50 p-4 rounded-xl">
-                          <h4 className="font-semibold text-gray-900 mb-2">Pricing Details</h4>
-                          <p className="text-sm text-gray-600">{service.pricing}</p>
-                        </div>
-                      )}
-
-                      <div className="grid grid-cols-2 gap-4 text-sm text-gray-500">
-                        {service.duration && (
-                          <div className="flex items-center">
-                            <Clock className="w-4 h-4 mr-2 text-[#d09d80]" />
-                            <span>{service.duration}</span>
-                          </div>
-                        )}
-                        {service.results && (
-                          <div className="flex items-center">
-                            <Star className="w-4 h-4 mr-2 text-[#d09d80]" />
-                            <span>{service.results}</span>
-                          </div>
-                        )}
-                        {service.sessions && (
-                          <div className="flex items-center col-span-2">
-                            <Star className="w-4 h-4 mr-2 text-[#d09d80]" />
-                            <span>{service.sessions}</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {service.includes && (
-                        <div className="bg-green-50 p-4 rounded-xl">
-                          <h4 className="font-semibold text-green-800 mb-2">Package Includes</h4>
-                          <p className="text-sm text-green-700">{service.includes}</p>
-                        </div>
-                      )}
-
-                      {service.benefits && (
+                    <motion.button
+                      key={serviceIndex}
+                      className="w-full text-left px-4 py-4 hover:bg-gray-50 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[#d09d80]"
+                      onClick={() => { setPreview({ service, category }); setIsPreviewOpen(true) }}
+                      whileHover={reduceMotion ? undefined : { y: -1 }}
+                      whileTap={reduceMotion ? undefined : { scale: 0.99 }}
+                      role="listitem"
+                      aria-haspopup="dialog"
+                      aria-label={`${service.name}, ${service.price}`}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setPreview({ service, category }); setIsPreviewOpen(true) } }}
+                    >
+                      <div className="flex items-center justify-between">
                         <div>
-                          <h4 className="font-semibold text-gray-900 mb-3">Key Benefits</h4>
-                          <div className="grid grid-cols-1 gap-2">
-                            {service.benefits.map((benefit, idx) => (
-                              <div key={idx} className="flex items-center text-sm text-gray-600">
-                                <CheckCircle className="w-4 h-4 text-[#d09d80] mr-2 flex-shrink-0" />
-                                {benefit}
-                              </div>
-                            ))}
+                          <div className="font-semibold text-gray-900">{service.name}</div>
+                          <div className="text-sm text-gray-500">
+                            {service.duration ? <span>{service.duration}</span> : null}{service.duration && service.results ? ' • ' : ''}{service.results ? <span>{service.results}</span> : null}
                           </div>
                         </div>
-                      )}
-
-                      {service.faqs && service.faqs.length > 0 && (
-                        <Accordion type="single" collapsible>
-                          <AccordionItem value="faqs" className="border-gray-200">
-                            <AccordionTrigger className="text-sm font-semibold text-gray-900 py-3 hover:text-[#d09d80] transition-colors duration-300 hover:no-underline">
-                              Frequently Asked Questions
-                            </AccordionTrigger>
-                            <AccordionContent className="space-y-4 pb-4">
-                              {service.faqs.map((faq, faqIndex) => (
-                                <div key={faqIndex} className="border-l-2 border-[#fbc6c5] pl-4">
-                                  <h5 className="font-semibold text-gray-900 mb-2">{faq.q}</h5>
-                                  <p className="text-sm text-gray-600 leading-relaxed">{faq.a}</p>
-                                </div>
-                              ))}
-                            </AccordionContent>
-                          </AccordionItem>
-                        </Accordion>
-                      )}
-
-                      {service.name === "Hiko Nose Thread Lift" ? (
-                        <Link href="/hiko-nose-lift">
-                          <Button variant="brand" className="w-full rounded-xl py-3 hover-scale">
-                            Learn More About Hiko
-                            <ArrowRight className="w-4 h-4 ml-2" />
-                          </Button>
-                        </Link>
-                      ) : (
-                        <Button
-                          onClick={() => {
-                            setSelectedServiceId(toId(service.name))
-                            setIsBookingOpen(true)
-                          }}
-                          variant="brand"
-                          className="w-full rounded-xl py-3 hover-scale"
-                        >
-                          Book {service.name}
-                          <Calendar className="w-4 h-4 ml-2" />
-                        </Button>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
-                {category.services.filter(matchesQuery).length === 0 && (
-                  <div className="col-span-full text-center text-gray-600">No services match your search.</div>
-                )}
+                        <div className="text-lg font-bold bg-gradient-to-r from-[#d09d80] to-[#fbc6c5] bg-clip-text text-transparent">
+                          {service.price}
+                        </div>
+                      </div>
+                    </motion.button>
+                  ))}
               </div>
+              {category.services.filter(matchesQuery).length === 0 && (
+                <div className="text-center text-gray-600">No services match your search.</div>
+              )}
             </div>
           </section>
         ))}
@@ -852,8 +764,7 @@ function ServicesContent() {
                 <Button
                   size="lg"
                   variant="outline"
-                size="lg"
-                className="border-2 border-white text-white hover:bg-white hover:text-brand-tan bg-transparent px-8 py-4 text-lg font-semibold rounded-xl"
+                  className="border-2 border-white text-white hover:bg-white hover:text-brand-tan bg-transparent px-8 py-4 text-lg font-semibold rounded-xl"
                 >
                   View Our Portfolio
                   <ArrowRight className="w-5 h-5 ml-2" />
@@ -866,6 +777,63 @@ function ServicesContent() {
         {/* Mobile Bottom Navigation */}
         <MobileNav />
       </div>
+      <Dialog open={isPreviewOpen} onOpenChange={(v) => { if (!v) { setIsPreviewOpen(false); setPreview(null) } }}>
+        <DialogContent className="max-w-2xl rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-gray-900">{preview?.service.name}</DialogTitle>
+          </DialogHeader>
+          <AnimatePresence>
+            {preview && (
+              <motion.div
+                className="space-y-4"
+                initial={reduceMotion ? undefined : { opacity: 0, y: 8 }}
+                animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+                exit={reduceMotion ? undefined : { opacity: 0, y: 8 }}
+                transition={{ duration: reduceMotion ? 0 : 0.2 }}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-gray-600">
+                    {preview.service.duration && (<span className="mr-3 flex items-center"><Clock className="w-4 h-4 mr-1 text-[#d09d80]" />{preview.service.duration}</span>)}{preview.service.results && (<span className="flex items-center"><Star className="w-4 h-4 mr-1 text-[#d09d80]" />{preview.service.results}</span>)}
+                  </div>
+                  <div className="text-xl font-bold bg-gradient-to-r from-[#d09d80] to-[#fbc6c5] bg-clip-text text-transparent">{preview.service.price}</div>
+                </div>
+                <p className="text-gray-700 leading-relaxed">{preview.service.description}</p>
+                {preview.service.includes && (
+                  <div className="bg-green-50 p-4 rounded-xl">
+                    <h4 className="font-semibold text-green-800 mb-2">Package Includes</h4>
+                    <p className="text-sm text-green-700">{preview.service.includes}</p>
+                  </div>
+                )}
+                {preview.service.benefits && (
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-3">Key Benefits</h4>
+                    <div className="grid grid-cols-1 gap-2">
+                      {preview.service.benefits.map((b, i) => (
+                        <div key={i} className="flex items-center text-sm text-gray-700"><CheckCircle className="w-4 h-4 mr-2 text-[#d09d80]" />{b}</div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div className="flex justify-end gap-3 pt-2">
+                  {preview.service.name === 'Hiko Nose Thread Lift' ? (
+                    <Link href="/hiko-nose-lift">
+                      <Button variant="brand" className="rounded-xl">
+                        Learn More
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </Button>
+                    </Link>
+                  ) : (
+                    <Button variant="brand" className="rounded-xl" onClick={() => { setSelectedServiceId(toId(preview.service.name)); setIsBookingOpen(true); setIsPreviewOpen(false) }}>
+                      Book Now
+                      <Calendar className="w-4 h-4 ml-2" />
+                    </Button>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </DialogContent>
+      </Dialog>
       <BookingModal isOpen={isBookingOpen} onClose={() => setIsBookingOpen(false)} defaultServiceId={selectedServiceId} />
     </PullToRefresh>
   )

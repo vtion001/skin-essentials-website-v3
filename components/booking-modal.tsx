@@ -10,7 +10,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { CalendarIcon, Clock, CheckCircle, Sparkles, ArrowRight, ArrowLeft, Search } from "lucide-react"
-import { appointmentService } from "@/lib/admin-services"
+import { appointmentService, influencerService, type Influencer } from "@/lib/admin-services"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface BookingModalProps {
   isOpen: boolean
@@ -24,6 +25,11 @@ export function BookingModal({ isOpen, onClose, defaultServiceId }: BookingModal
   const [serviceQuery, setServiceQuery] = useState("")
   const [formData, setFormData] = useState({ name: "", email: "", phone: "", date: "", time: "", message: "" })
   const contentRef = useRef<HTMLDivElement>(null)
+  const [sourcePlatform, setSourcePlatform] = useState<string>("")
+  const [useInfluencer, setUseInfluencer] = useState<boolean>(false)
+  const [influencers, setInfluencers] = useState<Influencer[]>([])
+  const [selectedInfluencerId, setSelectedInfluencerId] = useState<string>("")
+  const [referralCode, setReferralCode] = useState<string>("")
 
   useEffect(() => {
     if (isOpen && defaultServiceId) {
@@ -36,6 +42,12 @@ export function BookingModal({ isOpen, onClose, defaultServiceId }: BookingModal
   useEffect(() => {
     contentRef.current?.scrollTo({ top: 0, behavior: "smooth" })
   }, [step])
+
+  useEffect(() => {
+    try {
+      setInfluencers(influencerService.getAllInfluencers())
+    } catch {}
+  }, [])
 
   const toId = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
   const services = useMemo(
@@ -134,6 +146,49 @@ export function BookingModal({ isOpen, onClose, defaultServiceId }: BookingModal
                     <Input id="time" type="time" value={formData.time} onChange={(e) => setFormData({ ...formData, time: e.target.value })} className="rounded-xl" />
                   </div>
                 </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="mb-2 block">What platform?</Label>
+                    <Select value={sourcePlatform} onValueChange={setSourcePlatform}>
+                      <SelectTrigger className="h-10 rounded-xl">
+                        <SelectValue placeholder="Select platform" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="instagram">Instagram</SelectItem>
+                        <SelectItem value="facebook">Facebook</SelectItem>
+                        <SelectItem value="tiktok">TikTok</SelectItem>
+                        <SelectItem value="website">Website</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-end gap-2">
+                    <input id="useInfluencer" type="checkbox" checked={useInfluencer} onChange={(e) => setUseInfluencer(e.target.checked)} className="h-4 w-4" />
+                    <Label htmlFor="useInfluencer">Influencer referral?</Label>
+                  </div>
+                </div>
+
+                {useInfluencer && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="mb-2 block">Who is the influencer?</Label>
+                      <Select value={selectedInfluencerId} onValueChange={setSelectedInfluencerId}>
+                        <SelectTrigger className="h-10 rounded-xl">
+                          <SelectValue placeholder="Select influencer" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {influencers.map((inf) => (
+                            <SelectItem key={inf.id} value={inf.id}>{inf.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="referralCode" className="mb-2 block">Referral Code</Label>
+                      <Input id="referralCode" value={referralCode} onChange={(e) => setReferralCode(e.target.value)} className="rounded-xl" />
+                    </div>
+                  </div>
+                )}
                 <div>
                   <Label htmlFor="message" className="mb-2 block">Notes (optional)</Label>
                   <Textarea id="message" rows={4} value={formData.message} onChange={(e) => setFormData({ ...formData, message: e.target.value })} className="rounded-xl" />
@@ -147,6 +202,15 @@ export function BookingModal({ isOpen, onClose, defaultServiceId }: BookingModal
                       const price = /free/i.test(priceStr) ? 0 : parseFloat((priceStr.match(/[\d,.]+/g)?.[0] || "0").replace(/,/g, ""))
                       const durationStr = svc?.duration ?? "60"
                       const duration = parseInt((durationStr.match(/\d+/)?.[0] || "60"))
+                      let finalPrice = price
+                      let discountApplied = false
+                      if (useInfluencer && selectedInfluencerId && referralCode) {
+                        const inf = influencers.find(i => i.id === selectedInfluencerId)
+                        if (inf && String(inf.referralCode || '').trim().toLowerCase() === referralCode.trim().toLowerCase()) {
+                          finalPrice = Math.round((price * 0.9) * 100) / 100
+                          discountApplied = true
+                        }
+                      }
                       try {
                         const res = await fetch('/api/bookings', {
                           method: 'POST',
@@ -160,7 +224,12 @@ export function BookingModal({ isOpen, onClose, defaultServiceId }: BookingModal
                             time: formData.time,
                             notes: formData.message,
                             duration,
-                            price,
+                            price: finalPrice,
+                            sourcePlatform,
+                            influencerId: selectedInfluencerId || undefined,
+                            influencerName: (influencers.find(i => i.id === selectedInfluencerId)?.name) || undefined,
+                            referralCode: referralCode || undefined,
+                            discountApplied,
                           })
                         })
                         if (res.ok) {
@@ -168,7 +237,7 @@ export function BookingModal({ isOpen, onClose, defaultServiceId }: BookingModal
                         }
                       } catch {}
                     }}
-                    disabled={!formData.name || !formData.phone || !formData.date || !formData.time || !selectedService}
+                    disabled={!formData.name || !formData.phone || !formData.date || !formData.time || !selectedService || !sourcePlatform}
                     variant="brand"
                     className="rounded-xl"
                   >

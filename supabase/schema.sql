@@ -247,3 +247,12 @@ drop trigger if exists trg_appointments_ensure_client on appointments;
 create trigger trg_appointments_ensure_client
 before insert on appointments
 for each row execute function ensure_client_on_appointments_insert();
+alter table if exists medical_records add column if not exists treatments jsonb default '[]'::jsonb;
+alter table if exists staff add column if not exists treatments jsonb default '[]'::jsonb;
+alter table if exists appointments add column if not exists source_platform text;
+alter table if exists appointments add column if not exists influencer_id text references influencers(id) on delete set null;
+alter table if exists appointments add column if not exists influencer_name text;
+alter table if exists appointments add column if not exists referral_code text;
+alter table if exists appointments add column if not exists discount_applied boolean default false;
+create index if not exists idx_appointments_source_platform on appointments(source_platform);
+create index if not exists idx_appointments_influencer on appointments(influencer_id);
