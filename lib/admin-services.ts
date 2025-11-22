@@ -100,7 +100,7 @@ export interface Staff {
   status: 'active' | 'on_leave' | 'inactive' | 'terminated'
   avatarUrl?: string
   notes?: string
-  treatments?: { procedure: string; clientName?: string; total: number }[]
+  treatments?: { procedure: string; clientName?: string; total: number; date?: string }[]
   createdAt: string
   updatedAt: string
 }

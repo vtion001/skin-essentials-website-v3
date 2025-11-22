@@ -34,10 +34,11 @@ export interface CalendarProps {
   onDateSelect?: (date: Date) => void
   bookedDates?: Date[]
   availableTimeSlots?: string[]
+  disablePast?: boolean
 }
 
 const Calendar = React.forwardRef<HTMLDivElement, CalendarProps>(
-  ({ className, classNames, showOutsideDays = true, selectedDate, onDateSelect, bookedDates = [], ...props }, ref) => {
+  ({ className, classNames, showOutsideDays = true, selectedDate, onDateSelect, bookedDates = [], disablePast = false, ...props }, ref) => {
     const [currentMonth, setCurrentMonth] = React.useState(new Date())
 
     const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate()
@@ -66,7 +67,7 @@ const Calendar = React.forwardRef<HTMLDivElement, CalendarProps>(
 
     const handleDateClick = (day: number) => {
       const clickedDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day)
-      if (!isPastDate(clickedDate) && onDateSelect) {
+      if ((!disablePast || !isPastDate(clickedDate)) && onDateSelect) {
         onDateSelect(clickedDate)
       }
     }
@@ -141,14 +142,14 @@ const Calendar = React.forwardRef<HTMLDivElement, CalendarProps>(
               <button
                 key={day}
                 onClick={() => handleDateClick(day)}
-                disabled={isPast}
+                disabled={disablePast && isPast}
                 className={cn(
                   "h-10 w-10 text-sm rounded-md transition-colors",
                   "hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500",
                   {
                     "bg-blue-500 text-white hover:bg-blue-600": isSelected,
                     "bg-red-100 text-red-500": isBooked,
-                    "text-gray-400 cursor-not-allowed": isPast,
+                    "text-gray-400 cursor-not-allowed": disablePast && isPast,
                     "bg-blue-100 text-blue-600": isToday && !isSelected,
                     "text-gray-900": !isPast && !isBooked && !isSelected && !isToday,
                   }

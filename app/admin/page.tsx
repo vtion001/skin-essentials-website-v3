@@ -53,6 +53,7 @@ import {
   TrendingUp,
   BarChart3,
   Camera,
+  CalendarDays,
 } from "lucide-react"
 import Image from "next/image"
 import { supabaseAvailable } from "@/lib/supabase"
@@ -429,9 +430,11 @@ export default function AdminDashboard() {
   const [staffPositionFilter, setStaffPositionFilter] = useState<string>("all")
   const [isStaffTreatmentQuickOpen, setIsStaffTreatmentQuickOpen] = useState(false)
   const [staffTreatmentTarget, setStaffTreatmentTarget] = useState<Staff | null>(null)
-  const [staffTreatmentForm, setStaffTreatmentForm] = useState<{ procedure: string; clientName?: string; total: number }[]>([])
+  const [staffTreatmentForm, setStaffTreatmentForm] = useState<{ procedure: string; clientName?: string; total: number; date?: string }[]>([])
+  const [isStaffTotalsOpen, setIsStaffTotalsOpen] = useState(false)
   const [openQuickCalendarIdx, setOpenQuickCalendarIdx] = useState<number | null>(null)
   const [staffStatusFilter, setStaffStatusFilter] = useState<string>("all")
+  const [staffTotalsFilter, setStaffTotalsFilter] = useState<string>("all")
   const [influencerSearch, setInfluencerSearch] = useState("")
   const [influencerPlatformFilter, setInfluencerPlatformFilter] = useState<string>('all')
   const [influencerStatusFilter, setInfluencerStatusFilter] = useState<string>('all')
@@ -3123,20 +3126,94 @@ export default function AdminDashboard() {
                     <SelectItem value="admin">Admin</SelectItem>
                     <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
-                </Select>
-                <Select value={staffStatusFilter} onValueChange={setStaffStatusFilter}>
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="on_leave">On Leave</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
-                    <SelectItem value="terminated">Terminated</SelectItem>
-                  </SelectContent>
-                </Select>
+              </Select>
+              <Select value={staffStatusFilter} onValueChange={setStaffStatusFilter}>
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="on_leave">On Leave</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="terminated">Terminated</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button className="h-9" variant="outline" onClick={() => setIsStaffTotalsOpen(true)} aria-label="View staff treatment totals" title="View staff treatment totals">
+                View Totals
+              </Button>
               </div>
+
+              <Dialog open={isStaffTotalsOpen} onOpenChange={setIsStaffTotalsOpen}>
+                <DialogContent className="max-w-2xl max-h-[70vh] overflow-y-auto p-4">
+                  <DialogHeader>
+                    <DialogTitle>All Staff Treatments</DialogTitle>
+                  </DialogHeader>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                    <div className="sm:col-span-1">
+                      <Label htmlFor="totals_staff_filter">Staff</Label>
+                      <Select value={staffTotalsFilter} onValueChange={setStaffTotalsFilter}>
+                        <SelectTrigger id="totals_staff_filter" className="h-9">
+                          <SelectValue placeholder="All Staff" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Staff</SelectItem>
+                          {staff.map(s => (
+                            <SelectItem key={s.id} value={s.id}>{`${s.firstName} ${s.lastName}`.trim()}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  {(() => {
+                    const rows = staff.flatMap(s => (
+                      Array.isArray(s.treatments) ? s.treatments.map(t => ({
+                        staffId: s.id,
+                        staffName: `${s.firstName} ${s.lastName}`.trim(),
+                        date: t.date || '-',
+                        procedure: t.procedure,
+                        clientName: t.clientName || '',
+                        total: Number(t.total || 0),
+                      })) : []
+                    ))
+                      .filter(r => staffTotalsFilter === 'all' ? true : r.staffId === staffTotalsFilter)
+                    if (rows.length === 0) return (<div className="text-sm text-muted-foreground">No treatments recorded.</div>)
+                    const grandTotal = rows.reduce((acc, r) => acc + r.total, 0)
+                    return (
+                      <div className="space-y-3">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Date</TableHead>
+                              <TableHead>Procedure</TableHead>
+                              <TableHead>Client</TableHead>
+                              <TableHead>Staff</TableHead>
+                              <TableHead className="text-right">Total</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {rows.map((r, i) => (
+                              <TableRow key={i}>
+                                <TableCell className="whitespace-nowrap">{r.date}</TableCell>
+                                <TableCell className="max-w-[16rem] truncate">{r.procedure}</TableCell>
+                                <TableCell className="max-w-[12rem] truncate">{r.clientName}</TableCell>
+                                <TableCell className="max-w-[12rem] truncate">{r.staffName}</TableCell>
+                                <TableCell className="text-right">{r.total.toLocaleString()}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                        <div className="flex items-center justify-end gap-6 text-sm">
+                          <div className="font-medium">Grand Total: {grandTotal.toLocaleString()}</div>
+                        </div>
+                      </div>
+                    )
+                  })()}
+                  <div className="flex justify-end mt-4">
+                    <Button variant="outline" onClick={() => setIsStaffTotalsOpen(false)}>Close</Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
 
               <Card className="bg-white/60 backdrop-blur-sm border border-white/70 shadow-2xl">
                 <CardContent className="p-0">
@@ -3194,7 +3271,7 @@ export default function AdminDashboard() {
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2 justify-end">
-                              <Button size="sm" variant="outline" onClick={() => { setStaffTreatmentTarget(s); setStaffTreatmentForm([ ...(s.treatments || []), { procedure: '', clientName: '', total: 0 } ]); setIsStaffTreatmentQuickOpen(true) }} aria-label="Treatment Tracking" title="Treatment Tracking">
+                              <Button size="sm" variant="outline" onClick={() => { setStaffTreatmentTarget(s); setStaffTreatmentForm([ ...(s.treatments || []), { procedure: '', clientName: '', total: 0, date: new Date().toISOString().slice(0,10) } ]); setIsStaffTreatmentQuickOpen(true) }} aria-label="Treatment Tracking" title="Treatment Tracking">
                                 <Plus className="w-4 h-4 mr-1" />
                                 Treatment
                               </Button>
@@ -3217,23 +3294,23 @@ export default function AdminDashboard() {
               </CardContent>
               </Card>
               <Dialog open={isStaffTreatmentQuickOpen} onOpenChange={setIsStaffTreatmentQuickOpen}>
-                <DialogContent className="max-w-sm p-3 sm:p-3">
+                <DialogContent className="max-w-md sm:max-w-xl max-h-[70vh] overflow-y-auto p-4 sm:p-4">
                   <DialogHeader>
                     <DialogTitle>{staffTreatmentTarget ? `Add Treatment – ${staffTreatmentTarget.firstName} ${staffTreatmentTarget.lastName}` : 'Add Treatment'}</DialogTitle>
                   </DialogHeader>
                   <div className="space-y-2">
                     {staffTreatmentForm.map((t, idx) => (
-                      <div key={idx} className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-start">
-                        <div className="sm:col-span-3">
+                      <div key={idx} className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-start">
+                        <div className="sm:col-span-3 space-y-1.5 relative">
                           <Label htmlFor={`qt_date_${idx}`}>Date</Label>
                           <div className="flex items-center gap-2">
-                            <Input id={`qt_date_${idx}`} type="date" className="h-9" value={t?.date || ''} onChange={(e) => setStaffTreatmentForm(prev => prev.map((x, i) => i === idx ? { ...x, date: e.target.value } : x))} />
+                            <Input id={`qt_date_${idx}`} type="date" className="h-9 w-full" value={t?.date || ''} onChange={(e) => setStaffTreatmentForm(prev => prev.map((x, i) => i === idx ? { ...x, date: e.target.value } : x))} />
                             <Button type="button" variant="outline" className="h-9 px-2" aria-label="Pick date" title="Pick date" onClick={() => setOpenQuickCalendarIdx(openQuickCalendarIdx === idx ? null : idx)}>
                               <CalendarDays className="w-4 h-4" />
                             </Button>
                           </div>
                           {openQuickCalendarIdx === idx ? (
-                            <div className="mt-2 border rounded-md">
+                            <div className="absolute left-0 top-[calc(100%+0.5rem)] min-w-[18rem] p-2 border rounded-md bg-white shadow-lg z-50">
                               <Calendar selectedDate={t?.date ? new Date(t.date) : undefined} onDateSelect={(d) => {
                                 const iso = new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10)
                                 setStaffTreatmentForm(prev => prev.map((x, i) => i === idx ? { ...x, date: iso } : x))
@@ -3242,10 +3319,10 @@ export default function AdminDashboard() {
                             </div>
                           ) : null}
                         </div>
-                        <div className="sm:col-span-4">
+                        <div className="sm:col-span-4 space-y-1.5">
                           <Label htmlFor={`qt_procedure_${idx}`}>Procedure</Label>
                           <Select value={t?.procedure || ''} onValueChange={(value) => setStaffTreatmentForm(prev => prev.map((x, i) => i === idx ? { ...x, procedure: value } : x))}>
-                            <SelectTrigger id={`qt_procedure_${idx}`} className="h-9 truncate">
+                            <SelectTrigger id={`qt_procedure_${idx}`} className="h-9 w-full min-w-0 truncate">
                               <SelectValue placeholder="Select procedure" />
                             </SelectTrigger>
                             <SelectContent>
@@ -3255,10 +3332,10 @@ export default function AdminDashboard() {
                             </SelectContent>
                           </Select>
                         </div>
-                        <div className="sm:col-span-3">
+                        <div className="sm:col-span-3 space-y-1.5">
                           <Label htmlFor={`qt_client_${idx}`}>Client</Label>
                           <Select value={t?.clientName || ''} onValueChange={(value) => setStaffTreatmentForm(prev => prev.map((x, i) => i === idx ? { ...x, clientName: value } : x))}>
-                            <SelectTrigger id={`qt_client_${idx}`} className="h-9 truncate">
+                            <SelectTrigger id={`qt_client_${idx}`} className="h-9 w-full min-w-0 truncate">
                               <SelectValue placeholder="Select client" />
                             </SelectTrigger>
                             <SelectContent>
@@ -3268,9 +3345,9 @@ export default function AdminDashboard() {
                             </SelectContent>
                           </Select>
                         </div>
-                        <div className="sm:col-span-2">
+                        <div className="sm:col-span-2 space-y-1.5">
                           <Label htmlFor={`qt_total_${idx}`}>Total</Label>
-                          <Input id={`qt_total_${idx}`} type="number" className="h-9" value={typeof t?.total === 'number' ? t.total : 0} onChange={(e) => setStaffTreatmentForm(prev => prev.map((x, i) => i === idx ? { ...x, total: Number(e.target.value || 0) } : x))} />
+                          <Input id={`qt_total_${idx}`} type="number" className="h-9 w-full" value={typeof t?.total === 'number' ? t.total : 0} onChange={(e) => setStaffTreatmentForm(prev => prev.map((x, i) => i === idx ? { ...x, total: Number(e.target.value || 0) } : x))} />
                         </div>
                         <div className="sm:col-span-12 flex justify-end">
                           <Button type="button" variant="outline" onClick={() => setStaffTreatmentForm(prev => prev.filter((_, i) => i !== idx))}>
@@ -3726,7 +3803,7 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
               <div>
                 <Label htmlFor="date">Date</Label>
                 <Input
@@ -4593,23 +4670,40 @@ export default function AdminDashboard() {
                    </SelectContent>
                  </Select>
                </div>
-               <div>
-                 <Label htmlFor="clientStatus">Status</Label>
-                 <Select
-                  value={clientForm.status || ''}
-                  onValueChange={(value) => startTransition(() => setClientForm(prev => ({ ...prev, status: value as any })))}
+              <div>
+                <Label htmlFor="clientStatus">Status</Label>
+                <Select
+                 value={clientForm.status || ''}
+                 onValueChange={(value) => startTransition(() => setClientForm(prev => ({ ...prev, status: value as any })))}
+               >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="blocked">Blocked</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="clientSource">Source</Label>
+                <Select
+                  value={clientForm.source || ''}
+                  onValueChange={(value) => startTransition(() => setClientForm(prev => ({ ...prev, source: value as any })))}
                 >
-                   <SelectTrigger>
-                     <SelectValue placeholder="Select status" />
-                   </SelectTrigger>
-                   <SelectContent>
-                     <SelectItem value="active">Active</SelectItem>
-                     <SelectItem value="inactive">Inactive</SelectItem>
-                     <SelectItem value="blocked">Blocked</SelectItem>
-                   </SelectContent>
-                 </Select>
-               </div>
-             </div>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select source" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="website">Website</SelectItem>
+                    <SelectItem value="referral">Referral</SelectItem>
+                    <SelectItem value="social_media">Social Media</SelectItem>
+                    <SelectItem value="walk_in">Walk-in</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
              <div>
                <Label htmlFor="emergencyContact">Emergency Contact</Label>
