@@ -4,6 +4,7 @@ import "./admin-styles.css"
 import React, { useState, useEffect, useTransition, useMemo, useCallback, memo } from "react"
 import { createClient } from "@supabase/supabase-js"
 import { Button } from "@/components/ui/button"
+import { patchJson } from "@/lib/request"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -426,6 +427,10 @@ export default function AdminDashboard() {
   const [paymentPageSize, setPaymentPageSize] = useState<number>(10)
   const [staffSearch, setStaffSearch] = useState("")
   const [staffPositionFilter, setStaffPositionFilter] = useState<string>("all")
+  const [isStaffTreatmentQuickOpen, setIsStaffTreatmentQuickOpen] = useState(false)
+  const [staffTreatmentTarget, setStaffTreatmentTarget] = useState<Staff | null>(null)
+  const [staffTreatmentForm, setStaffTreatmentForm] = useState<{ procedure: string; clientName?: string; total: number }[]>([])
+  const [openQuickCalendarIdx, setOpenQuickCalendarIdx] = useState<number | null>(null)
   const [staffStatusFilter, setStaffStatusFilter] = useState<string>("all")
   const [influencerSearch, setInfluencerSearch] = useState("")
   const [influencerPlatformFilter, setInfluencerPlatformFilter] = useState<string>('all')
@@ -3189,6 +3194,10 @@ export default function AdminDashboard() {
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2 justify-end">
+                              <Button size="sm" variant="outline" onClick={() => { setStaffTreatmentTarget(s); setStaffTreatmentForm([ ...(s.treatments || []), { procedure: '', clientName: '', total: 0 } ]); setIsStaffTreatmentQuickOpen(true) }} aria-label="Treatment Tracking" title="Treatment Tracking">
+                                <Plus className="w-4 h-4 mr-1" />
+                                Treatment
+                              </Button>
                               <Button size="sm" variant="outline" onClick={() => openStaffModal(s)}>
                                 <Edit className="w-4 h-4" />
                               </Button>
@@ -3205,8 +3214,97 @@ export default function AdminDashboard() {
                       ))}
                     </TableBody>
                   </Table>
-                </CardContent>
+              </CardContent>
               </Card>
+              <Dialog open={isStaffTreatmentQuickOpen} onOpenChange={setIsStaffTreatmentQuickOpen}>
+                <DialogContent className="max-w-sm p-3 sm:p-3">
+                  <DialogHeader>
+                    <DialogTitle>{staffTreatmentTarget ? `Add Treatment – ${staffTreatmentTarget.firstName} ${staffTreatmentTarget.lastName}` : 'Add Treatment'}</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-2">
+                    {staffTreatmentForm.map((t, idx) => (
+                      <div key={idx} className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-start">
+                        <div className="sm:col-span-3">
+                          <Label htmlFor={`qt_date_${idx}`}>Date</Label>
+                          <div className="flex items-center gap-2">
+                            <Input id={`qt_date_${idx}`} type="date" className="h-9" value={t?.date || ''} onChange={(e) => setStaffTreatmentForm(prev => prev.map((x, i) => i === idx ? { ...x, date: e.target.value } : x))} />
+                            <Button type="button" variant="outline" className="h-9 px-2" aria-label="Pick date" title="Pick date" onClick={() => setOpenQuickCalendarIdx(openQuickCalendarIdx === idx ? null : idx)}>
+                              <CalendarDays className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          {openQuickCalendarIdx === idx ? (
+                            <div className="mt-2 border rounded-md">
+                              <Calendar selectedDate={t?.date ? new Date(t.date) : undefined} onDateSelect={(d) => {
+                                const iso = new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10)
+                                setStaffTreatmentForm(prev => prev.map((x, i) => i === idx ? { ...x, date: iso } : x))
+                                setOpenQuickCalendarIdx(null)
+                              }} />
+                            </div>
+                          ) : null}
+                        </div>
+                        <div className="sm:col-span-4">
+                          <Label htmlFor={`qt_procedure_${idx}`}>Procedure</Label>
+                          <Select value={t?.procedure || ''} onValueChange={(value) => setStaffTreatmentForm(prev => prev.map((x, i) => i === idx ? { ...x, procedure: value } : x))}>
+                            <SelectTrigger id={`qt_procedure_${idx}`} className="h-9 truncate">
+                              <SelectValue placeholder="Select procedure" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {procedureOptions.map(name => (
+                                <SelectItem key={name} value={name}>{name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="sm:col-span-3">
+                          <Label htmlFor={`qt_client_${idx}`}>Client</Label>
+                          <Select value={t?.clientName || ''} onValueChange={(value) => setStaffTreatmentForm(prev => prev.map((x, i) => i === idx ? { ...x, clientName: value } : x))}>
+                            <SelectTrigger id={`qt_client_${idx}`} className="h-9 truncate">
+                              <SelectValue placeholder="Select client" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {clients.map(c => (
+                                <SelectItem key={c.id} value={`${c.firstName} ${c.lastName}`.trim()}>{`${c.firstName} ${c.lastName}`.trim()}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="sm:col-span-2">
+                          <Label htmlFor={`qt_total_${idx}`}>Total</Label>
+                          <Input id={`qt_total_${idx}`} type="number" className="h-9" value={typeof t?.total === 'number' ? t.total : 0} onChange={(e) => setStaffTreatmentForm(prev => prev.map((x, i) => i === idx ? { ...x, total: Number(e.target.value || 0) } : x))} />
+                        </div>
+                        <div className="sm:col-span-12 flex justify-end">
+                          <Button type="button" variant="outline" onClick={() => setStaffTreatmentForm(prev => prev.filter((_, i) => i !== idx))}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                    <Button type="button" variant="outline" onClick={() => setStaffTreatmentForm(prev => ([ ...prev, { date: new Date().toISOString().split('T')[0], procedure: '', clientName: '', total: 0 } ]))}>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Treatment
+                    </Button>
+                  </div>
+                  <div className="flex justify-end gap-2 mt-4">
+                    <Button type="button" variant="outline" onClick={() => setIsStaffTreatmentQuickOpen(false)}>Cancel</Button>
+                    <Button type="button" onClick={async () => {
+                      if (!staffTreatmentTarget) return
+                      try {
+                        await patchJson('/api/admin/staff', { id: staffTreatmentTarget.id, treatments: staffTreatmentForm })
+                        await staffService.fetchFromSupabase?.()
+                        setStaff(staffService.getAllStaff())
+                        setIsStaffTreatmentQuickOpen(false)
+                        showNotification('success', 'Treatments saved')
+                      } catch {
+                        // fall back to local update
+                        staffService.updateStaff(staffTreatmentTarget.id, { treatments: staffTreatmentForm })
+                        setStaff(staffService.getAllStaff())
+                        setIsStaffTreatmentQuickOpen(false)
+                        showNotification('error', 'Saved locally; backend update failed')
+                      }
+                    }}>Save</Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </TabsContent>
             </LazyTabContent>
 
@@ -4309,79 +4407,37 @@ export default function AdminDashboard() {
 
             <div className="space-y-3">
               <Label>Treatment Tracking</Label>
-              {Array.isArray(medicalRecordForm.treatments) && medicalRecordForm.treatments.map((t, idx) => (
-                <div key={idx} className="grid grid-cols-12 gap-2 items-end">
-                  <div className="col-span-3">
-                    <Label htmlFor={`mr_t_date_${idx}`}>Date of Treatment</Label>
-                    <Input
-                      id={`mr_t_date_${idx}`}
-                      type="date"
-                      value={t?.date || ''}
-                      onChange={(e) => setMedicalRecordForm(prev => ({
-                        ...prev,
-                        treatments: (prev.treatments || []).map((x, i) => i === idx ? { ...x, date: e.target.value } : x)
-                      }))}
-                    />
-                  </div>
-                  <div className="col-span-5">
-                    <Label htmlFor={`mr_t_proc_${idx}`}>Treatment Procedure</Label>
-                    <Select
-                      value={t?.procedure || ''}
-                      onValueChange={(value) => setMedicalRecordForm(prev => ({
-                        ...prev,
-                        treatments: (prev.treatments || []).map((x, i) => i === idx ? { ...x, procedure: value } : x)
-                      }))}
-                    >
-                      <SelectTrigger id={`mr_t_proc_${idx}`}>
-                        <SelectValue placeholder="Select procedure" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {procedureOptions.map(name => (
-                          <SelectItem key={name} value={name}>{name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="col-span-4">
-                    <Label htmlFor={`mr_t_staff_${idx}`}>Aesthetician</Label>
-                    <Select
-                      value={t?.aestheticianId || ''}
-                      onValueChange={(value) => setMedicalRecordForm(prev => ({
-                        ...prev,
-                        treatments: (prev.treatments || []).map((x, i) => i === idx ? { ...x, aestheticianId: value } : x)
-                      }))}
-                    >
-                      <SelectTrigger id={`mr_t_staff_${idx}`}>
-                        <SelectValue placeholder="Select staff" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {staff.map(s => (
-                          <SelectItem key={s.id} value={s.id}>{`${s.firstName} ${s.lastName}`.trim()}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="col-span-12 flex justify-end">
-                    <Button type="button" variant="outline" onClick={() => setMedicalRecordForm(prev => ({
-                      ...prev,
-                      treatments: (prev.treatments || []).filter((_, i) => i !== idx)
-                    }))}>
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setMedicalRecordForm(prev => ({
-                  ...prev,
-                  treatments: [ ...(prev.treatments || []), { date: new Date().toISOString().split('T')[0], procedure: '', aestheticianId: '' } ]
-                }))}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Treatment
-              </Button>
+              {(() => {
+                const client = clients.find(c => c.id === medicalRecordForm.clientId)
+                const clientName = client ? `${client.firstName} ${client.lastName}`.trim() : ''
+                const items = staff.flatMap(s => (Array.isArray(s.treatments) ? s.treatments.map(t => ({ ...t, staffName: `${s.firstName} ${s.lastName}`.trim() })) : []))
+                  .filter(t => clientName ? (String(t.clientName || '').trim() === clientName) : true)
+                if (items.length === 0) {
+                  return (<div className="text-sm text-muted-foreground">No treatments recorded for this client yet.</div>)
+                }
+                return (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Procedure</TableHead>
+                        <TableHead>Staff</TableHead>
+                        <TableHead className="text-right">Total</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {items.map((t, i) => (
+                        <TableRow key={i}>
+                          <TableCell>{t.date || '-'}</TableCell>
+                          <TableCell className="max-w-[12rem] truncate">{t.procedure}</TableCell>
+                          <TableCell className="max-w-[12rem] truncate">{t.staffName}</TableCell>
+                          <TableCell className="text-right">{Number(t.total || 0).toLocaleString()}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )
+              })()}
             </div>
 
             <div>

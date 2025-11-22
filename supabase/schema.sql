@@ -256,3 +256,91 @@ alter table if exists appointments add column if not exists referral_code text;
 alter table if exists appointments add column if not exists discount_applied boolean default false;
 create index if not exists idx_appointments_source_platform on appointments(source_platform);
 create index if not exists idx_appointments_influencer on appointments(influencer_id);
+
+create table if not exists treatments (
+  id text primary key,
+  staff_id text references staff(id) on delete set null,
+  medical_record_id text references medical_records(id) on delete set null,
+  client_id text references clients(id) on delete set null,
+  appointment_id text references appointments(id) on delete set null,
+  procedure text,
+  total numeric,
+  date date,
+  notes text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+create index if not exists idx_treatments_staff on treatments(staff_id);
+create index if not exists idx_treatments_medical_record on treatments(medical_record_id);
+create index if not exists idx_treatments_client on treatments(client_id);
+create index if not exists idx_treatments_appointment on treatments(appointment_id);
+create index if not exists idx_treatments_date on treatments(date);
+
+alter table if exists treatments add column if not exists date date;
+
+create or replace function rebuild_staff_treatments(staff_target text)
+returns void as $$
+begin
+  update staff s
+    set treatments = coalesce(
+      (
+        select jsonb_agg(
+          jsonb_build_object(
+            'procedure', t.procedure,
+            'clientName', coalesce(c.first_name,'') || case when coalesce(c.last_name,'') <> '' then ' ' || c.last_name else '' end,
+            'total', coalesce(t.total,0),
+            'date', t.date::text,
+            'aestheticianId', t.staff_id
+          )
+        )
+        from treatments t
+        left join clients c on c.id = t.client_id
+        where t.staff_id = staff_target
+      ), '[]'::jsonb
+    ),
+    updated_at = now()
+  where s.id = staff_target;
+end;
+$$ language plpgsql security definer;
+
+create or replace function rebuild_medical_record_treatments(med_target text)
+returns void as $$
+begin
+  update medical_records m
+    set treatments = coalesce(
+      (
+        select jsonb_agg(
+          jsonb_build_object(
+            'date', t.date::text,
+            'procedure', t.procedure,
+            'aestheticianId', t.staff_id
+          )
+        )
+        from treatments t
+        where t.medical_record_id = med_target
+      ), '[]'::jsonb
+    ),
+    updated_at = now()
+  where m.id = med_target;
+end;
+$$ language plpgsql security definer;
+
+create or replace function trg_treatments_sync()
+returns trigger as $$
+begin
+  if tg_op = 'INSERT' or tg_op = 'UPDATE' then
+    if new.staff_id is not null then perform rebuild_staff_treatments(new.staff_id); end if;
+    if new.medical_record_id is not null then perform rebuild_medical_record_treatments(new.medical_record_id); end if;
+  elsif tg_op = 'DELETE' then
+    if old.staff_id is not null then perform rebuild_staff_treatments(old.staff_id); end if;
+    if old.medical_record_id is not null then perform rebuild_medical_record_treatments(old.medical_record_id); end if;
+  end if;
+  return null;
+end;
+$$ language plpgsql security definer;
+
+drop trigger if exists trg_treatments_sync_changes on treatments;
+create trigger trg_treatments_sync_changes
+after insert or update or delete on treatments
+for each row execute function trg_treatments_sync();

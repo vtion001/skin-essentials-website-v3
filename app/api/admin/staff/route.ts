@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { supabaseAdminClient } from "@/lib/supabase-admin"
 import { aesEncryptToString, aesDecryptFromString, verifyCsrfToken } from "@/lib/utils"
-import { cookies } from "next/headers"
+import { headers } from "next/headers"
 
 export async function GET() {
   const admin = supabaseAdminClient()
@@ -16,9 +16,12 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const cookieStore = cookies()
   const cookiesMap = new Map<string, string>()
-  cookieStore.getAll().forEach(c => cookiesMap.set(c.name, c.value))
+  const cookieHeader = req.headers.get('cookie') || ''
+  cookieHeader.split(';').forEach((pair) => {
+    const [k, v] = pair.split('=')
+    if (k) cookiesMap.set(k.trim(), decodeURIComponent((v || '').trim()))
+  })
   if (!verifyCsrfToken(req.headers, cookiesMap)) {
     return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 })
   }
@@ -38,6 +41,7 @@ export async function POST(req: Request) {
     status: raw.status ?? null,
     avatar_url: raw.avatarUrl ?? raw.avatar_url ?? null,
     notes: aesEncryptToString(raw.notes ?? null),
+    treatments: Array.isArray(raw.treatments) ? raw.treatments : [],
   }
   const admin = supabaseAdminClient()
   const { data, error } = await admin.from('staff').insert(payload).select('*').single()
@@ -51,9 +55,12 @@ export async function POST(req: Request) {
 }
 
 export async function PATCH(req: Request) {
-  const cookieStore = cookies()
   const cookiesMap = new Map<string, string>()
-  cookieStore.getAll().forEach(c => cookiesMap.set(c.name, c.value))
+  const cookieHeader = req.headers.get('cookie') || ''
+  cookieHeader.split(';').forEach((pair) => {
+    const [k, v] = pair.split('=')
+    if (k) cookiesMap.set(k.trim(), decodeURIComponent((v || '').trim()))
+  })
   if (!verifyCsrfToken(req.headers, cookiesMap)) {
     return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 })
   }
@@ -73,6 +80,7 @@ export async function PATCH(req: Request) {
     status: body.status,
     avatar_url: body.avatarUrl ?? body.avatar_url,
     notes: body.notes !== undefined ? aesEncryptToString(body.notes) : undefined,
+    treatments: Array.isArray(body.treatments) ? body.treatments : undefined,
     updated_at: new Date().toISOString(),
   }
   const admin = supabaseAdminClient()

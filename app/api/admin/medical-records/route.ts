@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { supabaseAdminClient } from "@/lib/supabase-admin"
 import { aesEncrypt, aesDecrypt, aesEncryptToString, aesDecryptFromString, verifyCsrfToken } from "@/lib/utils"
-import { cookies } from "next/headers"
+import { headers } from "next/headers"
 
 export async function GET() {
   const admin = supabaseAdminClient()
@@ -23,9 +23,12 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const cookieStore = cookies()
   const cookiesMap = new Map<string, string>()
-  cookieStore.getAll().forEach(c => cookiesMap.set(c.name, c.value))
+  const cookieHeader = req.headers.get('cookie') || ''
+  cookieHeader.split(';').forEach((pair) => {
+    const [k, v] = pair.split('=')
+    if (k) cookiesMap.set(k.trim(), decodeURIComponent((v || '').trim()))
+  })
   if (!verifyCsrfToken(req.headers, cookiesMap)) {
     return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 })
   }
@@ -44,6 +47,7 @@ export async function POST(req: Request) {
     notes: aesEncryptToString(raw.notes ?? null),
     attachments: aesEncrypt(Array.isArray(raw.attachments) ? raw.attachments : []),
     created_by: raw.createdBy ?? raw.created_by ?? null,
+    treatments: Array.isArray(raw.treatments) ? raw.treatments : [],
   }
   const admin = supabaseAdminClient()
   const { data, error } = await admin.from('medical_records').insert(payload).select('*').single()
@@ -61,9 +65,12 @@ export async function POST(req: Request) {
 }
 
 export async function PATCH(req: Request) {
-  const cookieStore = cookies()
   const cookiesMap = new Map<string, string>()
-  cookieStore.getAll().forEach(c => cookiesMap.set(c.name, c.value))
+  const cookieHeader = req.headers.get('cookie') || ''
+  cookieHeader.split(';').forEach((pair) => {
+    const [k, v] = pair.split('=')
+    if (k) cookiesMap.set(k.trim(), decodeURIComponent((v || '').trim()))
+  })
   if (!verifyCsrfToken(req.headers, cookiesMap)) {
     return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 })
   }
@@ -82,6 +89,7 @@ export async function PATCH(req: Request) {
     notes: body.notes ? aesEncryptToString(body.notes) : undefined,
     attachments: Array.isArray(body.attachments) ? aesEncrypt(body.attachments) : undefined,
     created_by: body.createdBy ?? body.created_by,
+    treatments: Array.isArray(body.treatments) ? body.treatments : undefined,
     updated_at: new Date().toISOString(),
   }
   const admin = supabaseAdminClient()
@@ -100,9 +108,12 @@ export async function PATCH(req: Request) {
 }
 
 export async function DELETE(req: Request) {
-  const cookieStore = cookies()
   const cookiesMap = new Map<string, string>()
-  cookieStore.getAll().forEach(c => cookiesMap.set(c.name, c.value))
+  const cookieHeader = req.headers.get('cookie') || ''
+  cookieHeader.split(';').forEach((pair) => {
+    const [k, v] = pair.split('=')
+    if (k) cookiesMap.set(k.trim(), decodeURIComponent((v || '').trim()))
+  })
   if (!verifyCsrfToken(req.headers, cookiesMap)) {
     return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 })
   }
