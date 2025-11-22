@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { jsonMasked } from "@/lib/admin-mask"
 import { supabaseAdminClient } from "@/lib/supabase-admin"
 import { aesEncryptToString, aesDecryptFromString, verifyCsrfToken } from "@/lib/utils"
 import { headers } from "next/headers"
@@ -6,13 +7,13 @@ import { headers } from "next/headers"
 export async function GET() {
   const admin = supabaseAdminClient()
   const { data, error } = await admin.from('staff').select('*').order('created_at', { ascending: false })
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return jsonMasked({ error: error.message }, { status: 500 })
   const staff = (data || []).map((s: any) => ({
     ...s,
     license_number: aesDecryptFromString(s.license_number) ?? s.license_number,
     notes: aesDecryptFromString(s.notes) ?? s.notes,
   }))
-  return NextResponse.json({ staff })
+  return jsonMasked({ staff })
 }
 
 export async function POST(req: Request) {
@@ -23,7 +24,7 @@ export async function POST(req: Request) {
     if (k) cookiesMap.set(k.trim(), decodeURIComponent((v || '').trim()))
   })
   if (!verifyCsrfToken(req.headers, cookiesMap)) {
-    return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 })
+    return jsonMasked({ error: 'Invalid CSRF token' }, { status: 403 })
   }
   const raw = await req.json()
   const id = raw.id || `staff_${Date.now()}`
@@ -45,13 +46,13 @@ export async function POST(req: Request) {
   }
   const admin = supabaseAdminClient()
   const { data, error } = await admin.from('staff').insert(payload).select('*').single()
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return jsonMasked({ error: error.message }, { status: 500 })
   const staff = {
     ...data,
     license_number: aesDecryptFromString(data.license_number) ?? data.license_number,
     notes: aesDecryptFromString(data.notes) ?? data.notes,
   }
-  return NextResponse.json({ staff })
+  return jsonMasked({ staff })
 }
 
 export async function PATCH(req: Request) {
@@ -62,11 +63,11 @@ export async function PATCH(req: Request) {
     if (k) cookiesMap.set(k.trim(), decodeURIComponent((v || '').trim()))
   })
   if (!verifyCsrfToken(req.headers, cookiesMap)) {
-    return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 })
+    return jsonMasked({ error: 'Invalid CSRF token' }, { status: 403 })
   }
   const body = await req.json()
   const { id } = body || {}
-  if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
+  if (!id) return jsonMasked({ error: 'Missing id' }, { status: 400 })
   const updates = {
     first_name: body.firstName ?? body.first_name,
     last_name: body.lastName ?? body.last_name,
@@ -85,21 +86,21 @@ export async function PATCH(req: Request) {
   }
   const admin = supabaseAdminClient()
   const { data, error } = await admin.from('staff').update(updates).eq('id', id).select('*').single()
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return jsonMasked({ error: error.message }, { status: 500 })
   const staff = {
     ...data,
     license_number: aesDecryptFromString(data.license_number) ?? data.license_number,
     notes: aesDecryptFromString(data.notes) ?? data.notes,
   }
-  return NextResponse.json({ staff })
+  return jsonMasked({ staff })
 }
 
 export async function DELETE(req: Request) {
   const body = await req.json()
   const { id } = body || {}
-  if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
+  if (!id) return jsonMasked({ error: 'Missing id' }, { status: 400 })
   const admin = supabaseAdminClient()
   const { error } = await admin.from('staff').delete().eq('id', id)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ success: true })
+  if (error) return jsonMasked({ error: error.message }, { status: 500 })
+  return jsonMasked({ success: true })
 }

@@ -418,6 +418,10 @@ export default function AdminDashboard() {
   const [appointmentsSort, setAppointmentsSort] = useState<string>("date_desc")
   const [appointmentsPage, setAppointmentsPage] = useState<number>(1)
   const [appointmentsPageSize, setAppointmentsPageSize] = useState<number>(10)
+  const [privacyMode, setPrivacyMode] = useState<boolean>(true)
+  const [clientReveal, setClientReveal] = useState<{ name: boolean; email: boolean; phone: boolean; address: boolean }>({ name: false, email: false, phone: false, address: false })
+  const [appointmentReveal, setAppointmentReveal] = useState<{ clientName: boolean; clientEmail: boolean; clientPhone: boolean }>({ clientName: false, clientEmail: false, clientPhone: false })
+  const [influencerReveal, setInfluencerReveal] = useState<{ referralCode: boolean; email: boolean; phone: boolean }>({ referralCode: false, email: false, phone: false })
   const [paymentSearch, setPaymentSearch] = useState("")
   const [paymentMethodFilter, setPaymentMethodFilter] = useState<string>("all")
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>("all")
@@ -1736,7 +1740,7 @@ export default function AdminDashboard() {
                               <div className="flex-1">
                                 <div className="flex items-center gap-4">
                                   <div className="flex-1">
-                                    <p className="font-medium">{appointment.clientName}</p>
+                                <p className="font-medium">{privacyMode ? maskName(appointment.clientName) : appointment.clientName}</p>
                                     <p className="text-sm text-gray-600">{appointment.service}</p>
                                     <p className="text-xs text-gray-500">
                                       {appointment.time} • {appointment.duration} min • ₱{appointment.price}
@@ -1789,7 +1793,7 @@ export default function AdminDashboard() {
                   <CardTitle>All Appointments</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3 mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3 mb-4">
                     <div className="lg:col-span-2">
                       <Input
                         placeholder="Search by client or service"
@@ -1833,16 +1837,19 @@ export default function AdminDashboard() {
                     </div>
                     <div>
                       <Select value={appointmentsSort} onValueChange={setAppointmentsSort}>
-                        <SelectTrigger className="h-9">
-                          <SelectValue placeholder="Sort" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="date_desc">Date ↓</SelectItem>
-                          <SelectItem value="date_asc">Date ↑</SelectItem>
-                          <SelectItem value="price_desc">Price ↓</SelectItem>
-                          <SelectItem value="price_asc">Price ↑</SelectItem>
-                        </SelectContent>
+                      <SelectTrigger className="h-9">
+                        <SelectValue placeholder="Sort" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="date_desc">Date ↓</SelectItem>
+                        <SelectItem value="date_asc">Date ↑</SelectItem>
+                        <SelectItem value="price_desc">Price ↓</SelectItem>
+                        <SelectItem value="price_asc">Price ↑</SelectItem>
+                      </SelectContent>
                       </Select>
+                    </div>
+                    <div className="flex items-center justify-end">
+                      <Button variant="outline" className="h-9" onClick={() => setPrivacyMode(prev => !prev)}>{privacyMode ? 'Privacy On' : 'Privacy Off'}</Button>
                     </div>
                   </div>
 
@@ -1900,8 +1907,8 @@ export default function AdminDashboard() {
                             {pageItems.map(a => (
                               <TableRow key={a.id} className="cursor-pointer" onClick={() => setSelectedDate(new Date(a.date + 'T00:00:00'))}>
                                 <TableCell>
-                                  <div className="font-medium">{a.clientName}</div>
-                                  <div className="text-xs text-gray-500">{a.clientEmail} • {a.clientPhone}</div>
+                                  <div className="font-medium">{privacyMode ? maskName(a.clientName) : a.clientName}</div>
+                                  <div className="text-xs text-gray-500">{privacyMode ? maskEmail(a.clientEmail) : a.clientEmail} • {privacyMode ? maskPhone(a.clientPhone) : a.clientPhone}</div>
                                 </TableCell>
                                 <TableCell className="max-w-xs truncate">{a.service}</TableCell>
                                 <TableCell>{new Date(a.date).toLocaleDateString()}</TableCell>
@@ -2936,8 +2943,9 @@ export default function AdminDashboard() {
                     <SelectItem value="website">Website</SelectItem>
                     <SelectItem value="facebook">Facebook</SelectItem>
                     <SelectItem value="instagram">Instagram</SelectItem>
+                    <SelectItem value="tiktok">TikTok</SelectItem>
                     <SelectItem value="referral">Referral</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
+                    <SelectItem value="walk_in">Walk-in</SelectItem>
                   </SelectContent>
                 </Select>
                 <Select value={clientsSort} onValueChange={setClientsSort}>
@@ -2987,9 +2995,9 @@ export default function AdminDashboard() {
                       })
                       .map((client) => (
                         <TableRow key={client.id}>
-                          <TableCell className="font-medium">{client.firstName} {client.lastName}</TableCell>
-                          <TableCell className="truncate max-w-[220px]">{client.email}</TableCell>
-                          <TableCell className="truncate max-w-[160px]">{client.phone}</TableCell>
+                          <TableCell className="font-medium">{privacyMode ? maskName(`${client.firstName} ${client.lastName}`) : `${client.firstName} ${client.lastName}`}</TableCell>
+                          <TableCell className="truncate max-w-[220px]">{privacyMode ? maskEmail(client.email) : client.email}</TableCell>
+                          <TableCell className="truncate max-w-[160px]">{privacyMode ? maskPhone(client.phone) : client.phone}</TableCell>
                           <TableCell>
                             <Badge className={
                               client.status === 'active' ? 'bg-green-100 text-green-800' :
@@ -3045,8 +3053,9 @@ export default function AdminDashboard() {
                         <p>Are you sure you want to delete this client? This action cannot be undone.</p>
                         <div className="rounded-lg border bg-white/70 p-3">
                           <div className="font-medium">{confirmClient.firstName} {confirmClient.lastName}</div>
-                          {confirmClient.email && <div className="text-gray-600">{confirmClient.email}</div>}
-                          {confirmClient.phone && <div className="text-gray-600">{confirmClient.phone}</div>}
+                          {confirmClient.email && <div className="text-gray-600">{privacyMode ? maskEmail(confirmClient.email) : confirmClient.email}</div>}
+                          {confirmClient.phone && <div className="text-gray-600">{privacyMode ? maskPhone(confirmClient.phone) : confirmClient.phone}</div>}
+                          {confirmClient.address && <div className="text-gray-600">{privacyMode ? maskAddress(confirmClient.address) : confirmClient.address}</div>}
                         </div>
                       </div>
                     )}
@@ -3099,6 +3108,7 @@ export default function AdminDashboard() {
                       className="pl-10 w-64"
                     />
                   </div>
+                  <Button variant="outline" className="h-9" onClick={() => setPrivacyMode(prev => !prev)}>{privacyMode ? 'Privacy On' : 'Privacy Off'}</Button>
                   <Button
                     onClick={() => openStaffModal()}
                     className="bg-gradient-to-r from-slate-600 via-gray-700 to-slate-800 hover:from-slate-700 hover:via-gray-800 hover:to-slate-900 text-white shadow-2xl shadow-slate-500/30 hover:shadow-slate-500/40 transition-all duration-300 hover:scale-105 font-bold px-6 py-3 rounded-2xl"
@@ -3162,9 +3172,12 @@ export default function AdminDashboard() {
                             <SelectItem key={s.id} value={s.id}>{`${s.firstName} ${s.lastName}`.trim()}</SelectItem>
                           ))}
                         </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
+                </Select>
+              </div>
+              <div className="flex items-center justify-end">
+                <Button variant="outline" className="h-9" onClick={() => setPrivacyMode(prev => !prev)}>{privacyMode ? 'Privacy On' : 'Privacy Off'}</Button>
+              </div>
+              </div>
                   {(() => {
                     const rows = staff.flatMap(s => (
                       Array.isArray(s.treatments) ? s.treatments.map(t => ({
@@ -3196,7 +3209,7 @@ export default function AdminDashboard() {
                               <TableRow key={i}>
                                 <TableCell className="whitespace-nowrap">{r.date}</TableCell>
                                 <TableCell className="max-w-[16rem] truncate">{r.procedure}</TableCell>
-                                <TableCell className="max-w-[12rem] truncate">{r.clientName}</TableCell>
+                                <TableCell className="max-w-[12rem] truncate">{privacyMode ? maskName(r.clientName) : r.clientName}</TableCell>
                                 <TableCell className="max-w-[12rem] truncate">{r.staffName}</TableCell>
                                 <TableCell className="text-right">{r.total.toLocaleString()}</TableCell>
                               </TableRow>
@@ -3259,7 +3272,7 @@ export default function AdminDashboard() {
                                   {s.treatments.map((t, i) => (
                                     <TableRow key={i}>
                                       <TableCell className="text-xs max-w-[12rem] truncate">{t.procedure}</TableCell>
-                                      <TableCell className="text-xs max-w-[12rem] truncate">{t.clientName || '-'}</TableCell>
+                                      <TableCell className="text-xs max-w-[12rem] truncate">{privacyMode ? maskName(t.clientName || '') : (t.clientName || '-')}</TableCell>
                                       <TableCell className="text-xs font-medium">{t.total}</TableCell>
                                     </TableRow>
                                   ))}
@@ -3576,7 +3589,16 @@ export default function AdminDashboard() {
                   .sort((a, b) => b.count - a.count)
                   .slice(0, 5)
 
-                const sourceLabels: Record<string, string> = { website: 'Website', referral: 'Referral', social_media: 'Social Media', walk_in: 'Walk-in', unknown: 'Unknown' }
+                const sourceLabels: Record<string, string> = {
+                  website: 'Website',
+                  referral: 'Referral',
+                  facebook: 'Facebook',
+                  instagram: 'Instagram',
+                  tiktok: 'TikTok',
+                  social_media: 'Social Media',
+                  walk_in: 'Walk-in',
+                  unknown: 'Unknown'
+                }
 
                 const statusBreakdown: Record<string, number> = {}
                 bookedApts.forEach(a => { statusBreakdown[a.status] = (statusBreakdown[a.status] || 0) + 1 })
@@ -3775,34 +3797,48 @@ export default function AdminDashboard() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="clientName">Client Name</Label>
-                <Input
-                  id="clientName"
-                  value={appointmentForm.clientName || ''}
-                  onChange={(e) => setAppointmentForm(prev => ({ ...prev, clientName: e.target.value }))}
-                  required
-                />
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="clientName"
+                    value={appointmentForm.clientName || ''}
+                    onChange={(e) => setAppointmentForm(prev => ({ ...prev, clientName: e.target.value }))}
+                    required
+                    type={privacyMode && !appointmentReveal.clientName ? 'password' : 'text'}
+                    readOnly={privacyMode && !appointmentReveal.clientName}
+                  />
+                  <Button type="button" variant="outline" className="h-9 px-2" onClick={() => setAppointmentReveal(prev => ({ ...prev, clientName: !prev.clientName }))}>{appointmentReveal.clientName ? 'Hide' : 'Reveal'}</Button>
+                </div>
               </div>
               <div>
                 <Label htmlFor="clientEmail">Client Email</Label>
-                <Input
-                  id="clientEmail"
-                  type="email"
-                  value={appointmentForm.clientEmail || ''}
-                  onChange={(e) => setAppointmentForm(prev => ({ ...prev, clientEmail: e.target.value }))}
-                  required
-                />
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="clientEmail"
+                    type={privacyMode && !appointmentReveal.clientEmail ? 'password' : 'email'}
+                    value={appointmentForm.clientEmail || ''}
+                    onChange={(e) => setAppointmentForm(prev => ({ ...prev, clientEmail: e.target.value }))}
+                    required
+                    readOnly={privacyMode && !appointmentReveal.clientEmail}
+                  />
+                  <Button type="button" variant="outline" className="h-9 px-2" onClick={() => setAppointmentReveal(prev => ({ ...prev, clientEmail: !prev.clientEmail }))}>{appointmentReveal.clientEmail ? 'Hide' : 'Reveal'}</Button>
+                </div>
               </div>
             </div>
             
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="clientPhone">Client Phone</Label>
-                <Input
-                  id="clientPhone"
-                  value={appointmentForm.clientPhone || ''}
-                  onChange={(e) => setAppointmentForm(prev => ({ ...prev, clientPhone: e.target.value }))}
-                  required
-                />
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="clientPhone"
+                    value={appointmentForm.clientPhone || ''}
+                    onChange={(e) => setAppointmentForm(prev => ({ ...prev, clientPhone: e.target.value }))}
+                    required
+                    type={privacyMode && !appointmentReveal.clientPhone ? 'password' : 'text'}
+                    readOnly={privacyMode && !appointmentReveal.clientPhone}
+                  />
+                  <Button type="button" variant="outline" className="h-9 px-2" onClick={() => setAppointmentReveal(prev => ({ ...prev, clientPhone: !prev.clientPhone }))}>{appointmentReveal.clientPhone ? 'Hide' : 'Reveal'}</Button>
+                </div>
               </div>
               <div>
                 <Label htmlFor="service">Service</Label>
@@ -4113,17 +4149,26 @@ export default function AdminDashboard() {
                </div>
                <div>
                  <Label htmlFor="infReferralCode">Referral Code</Label>
-                 <Input id="infReferralCode" value={influencerForm.referralCode || ''} onChange={(e) => setInfluencerForm(prev => ({ ...prev, referralCode: e.target.value }))} />
+                <div className="flex items-center gap-2">
+                  <Input id="infReferralCode" value={influencerForm.referralCode || ''} onChange={(e) => setInfluencerForm(prev => ({ ...prev, referralCode: e.target.value }))} type={privacyMode && !influencerReveal.referralCode ? 'password' : 'text'} readOnly={privacyMode && !influencerReveal.referralCode} />
+                  <Button type="button" variant="outline" className="h-9 px-2" onClick={() => setInfluencerReveal(prev => ({ ...prev, referralCode: !prev.referralCode }))}>{influencerReveal.referralCode ? 'Hide' : 'Reveal'}</Button>
+                </div>
                </div>
              </div>
              <div className="grid grid-cols-2 gap-4">
                <div>
                  <Label htmlFor="infEmail">Email</Label>
-                 <Input id="infEmail" type="email" value={influencerForm.email || ''} onChange={(e) => setInfluencerForm(prev => ({ ...prev, email: e.target.value }))} />
+                <div className="flex items-center gap-2">
+                  <Input id="infEmail" value={influencerForm.email || ''} onChange={(e) => setInfluencerForm(prev => ({ ...prev, email: e.target.value }))} type={privacyMode && !influencerReveal.email ? 'password' : 'email'} readOnly={privacyMode && !influencerReveal.email} />
+                  <Button type="button" variant="outline" className="h-9 px-2" onClick={() => setInfluencerReveal(prev => ({ ...prev, email: !prev.email }))}>{influencerReveal.email ? 'Hide' : 'Reveal'}</Button>
+                </div>
                </div>
                <div>
                  <Label htmlFor="infPhone">Phone</Label>
-                 <Input id="infPhone" value={influencerForm.phone || ''} onChange={(e) => setInfluencerForm(prev => ({ ...prev, phone: e.target.value }))} />
+                <div className="flex items-center gap-2">
+                  <Input id="infPhone" value={influencerForm.phone || ''} onChange={(e) => setInfluencerForm(prev => ({ ...prev, phone: e.target.value }))} type={privacyMode && !influencerReveal.phone ? 'password' : 'text'} readOnly={privacyMode && !influencerReveal.phone} />
+                  <Button type="button" variant="outline" className="h-9 px-2" onClick={() => setInfluencerReveal(prev => ({ ...prev, phone: !prev.phone }))}>{influencerReveal.phone ? 'Hide' : 'Reveal'}</Button>
+                </div>
                </div>
              </div>
              <div className="grid grid-cols-2 gap-4">
@@ -4612,57 +4657,82 @@ export default function AdminDashboard() {
       )}
       <form onSubmit={handleClientSubmit} className="space-y-4">
              <div className="grid grid-cols-2 gap-4">
-               <div>
-                 <Label htmlFor="firstName">First Name</Label>
-                 <Input
-                  id="firstName"
-                  value={clientForm.firstName || ''}
-                  onChange={(e) => startTransition(() => setClientForm(prev => ({ ...prev, firstName: e.target.value })))}
-                  required
-                />
-               </div>
-               <div>
-                 <Label htmlFor="lastName">Last Name</Label>
-                 <Input
-                  id="lastName"
-                  value={clientForm.lastName || ''}
-                  onChange={(e) => startTransition(() => setClientForm(prev => ({ ...prev, lastName: e.target.value })))}
-                  required
-                />
-               </div>
+              <div>
+                <Label htmlFor="firstName">First Name</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                   id="firstName"
+                   value={clientForm.firstName || ''}
+                   onChange={(e) => startTransition(() => setClientForm(prev => ({ ...prev, firstName: e.target.value })))}
+                   required
+                   type={privacyMode && !clientReveal.name ? 'password' : 'text'}
+                   readOnly={privacyMode && !clientReveal.name}
+                 />
+                 <Button type="button" variant="outline" className="h-9 px-2" onClick={() => setClientReveal(prev => ({ ...prev, name: !prev.name }))}>{clientReveal.name ? 'Hide' : 'Reveal'}</Button>
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="lastName">Last Name</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                   id="lastName"
+                   value={clientForm.lastName || ''}
+                   onChange={(e) => startTransition(() => setClientForm(prev => ({ ...prev, lastName: e.target.value })))}
+                   required
+                   type={privacyMode && !clientReveal.name ? 'password' : 'text'}
+                   readOnly={privacyMode && !clientReveal.name}
+                 />
+                 <Button type="button" variant="outline" className="h-9 px-2" onClick={() => setClientReveal(prev => ({ ...prev, name: !prev.name }))}>{clientReveal.name ? 'Hide' : 'Reveal'}</Button>
+                </div>
+              </div>
              </div>
 
              <div className="grid grid-cols-2 gap-4">
-               <div>
-                 <Label htmlFor="email">Email</Label>
-                 <Input
-                  id="email"
-                  type="email"
-                  value={clientForm.email || ''}
-                  onChange={(e) => startTransition(() => setClientForm(prev => ({ ...prev, email: e.target.value })))}
-                  required
-                />
-               </div>
-               <div>
-                 <Label htmlFor="phone">Phone</Label>
-                 <Input
-                  id="phone"
-                  value={clientForm.phone || ''}
-                  onChange={(e) => startTransition(() => setClientForm(prev => ({ ...prev, phone: e.target.value })))}
-                  required
-                />
-               </div>
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                   id="email"
+                   type={privacyMode && !clientReveal.email ? 'password' : 'email'}
+                   value={clientForm.email || ''}
+                   onChange={(e) => startTransition(() => setClientForm(prev => ({ ...prev, email: e.target.value })))}
+                   required
+                   readOnly={privacyMode && !clientReveal.email}
+                 />
+                 <Button type="button" variant="outline" className="h-9 px-2" onClick={() => setClientReveal(prev => ({ ...prev, email: !prev.email }))}>{clientReveal.email ? 'Hide' : 'Reveal'}</Button>
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="phone">Phone</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                   id="phone"
+                   value={clientForm.phone || ''}
+                   onChange={(e) => startTransition(() => setClientForm(prev => ({ ...prev, phone: e.target.value })))}
+                   required
+                   type={privacyMode && !clientReveal.phone ? 'password' : 'text'}
+                   readOnly={privacyMode && !clientReveal.phone}
+                 />
+                 <Button type="button" variant="outline" className="h-9 px-2" onClick={() => setClientReveal(prev => ({ ...prev, phone: !prev.phone }))}>{clientReveal.phone ? 'Hide' : 'Reveal'}</Button>
+                </div>
+              </div>
              </div>
 
-             <div>
-               <Label htmlFor="address">Address</Label>
-               <Textarea
-                 id="address"
-                 value={clientForm.address || ''}
-                 onChange={(e) => startTransition(() => setClientForm(prev => ({ ...prev, address: e.target.value })))}
-                 rows={2}
-               />
-             </div>
+            <div>
+              <Label htmlFor="address">Address</Label>
+              <div className="space-y-2">
+                <Textarea
+                  id="address"
+                  value={privacyMode && !clientReveal.address ? maskAddress(clientForm.address || '') : (clientForm.address || '')}
+                  onChange={(e) => startTransition(() => setClientForm(prev => ({ ...prev, address: e.target.value })))}
+                  rows={2}
+                  readOnly={privacyMode && !clientReveal.address}
+                />
+                <div className="flex justify-end">
+                  <Button type="button" variant="outline" className="h-9 px-2" onClick={() => setClientReveal(prev => ({ ...prev, address: !prev.address }))}>{clientReveal.address ? 'Hide' : 'Reveal'}</Button>
+                </div>
+              </div>
+            </div>
 
              <div className="grid grid-cols-3 gap-4">
                <div>
@@ -4719,7 +4789,9 @@ export default function AdminDashboard() {
                   <SelectContent>
                     <SelectItem value="website">Website</SelectItem>
                     <SelectItem value="referral">Referral</SelectItem>
-                    <SelectItem value="social_media">Social Media</SelectItem>
+                    <SelectItem value="facebook">Facebook</SelectItem>
+                    <SelectItem value="instagram">Instagram</SelectItem>
+                    <SelectItem value="tiktok">TikTok</SelectItem>
                     <SelectItem value="walk_in">Walk-in</SelectItem>
                   </SelectContent>
                 </Select>
@@ -4960,4 +5032,28 @@ export default function AdminDashboard() {
        </Dialog>
     </>
   )
+}
+const maskEmail = (e: string) => {
+  const s = String(e || '').trim()
+  const at = s.indexOf('@')
+  if (at <= 0) return s ? '••••' : ''
+  const local = s.slice(0, at)
+  const domain = s.slice(at + 1)
+  return `${local[0]}${'•'.repeat(Math.max(0, local.length - 1))}@${domain[0]}${'•'.repeat(Math.max(0, domain.length - 1))}`
+}
+const maskPhone = (p: string) => {
+  const s = String(p || '')
+  if (!s) return ''
+  const last4 = s.slice(-4)
+  return `••••••••${last4}`
+}
+const maskName = (n: string) => {
+  const s = String(n || '').trim()
+  if (!s) return ''
+  return s.split(/\s+/).map(part => part ? `${part[0]}${'•'.repeat(Math.max(0, part.length - 1))}` : '').join(' ')
+}
+const maskAddress = (a: string) => {
+  const s = String(a || '').trim()
+  if (!s) return ''
+  return '•'.repeat(Math.min(s.length, 12))
 }

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { jsonMasked } from "@/lib/admin-mask"
 import { supabaseAdminClient } from "@/lib/supabase-admin"
 import { aesEncrypt, aesDecrypt, aesEncryptToString, aesDecryptFromString, verifyCsrfToken } from "@/lib/utils"
 import { headers } from "next/headers"
@@ -6,7 +7,7 @@ import { headers } from "next/headers"
 export async function GET() {
   const admin = supabaseAdminClient()
   const { data, error } = await admin.from('medical_records').select('*').order('created_at', { ascending: false })
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return jsonMasked({ error: error.message }, { status: 500 })
   const records = (data || []).map((r: any) => {
     const decrypt = (val: any) => aesDecrypt(val) ?? val
     return {
@@ -19,7 +20,7 @@ export async function GET() {
       attachments: decrypt(r.attachments),
     }
   })
-  return NextResponse.json({ records })
+  return jsonMasked({ records })
 }
 
 export async function POST(req: Request) {
@@ -30,7 +31,7 @@ export async function POST(req: Request) {
     if (k) cookiesMap.set(k.trim(), decodeURIComponent((v || '').trim()))
   })
   if (!verifyCsrfToken(req.headers, cookiesMap)) {
-    return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 })
+    return jsonMasked({ error: 'Invalid CSRF token' }, { status: 403 })
   }
   const raw = await req.json()
   const id = raw.id || `med_${Date.now()}`
@@ -51,7 +52,7 @@ export async function POST(req: Request) {
   }
   const admin = supabaseAdminClient()
   const { data, error } = await admin.from('medical_records').insert(payload).select('*').single()
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return jsonMasked({ error: error.message }, { status: 500 })
   const record = {
     ...data,
     medical_history: aesDecrypt(data.medical_history),
@@ -61,7 +62,7 @@ export async function POST(req: Request) {
     notes: aesDecryptFromString(data.notes) ?? data.notes,
     attachments: aesDecrypt(data.attachments),
   }
-  return NextResponse.json({ record })
+  return jsonMasked({ record })
 }
 
 export async function PATCH(req: Request) {
@@ -72,11 +73,11 @@ export async function PATCH(req: Request) {
     if (k) cookiesMap.set(k.trim(), decodeURIComponent((v || '').trim()))
   })
   if (!verifyCsrfToken(req.headers, cookiesMap)) {
-    return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 })
+    return jsonMasked({ error: 'Invalid CSRF token' }, { status: 403 })
   }
   const body = await req.json()
   const { id } = body || {}
-  if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
+  if (!id) return jsonMasked({ error: 'Missing id' }, { status: 400 })
   const updates = {
     client_id: body.clientId ?? body.client_id,
     appointment_id: body.appointmentId ?? body.appointment_id,
@@ -94,7 +95,7 @@ export async function PATCH(req: Request) {
   }
   const admin = supabaseAdminClient()
   const { data, error } = await admin.from('medical_records').update(updates).eq('id', id).select('*').single()
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return jsonMasked({ error: error.message }, { status: 500 })
   const record = {
     ...data,
     medical_history: aesDecrypt(data.medical_history),
@@ -104,7 +105,7 @@ export async function PATCH(req: Request) {
     notes: aesDecryptFromString(data.notes) ?? data.notes,
     attachments: aesDecrypt(data.attachments),
   }
-  return NextResponse.json({ record })
+  return jsonMasked({ record })
 }
 
 export async function DELETE(req: Request) {
@@ -115,13 +116,13 @@ export async function DELETE(req: Request) {
     if (k) cookiesMap.set(k.trim(), decodeURIComponent((v || '').trim()))
   })
   if (!verifyCsrfToken(req.headers, cookiesMap)) {
-    return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 })
+    return jsonMasked({ error: 'Invalid CSRF token' }, { status: 403 })
   }
   const body = await req.json()
   const { id } = body || {}
-  if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
+  if (!id) return jsonMasked({ error: 'Missing id' }, { status: 400 })
   const admin = supabaseAdminClient()
   const { error } = await admin.from('medical_records').delete().eq('id', id)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ success: true })
+  if (error) return jsonMasked({ error: error.message }, { status: 500 })
+  return jsonMasked({ success: true })
 }

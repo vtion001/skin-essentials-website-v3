@@ -78,7 +78,7 @@ export interface Client {
     reminderSettings: boolean
     marketingConsent: boolean
   }
-  source: 'website' | 'referral' | 'social_media' | 'walk_in'
+  source: 'website' | 'referral' | 'facebook' | 'instagram' | 'tiktok' | 'walk_in' | 'social_media'
   status: 'active' | 'inactive' | 'blocked'
   totalSpent: number
   lastVisit?: string
@@ -614,20 +614,23 @@ class ClientService {
       if (s === 'prefer-not-to-say' || s === 'prefer_not_to_say' || s === 'prefer not to say') return 'prefer-not-to-say'
       return undefined
     }
-    const toSource = (val: any): Client['source'] => {
-      const s = String(val ?? '').toLowerCase().trim()
-      if (s === 'website') return 'website'
-      if (s === 'referral') return 'referral'
-      if (s === 'social_media' || s === 'social-media') return 'social_media'
-      if (s === 'walk_in' || s === 'walk-in') return 'walk_in'
-      return 'website'
-    }
     const toStatus = (val: any): Client['status'] => {
       const s = String(val ?? '').toLowerCase().trim()
       if (s === 'active') return 'active'
       if (s === 'inactive') return 'inactive'
       if (s === 'blocked') return 'blocked'
       return 'active'
+    }
+    const toSource = (val: any): Client['source'] => {
+      const s = String(val ?? '').toLowerCase().trim()
+      if (s === 'website') return 'website'
+      if (s === 'referral') return 'referral'
+      if (s === 'facebook') return 'facebook'
+      if (s === 'instagram') return 'instagram'
+      if (s === 'tiktok') return 'tiktok'
+      if (s === 'walk_in' || s === 'walk-in') return 'walk_in'
+      if (s === 'social_media' || s === 'social-media') return 'social_media'
+      return 'website'
     }
     const normalized: Client[] = rows.map((r: any) => ({
       id: String(r.id),
