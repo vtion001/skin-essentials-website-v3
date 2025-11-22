@@ -3524,18 +3524,39 @@ export default function AdminDashboard() {
                 }
 
                 const completedPayments = payments.filter(p => p.status === 'completed' && inRange(p.createdAt))
+                const clientsInRange = clients.filter(c => inRange(c.createdAt))
                 const totalRevenue = completedPayments.reduce((s, p) => s + p.amount, 0)
                 const avgOrder = completedPayments.length ? totalRevenue / completedPayments.length : 0
 
                 const bookedApts = appointments.filter(a => inRangeDateOnly(a.date))
                 const completedApts = appointments.filter(a => a.status === 'completed' && inRangeDateOnly(a.date))
 
-                const bySource: Record<string, number> = {}
+                const bySourcePayments: Record<string, number> = {}
                 completedPayments.forEach(p => {
                   const c = clients.find(x => x.id === p.clientId)
                   const src = c?.source || 'unknown'
-                  bySource[src] = (bySource[src] || 0) + 1
+                  if (clientsSourceFilter === 'all' || src === clientsSourceFilter) {
+                    bySourcePayments[src] = (bySourcePayments[src] || 0) + 1
+                  }
                 })
+                const completedPaymentsForSource = completedPayments.filter(p => {
+                  const c = clients.find(x => x.id === p.clientId)
+                  const src = c?.source || 'unknown'
+                  return clientsSourceFilter === 'all' || src === clientsSourceFilter
+                })
+
+                const bySourceClients: Record<string, number> = {}
+                clientsInRange.forEach(c => {
+                  const src = c.source || 'unknown'
+                  if (clientsSourceFilter === 'all' || src === clientsSourceFilter) {
+                    bySourceClients[src] = (bySourceClients[src] || 0) + 1
+                  }
+                })
+                const clientsForSource = clientsInRange.filter(c => clientsSourceFilter === 'all' || c.source === clientsSourceFilter)
+
+                const useClientCounts = clientsSourceFilter !== 'all'
+                const displayBySource = useClientCounts ? bySourceClients : bySourcePayments
+                const displayDenominator = useClientCounts ? clientsForSource.length : completedPaymentsForSource.length
 
                 const platformAgg: Record<string, { referrals: number; revenue: number }> = {}
                 influencers.forEach(i => {
@@ -3605,15 +3626,15 @@ export default function AdminDashboard() {
                         </CardHeader>
                         <CardContent>
                           <div className="space-y-3">
-                            {Object.entries(sourceLabels).map(([key, label]) => (
-                              <div key={key} className="flex items-center gap-4">
-                                <div className="w-28 text-sm text-gray-600">{label}</div>
-                                <div className="flex-1 h-2 bg-gray-200/60 rounded-full overflow-hidden">
-                                  <div className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full" style={{ width: `${pct(bySource[key] || 0, completedPayments.length)}%` }}></div>
-                                </div>
-                                <div className="w-12 text-sm font-medium text-gray-900 text-right">{bySource[key] || 0}</div>
-                              </div>
-                            ))}
+                                {Object.entries(sourceLabels).map(([key, label]) => (
+                                  <div key={key} className="flex items-center gap-4">
+                                    <div className="w-28 text-sm text-gray-600">{label}</div>
+                                    <div className="flex-1 h-2 bg-gray-200/60 rounded-full overflow-hidden">
+                                  <div className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full" style={{ width: `${pct(displayBySource[key] || 0, displayDenominator)}%` }}></div>
+                                    </div>
+                                    <div className="w-12 text-sm font-medium text-gray-900 text-right">{displayBySource[key] || 0}</div>
+                                  </div>
+                                ))}
                           </div>
                         </CardContent>
                       </Card>
