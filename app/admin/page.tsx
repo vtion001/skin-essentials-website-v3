@@ -418,7 +418,7 @@ export default function AdminDashboard() {
   const [appointmentsSort, setAppointmentsSort] = useState<string>("date_desc")
   const [appointmentsPage, setAppointmentsPage] = useState<number>(1)
   const [appointmentsPageSize, setAppointmentsPageSize] = useState<number>(10)
-  const [privacyMode, setPrivacyMode] = useState<boolean>(true)
+  const [privacyMode, setPrivacyMode] = useState<boolean>(false)
   const [clientReveal, setClientReveal] = useState<{ name: boolean; email: boolean; phone: boolean; address: boolean }>({ name: false, email: false, phone: false, address: false })
   const [appointmentReveal, setAppointmentReveal] = useState<{ clientName: boolean; clientEmail: boolean; clientPhone: boolean }>({ clientName: false, clientEmail: false, clientPhone: false })
   const [influencerReveal, setInfluencerReveal] = useState<{ referralCode: boolean; email: boolean; phone: boolean }>({ referralCode: false, email: false, phone: false })
