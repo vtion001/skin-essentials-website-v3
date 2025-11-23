@@ -1,17 +1,17 @@
 import { NextResponse } from "next/server"
-import { jsonMasked } from "@/lib/admin-mask"
+import { jsonMaybeMasked } from "@/lib/admin-mask"
 import { supabaseAdminClient } from "@/lib/supabase-admin"
 import { aesEncrypt, aesDecrypt, aesEncryptToString, aesDecryptFromString, verifyCsrfToken } from "@/lib/utils"
 import { cookies } from "next/headers"
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     const admin = supabaseAdminClient()
     const { data, error } = await admin
       .from('clients')
       .select('*')
       .order('created_at', { ascending: false })
-    if (error) return jsonMasked({ error: error.message }, { status: 500 })
+    if (error) return jsonMaybeMasked(req, { error: error.message }, { status: 500 })
     const decryptJson = (v: any) => aesDecrypt(v) ?? v
     const clients = (data || []).map((c: any) => ({
       ...c,
@@ -23,7 +23,7 @@ export async function GET() {
       allergies: Array.isArray(c.allergies) ? c.allergies : decryptJson(c.allergies),
       preferences: c.preferences && typeof c.preferences === 'object' ? c.preferences : decryptJson(c.preferences),
     }))
-    return jsonMasked({ clients })
+    return jsonMaybeMasked(req, { clients })
   } catch (e: any) {
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })
   }
@@ -35,7 +35,7 @@ export async function POST(req: Request) {
     const cookiesMap = new Map<string, string>()
     cookieStore.getAll().forEach((c: any) => cookiesMap.set(c.name, c.value))
     if (!verifyCsrfToken(req.headers, cookiesMap)) {
-      return jsonMasked({ error: 'Invalid CSRF token' }, { status: 403 })
+      return jsonMaybeMasked(req, { error: 'Invalid CSRF token' }, { status: 403 })
     }
     const raw = await req.json()
     const id = raw.id || `client_${Date.now()}`
@@ -77,12 +77,12 @@ export async function POST(req: Request) {
         const cNameKey = `${norm(c.first_name)} ${norm(c.last_name)}`.trim()
         const dup = (emailNorm && cEmail && emailNorm === cEmail) || (phoneNorm && cPhone && phoneNorm === cPhone) || (!emailNorm && !phoneNorm && nameKey && cNameKey && nameKey === cNameKey)
         if (dup) {
-          return jsonMasked({ error: 'Duplicate client' }, { status: 409 })
+          return jsonMaybeMasked(req, { error: 'Duplicate client' }, { status: 409 })
         }
       }
     }
     const { data, error } = await admin.from('clients').insert(payload).select('*').single()
-    if (error) return jsonMasked({ error: error.message }, { status: 500 })
+    if (error) return jsonMaybeMasked(req, { error: error.message }, { status: 500 })
     const client = {
       ...data,
       email: aesDecryptFromString(data.email) ?? data.email,
@@ -93,7 +93,7 @@ export async function POST(req: Request) {
       allergies: aesDecrypt(data.allergies),
       preferences: aesDecrypt(data.preferences) ?? data.preferences,
     }
-    return jsonMasked({ client })
+    return jsonMaybeMasked(req, { client })
   } catch (e) {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
   }
@@ -105,11 +105,11 @@ export async function PATCH(req: Request) {
     const cookiesMap = new Map<string, string>()
     cookieStore.getAll().forEach((c: any) => cookiesMap.set(c.name, c.value))
     if (!verifyCsrfToken(req.headers, cookiesMap)) {
-      return jsonMasked({ error: 'Invalid CSRF token' }, { status: 403 })
+      return jsonMaybeMasked(req, { error: 'Invalid CSRF token' }, { status: 403 })
     }
     const body = await req.json()
     const { id } = body || {}
-    if (!id) return jsonMasked({ error: 'Missing id' }, { status: 400 })
+    if (!id) return jsonMaybeMasked(req, { error: 'Missing id' }, { status: 400 })
     const toEmergencyContactUpd = (val: any) => {
       if (val === undefined) return undefined
       if (!val) return null
@@ -151,13 +151,13 @@ export async function PATCH(req: Request) {
           const cNameKey = `${norm(c.first_name)} ${norm(c.last_name)}`.trim()
           const dup = (emailNorm && cEmail && emailNorm === cEmail) || (phoneNorm && cPhone && phoneNorm === cPhone) || (!emailNorm && !phoneNorm && nameKey && cNameKey && nameKey === cNameKey)
           if (dup) {
-            return jsonMasked({ error: 'Duplicate client' }, { status: 409 })
+            return jsonMaybeMasked(req, { error: 'Duplicate client' }, { status: 409 })
           }
         }
       }
     }
     const { data, error } = await admin.from('clients').update(updates).eq('id', id).select('*').single()
-    if (error) return jsonMasked({ error: error.message }, { status: 500 })
+    if (error) return jsonMaybeMasked(req, { error: error.message }, { status: 500 })
     const client = {
       ...data,
       email: aesDecryptFromString(data.email) ?? data.email,
@@ -168,9 +168,9 @@ export async function PATCH(req: Request) {
       allergies: aesDecrypt(data.allergies),
       preferences: aesDecrypt(data.preferences) ?? data.preferences,
     }
-    return jsonMasked({ client })
+    return jsonMaybeMasked(req, { client })
   } catch (e) {
-    return jsonMasked({ error: 'Invalid request' }, { status: 400 })
+    return jsonMaybeMasked(req, { error: 'Invalid request' }, { status: 400 })
   }
 }
 
@@ -178,12 +178,12 @@ export async function DELETE(req: Request) {
   try {
     const body = await req.json()
     const { id } = body || {}
-    if (!id) return jsonMasked({ error: 'Missing id' }, { status: 400 })
+    if (!id) return jsonMaybeMasked(req, { error: 'Missing id' }, { status: 400 })
     const admin = supabaseAdminClient()
     const { error } = await admin.from('clients').delete().eq('id', id)
-    if (error) return jsonMasked({ error: error.message }, { status: 500 })
-    return jsonMasked({ success: true })
+    if (error) return jsonMaybeMasked(req, { error: error.message }, { status: 500 })
+    return jsonMaybeMasked(req, { success: true })
   } catch (e) {
-    return jsonMasked({ error: 'Invalid request' }, { status: 400 })
+    return jsonMaybeMasked(req, { error: 'Invalid request' }, { status: 400 })
   }
 }

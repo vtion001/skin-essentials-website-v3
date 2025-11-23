@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server"
-import { jsonMasked } from "@/lib/admin-mask"
+import { jsonMaybeMasked } from "@/lib/admin-mask"
 import { supabaseAdminClient } from "@/lib/supabase-admin"
 
-export async function GET() {
+export async function GET(req: Request) {
   const admin = supabaseAdminClient()
   const { data, error } = await admin.from('influencer_referrals').select('*').order('created_at', { ascending: false })
-  if (error) return jsonMasked({ error: error.message }, { status: 500 })
-  return jsonMasked({ referrals: data || [] })
+  if (error) return jsonMaybeMasked(req, { error: error.message }, { status: 500 })
+  return jsonMaybeMasked(req, { referrals: data || [] })
 }
 
 export async function POST(req: Request) {
@@ -24,14 +24,14 @@ export async function POST(req: Request) {
   }
   const admin = supabaseAdminClient()
   const { data, error } = await admin.from('influencer_referrals').insert(payload).select('*').single()
-  if (error) return jsonMasked({ error: error.message }, { status: 500 })
-  return jsonMasked({ referral: data })
+  if (error) return jsonMaybeMasked(req, { error: error.message }, { status: 500 })
+  return jsonMaybeMasked(req, { referral: data })
 }
 
 export async function PATCH(req: Request) {
   const body = await req.json()
   const { id } = body || {}
-  if (!id) return jsonMasked({ error: 'Missing id' }, { status: 400 })
+  if (!id) return jsonMaybeMasked(req, { error: 'Missing id' }, { status: 400 })
   const updates = {
     influencer_id: body.influencerId ?? body.influencer_id,
     client_id: body.clientId ?? body.client_id,
@@ -43,16 +43,16 @@ export async function PATCH(req: Request) {
   }
   const admin = supabaseAdminClient()
   const { data, error } = await admin.from('influencer_referrals').update(updates).eq('id', id).select('*').single()
-  if (error) return jsonMasked({ error: error.message }, { status: 500 })
-  return jsonMasked({ referral: data })
+  if (error) return jsonMaybeMasked(req, { error: error.message }, { status: 500 })
+  return jsonMaybeMasked(req, { referral: data })
 }
 
 export async function DELETE(req: Request) {
   const body = await req.json()
   const { id } = body || {}
-  if (!id) return jsonMasked({ error: 'Missing id' }, { status: 400 })
+  if (!id) return jsonMaybeMasked(req, { error: 'Missing id' }, { status: 400 })
   const admin = supabaseAdminClient()
   const { error } = await admin.from('influencer_referrals').delete().eq('id', id)
-  if (error) return jsonMasked({ error: error.message }, { status: 500 })
-  return jsonMasked({ success: true })
+  if (error) return jsonMaybeMasked(req, { error: error.message }, { status: 500 })
+  return jsonMaybeMasked(req, { success: true })
 }

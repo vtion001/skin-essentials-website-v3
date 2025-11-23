@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server"
+import { NextResponse, NextRequest } from "next/server"
 
 function maskEmail(v: any): any {
   const s = String(v || "")
@@ -52,4 +52,29 @@ export function jsonMasked(payload: any, init?: number | { status?: number }): R
   const body = masked && typeof masked === "object" ? { ...masked, masked: true } : { data: masked, masked: true }
   const status = typeof init === "number" ? init : init?.status
   return NextResponse.json(body, status ? { status } : {})
+}
+
+function shouldRevealFromReq(req: NextRequest | Request | undefined): boolean {
+  if (!req) return false
+  try {
+    const url = new URL(req.url)
+    const revealParam = url.searchParams.get('reveal')
+    if (revealParam === '1') return true
+  } catch {}
+  const headersAny: any = (req as any).headers
+  const hdrGet = typeof headersAny?.get === 'function' ? (k: string) => headersAny.get(k) : () => null
+  const revealHdr = hdrGet('x-reveal') || hdrGet('X-Reveal')
+  if (revealHdr === '1') return true
+  const referer = hdrGet('referer') || hdrGet('referrer')
+  if (referer && referer.includes('/admin')) return true
+  return false
+}
+
+export function jsonMaybeMasked(req: NextRequest | Request | undefined, payload: any, init?: number | { status?: number }): Response {
+  if (shouldRevealFromReq(req)) {
+    const status = typeof init === "number" ? init : init?.status
+    const body = payload && typeof payload === 'object' ? { ...payload, masked: false } : { data: payload, masked: false }
+    return NextResponse.json(body, status ? { status } : {})
+  }
+  return jsonMasked(payload, init as any)
 }

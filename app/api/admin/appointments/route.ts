@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from "next/server"
-import { jsonMasked } from "@/lib/admin-mask"
+import { jsonMaybeMasked } from "@/lib/admin-mask"
 import { supabaseAdminClient } from "@/lib/supabase-admin"
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     const admin = supabaseAdminClient()
     const { data, error } = await admin
       .from('appointments')
       .select('*')
       .order('created_at', { ascending: false })
-    if (error) return jsonMasked({ error: error.message }, { status: 500 })
-    return jsonMasked({ appointments: data || [] })
+    if (error) return jsonMaybeMasked(req, { error: error.message }, { status: 500 })
+    return jsonMaybeMasked(req, { appointments: data || [] })
   } catch (e: any) {
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })
   }
@@ -37,8 +37,8 @@ export async function POST(req: NextRequest) {
       updated_at: body.updated_at,
     }
     const { data, error } = await admin.from('appointments').insert(payload).select('*').single()
-    if (error) return jsonMasked({ ok: false, error: error.message }, { status: 500 })
-    return jsonMasked({ ok: true, appointment: data })
+    if (error) return jsonMaybeMasked(req, { ok: false, error: error.message }, { status: 500 })
+    return jsonMaybeMasked(req, { ok: true, appointment: data })
   } catch (e: any) {
     return NextResponse.json({ ok: false, error: 'Invalid request' }, { status: 400 })
   }
@@ -65,8 +65,8 @@ export async function PATCH(req: NextRequest) {
       updated_at: updates?.updated_at,
     }
     const { data, error } = await admin.from('appointments').update(normalized).eq('id', id).select('*').single()
-    if (error) return jsonMasked({ ok: false, error: error.message }, { status: 500 })
-    return jsonMasked({ ok: true, appointment: data })
+    if (error) return jsonMaybeMasked(req, { ok: false, error: error.message }, { status: 500 })
+    return jsonMaybeMasked(req, { ok: true, appointment: data })
   } catch (e: any) {
     return NextResponse.json({ ok: false, error: 'Invalid request' }, { status: 400 })
   }
@@ -82,11 +82,11 @@ export async function DELETE(req: NextRequest) {
         id = parsed?.id || null
       } catch {}
     }
-    if (!id) return jsonMasked({ ok: false, error: 'Missing id' }, { status: 400 })
+    if (!id) return jsonMaybeMasked(req, { ok: false, error: 'Missing id' }, { status: 400 })
     const admin = supabaseAdminClient()
     const { error } = await admin.from('appointments').delete().eq('id', id)
-    if (error) return jsonMasked({ ok: false, error: error.message }, { status: 500 })
-    return jsonMasked({ ok: true })
+    if (error) return jsonMaybeMasked(req, { ok: false, error: error.message }, { status: 500 })
+    return jsonMaybeMasked(req, { ok: true })
   } catch (e: any) {
     return NextResponse.json({ ok: false, error: 'Invalid request' }, { status: 400 })
   }
