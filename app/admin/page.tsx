@@ -1020,8 +1020,17 @@ export default function AdminDashboard() {
     setIsLoading(true)
     ;(async () => {
       try {
-        const emailOk = !clientForm.email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientForm.email)
-        const phoneOk = !clientForm.phone || /\+?\d[\d\s-]{6,}$/.test(clientForm.phone)
+        const formEl = e.currentTarget as HTMLFormElement
+        const fd = new FormData(formEl)
+        const firstName = String(fd.get('firstName') || '')
+        const lastName = String(fd.get('lastName') || '')
+        const emailVal = String(fd.get('email') || '')
+        const phoneVal = String(fd.get('phone') || '')
+        const addressVal = String(fd.get('address') || '')
+        const dobVal = String(fd.get('dateOfBirth') || '')
+        const emergencyRaw = String(fd.get('emergencyContact') || '')
+        const emailOk = !emailVal || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)
+        const phoneOk = !phoneVal || /\+?\d[\d\s-]{6,}$/.test(phoneVal)
         if (!emailOk || !phoneOk) {
           showNotification("error", "Please enter valid email and phone")
           setIsLoading(false)
@@ -1030,9 +1039,9 @@ export default function AdminDashboard() {
         setClientDuplicateWarning(null)
         const isEditing = Boolean(selectedClient?.id)
         const norm = (s: any) => String(s || '').trim().toLowerCase()
-        const email = norm(clientForm.email)
-        const phone = norm(clientForm.phone)
-        const nameKey = `${norm(clientForm.firstName)} ${norm(clientForm.lastName)}`.trim()
+        const email = norm(emailVal)
+        const phone = norm(phoneVal)
+        const nameKey = `${norm(firstName)} ${norm(lastName)}`.trim()
         const duplicate = clients.find(c => {
           if (isEditing && c.id === selectedClient!.id) return false
           const cEmail = norm(c.email)
@@ -1048,7 +1057,19 @@ export default function AdminDashboard() {
           return
         }
         const method = selectedClient ? 'PATCH' : 'POST'
-        const payload = selectedClient ? { id: selectedClient.id, ...clientForm } : clientForm
+        const [ecName, ecPhoneRaw] = emergencyRaw.split('(')
+        const emergencyName = String(ecName || '').trim()
+        const emergencyPhone = String((ecPhoneRaw || '').replace(')', '')).trim()
+        const overrides = {
+          firstName,
+          lastName,
+          email: emailVal,
+          phone: phoneVal,
+          address: addressVal,
+          dateOfBirth: dobVal,
+          emergencyContact: emergencyName || emergencyPhone ? { name: emergencyName, phone: emergencyPhone, relationship: 'family' } : clientForm.emergencyContact,
+        }
+        const payload = selectedClient ? { id: selectedClient.id, ...clientForm, ...overrides } : { ...clientForm, ...overrides }
         const res = await fetch('/api/admin/clients', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
         if (!res.ok) throw new Error('Failed')
         await clientService.fetchFromSupabase?.()
@@ -4686,13 +4707,12 @@ export default function AdminDashboard() {
                 <div className="flex items-center gap-2">
                   <Input
                    id="firstName"
-                   value={clientForm.firstName || ''}
-                   onChange={(e) => startTransition(() => setClientForm(prev => ({ ...prev, firstName: e.target.value })))}
+                   name="firstName"
+                   defaultValue={clientForm.firstName || ''}
                    required
-                   type={privacyMode && !clientReveal.name ? 'password' : 'text'}
-                   readOnly={privacyMode && !clientReveal.name}
+                   type="text"
                  />
-                 <Button type="button" variant="outline" className="h-9 px-2" onClick={() => setClientReveal(prev => ({ ...prev, name: !prev.name }))}>{clientReveal.name ? 'Hide' : 'Reveal'}</Button>
+                  <Button type="button" variant="outline" className="h-9 px-2" onClick={() => setClientReveal(prev => ({ ...prev, name: !prev.name }))}>{clientReveal.name ? 'Hide' : 'Reveal'}</Button>
                 </div>
               </div>
               <div>
@@ -4700,13 +4720,12 @@ export default function AdminDashboard() {
                 <div className="flex items-center gap-2">
                   <Input
                    id="lastName"
-                   value={clientForm.lastName || ''}
-                   onChange={(e) => startTransition(() => setClientForm(prev => ({ ...prev, lastName: e.target.value })))}
+                   name="lastName"
+                   defaultValue={clientForm.lastName || ''}
                    required
-                   type={privacyMode && !clientReveal.name ? 'password' : 'text'}
-                   readOnly={privacyMode && !clientReveal.name}
+                   type="text"
                  />
-                 <Button type="button" variant="outline" className="h-9 px-2" onClick={() => setClientReveal(prev => ({ ...prev, name: !prev.name }))}>{clientReveal.name ? 'Hide' : 'Reveal'}</Button>
+                  <Button type="button" variant="outline" className="h-9 px-2" onClick={() => setClientReveal(prev => ({ ...prev, name: !prev.name }))}>{clientReveal.name ? 'Hide' : 'Reveal'}</Button>
                 </div>
               </div>
              </div>
@@ -4717,13 +4736,12 @@ export default function AdminDashboard() {
                 <div className="flex items-center gap-2">
                   <Input
                    id="email"
-                   type={privacyMode && !clientReveal.email ? 'password' : 'email'}
-                   value={clientForm.email || ''}
-                   onChange={(e) => startTransition(() => setClientForm(prev => ({ ...prev, email: e.target.value })))}
+                   name="email"
+                   type="email"
+                   defaultValue={clientForm.email || ''}
                    required
-                   readOnly={privacyMode && !clientReveal.email}
                  />
-                 <Button type="button" variant="outline" className="h-9 px-2" onClick={() => setClientReveal(prev => ({ ...prev, email: !prev.email }))}>{clientReveal.email ? 'Hide' : 'Reveal'}</Button>
+                  <Button type="button" variant="outline" className="h-9 px-2" onClick={() => setClientReveal(prev => ({ ...prev, email: !prev.email }))}>{clientReveal.email ? 'Hide' : 'Reveal'}</Button>
                 </div>
               </div>
               <div>
@@ -4731,13 +4749,12 @@ export default function AdminDashboard() {
                 <div className="flex items-center gap-2">
                   <Input
                    id="phone"
-                   value={clientForm.phone || ''}
-                   onChange={(e) => startTransition(() => setClientForm(prev => ({ ...prev, phone: e.target.value })))}
+                   name="phone"
+                   defaultValue={clientForm.phone || ''}
                    required
-                   type={privacyMode && !clientReveal.phone ? 'password' : 'text'}
-                   readOnly={privacyMode && !clientReveal.phone}
+                   type="text"
                  />
-                 <Button type="button" variant="outline" className="h-9 px-2" onClick={() => setClientReveal(prev => ({ ...prev, phone: !prev.phone }))}>{clientReveal.phone ? 'Hide' : 'Reveal'}</Button>
+                  <Button type="button" variant="outline" className="h-9 px-2" onClick={() => setClientReveal(prev => ({ ...prev, phone: !prev.phone }))}>{clientReveal.phone ? 'Hide' : 'Reveal'}</Button>
                 </div>
               </div>
              </div>
@@ -4747,10 +4764,9 @@ export default function AdminDashboard() {
               <div className="space-y-2">
                 <Textarea
                   id="address"
-                  value={privacyMode && !clientReveal.address ? maskAddress(clientForm.address || '') : (clientForm.address || '')}
-                  onChange={(e) => startTransition(() => setClientForm(prev => ({ ...prev, address: e.target.value })))}
+                  name="address"
+                  defaultValue={clientForm.address || ''}
                   rows={2}
-                  readOnly={privacyMode && !clientReveal.address}
                 />
                 <div className="flex justify-end">
                   <Button type="button" variant="outline" className="h-9 px-2" onClick={() => setClientReveal(prev => ({ ...prev, address: !prev.address }))}>{clientReveal.address ? 'Hide' : 'Reveal'}</Button>
@@ -4760,13 +4776,13 @@ export default function AdminDashboard() {
 
              <div className="grid grid-cols-3 gap-4">
                <div>
-                 <Label htmlFor="dateOfBirth">Date of Birth</Label>
-                 <Input
-                  id="dateOfBirth"
-                  type="date"
-                  value={clientForm.dateOfBirth || ''}
-                  onChange={(e) => startTransition(() => setClientForm(prev => ({ ...prev, dateOfBirth: e.target.value })))}
-                />
+               <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                <Input
+                 id="dateOfBirth"
+                 name="dateOfBirth"
+                 type="date"
+                 defaultValue={clientForm.dateOfBirth || ''}
+               />
                </div>
                <div>
                  <Label htmlFor="gender">Gender</Label>
@@ -4822,20 +4838,14 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-             <div>
-               <Label htmlFor="emergencyContact">Emergency Contact</Label>
-               <Input
-                 id="emergencyContact"
-                 value={clientForm.emergencyContact ? `${clientForm.emergencyContact.name} (${clientForm.emergencyContact.phone})` : ''}
-                 onChange={(e) => startTransition(() => {
-                   const [name, phone] = e.target.value.split('(').map(s => s.trim().replace(')', ''))
-                   setClientForm(prev => ({ 
-                     ...prev, 
-                     emergencyContact: { name: name || '', phone: phone || '', relationship: 'family' }
-                   }))
-                 })}
-                 placeholder="Name and phone number (e.g., John Doe (09123456789))"
-               />
+            <div>
+              <Label htmlFor="emergencyContact">Emergency Contact</Label>
+              <Input
+                id="emergencyContact"
+                name="emergencyContact"
+                defaultValue={clientForm.emergencyContact ? `${clientForm.emergencyContact.name} (${clientForm.emergencyContact.phone})` : ''}
+                placeholder="Name and phone number (e.g., John Doe (09123456789))"
+              />
              </div>
 
              <div className="flex justify-end gap-2">
