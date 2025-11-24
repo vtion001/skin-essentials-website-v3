@@ -213,29 +213,17 @@ const LazyTabContent = memo(({
   children: React.ReactNode
   isActive: boolean
 }) => {
-  const [hasBeenVisible, setHasBeenVisible] = useState(isActive)
-  
-  useEffect(() => {
-    if (isActive && !hasBeenVisible) {
-      setHasBeenVisible(true)
-    }
-  }, [isActive, hasBeenVisible])
-  
+  if (!isActive) return null
   return (
-    <AnimatePresence mode="wait">
-      {(isActive || hasBeenVisible) && (
-        <motion.div
-          key={isActive ? 'active' : 'inactive'}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{ duration: 0.3, ease: "easeInOut" }}
-          className="w-full"
-        >
-          {children}
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.3, ease: "easeInOut" }}
+      className="w-full"
+    >
+      {children}
+    </motion.div>
   )
 })
 
@@ -333,6 +321,12 @@ export default function AdminDashboard() {
   const [appointmentForm, setAppointmentForm] = useState<Partial<Appointment>>({})
   const [paymentForm, setPaymentForm] = useState<Partial<Payment>>({})
   const [medicalRecordForm, setMedicalRecordForm] = useState<Partial<MedicalRecord>>({})
+  const [chiefComplaintText, setChiefComplaintText] = useState<string>("")
+  const [medicalHistoryText, setMedicalHistoryText] = useState<string>("")
+  const [allergiesText, setAllergiesText] = useState<string>("")
+  const [currentMedicationsText, setCurrentMedicationsText] = useState<string>("")
+  const [treatmentPlanText, setTreatmentPlanText] = useState<string>("")
+  const [notesText, setNotesText] = useState<string>("")
   const [clientForm, setClientForm] = useState<Partial<Client>>({})
   const [replyMessage, setReplyMessage] = useState("")
   const [staffForm, setStaffForm] = useState<Partial<Staff>>({})
@@ -972,7 +966,24 @@ export default function AdminDashboard() {
     ;(async () => {
       try {
         const method = selectedMedicalRecord ? 'PATCH' : 'POST'
-        const payload = selectedMedicalRecord ? { id: selectedMedicalRecord.id, ...medicalRecordForm } : medicalRecordForm
+        const formEl = e.currentTarget as HTMLFormElement
+        const fd = new FormData(formEl)
+        const chiefComplaint = String(fd.get('chiefComplaint') || '')
+        const treatmentPlan = String(fd.get('treatmentPlan') || '')
+        const notes = String(fd.get('notes') || '')
+        const medicalHistoryRaw = String(fd.get('medicalHistory') || '')
+        const allergiesRaw = String(fd.get('allergies') || '')
+        const currentMedicationsRaw = String(fd.get('currentMedications') || '')
+        const payloadBase = selectedMedicalRecord ? { id: selectedMedicalRecord.id, ...medicalRecordForm } : medicalRecordForm
+        const payload = {
+          ...payloadBase,
+          chiefComplaint,
+          treatmentPlan,
+          notes,
+          medicalHistory: medicalHistoryRaw.split('\n').filter(item => item.trim()),
+          allergies: allergiesRaw.split('\n').filter(item => item.trim()),
+          currentMedications: currentMedicationsRaw.split('\n').filter(item => item.trim()),
+        }
         const res = await fetch('/api/admin/medical-records', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
         if (!res.ok) throw new Error('Failed')
         try {
@@ -985,10 +996,16 @@ export default function AdminDashboard() {
           }
         } catch {}
         await refreshMedical()
-        showNotification("success", selectedMedicalRecord ? "Medical record updated successfully!" : "Medical record created successfully!")
-        setIsMedicalRecordModalOpen(false)
-        setMedicalRecordForm({})
-        setSelectedMedicalRecord(null)
+          showNotification("success", selectedMedicalRecord ? "Medical record updated successfully!" : "Medical record created successfully!")
+          setIsMedicalRecordModalOpen(false)
+          setMedicalRecordForm({})
+        setChiefComplaintText('')
+        setMedicalHistoryText('')
+        setAllergiesText('')
+        setCurrentMedicationsText('')
+        setTreatmentPlanText('')
+        setNotesText('')
+          setSelectedMedicalRecord(null)
       } catch {
         showNotification("error", "Failed to save medical record")
       } finally {
@@ -1245,6 +1262,12 @@ export default function AdminDashboard() {
     if (record) {
       setSelectedMedicalRecord(record)
       setMedicalRecordForm(record)
+      setChiefComplaintText(String(record.chiefComplaint || ''))
+      setMedicalHistoryText(Array.isArray(record.medicalHistory) ? record.medicalHistory.join('\n') : '')
+      setAllergiesText(Array.isArray(record.allergies) ? record.allergies.join('\n') : '')
+      setCurrentMedicationsText(Array.isArray(record.currentMedications) ? record.currentMedications.join('\n') : '')
+      setTreatmentPlanText(String(record.treatmentPlan || ''))
+      setNotesText(String(record.notes || ''))
     } else {
       setSelectedMedicalRecord(null)
       setMedicalRecordForm({
@@ -1258,9 +1281,22 @@ export default function AdminDashboard() {
         createdBy: 'Admin',
         treatments: []
       })
+      setChiefComplaintText('')
+      setMedicalHistoryText('')
+      setAllergiesText('')
+      setCurrentMedicationsText('')
+      setTreatmentPlanText('')
+      setNotesText('')
     }
     setIsMedicalRecordModalOpen(true)
   }
+
+  const medicalTreatmentItems = React.useMemo(() => {
+    const client = clients.find(c => c.id === (medicalRecordForm.clientId || ''))
+    const clientName = client ? `${client.firstName} ${client.lastName}`.trim() : ''
+    const items = staff.flatMap(s => (Array.isArray(s.treatments) ? s.treatments.map(t => ({ ...t, staffName: `${s.firstName} ${s.lastName}`.trim() })) : []))
+    return items.filter(t => clientName ? (String(t.clientName || '').trim() === clientName) : true)
+  }, [staff, clients, medicalRecordForm.clientId])
 
   const openClientModal = (client?: Client) => {
     if (client) {
@@ -3801,7 +3837,7 @@ export default function AdminDashboard() {
                   <Input
                     id="clientName"
                     value={appointmentForm.clientName || ''}
-                    onChange={(e) => setAppointmentForm(prev => ({ ...prev, clientName: e.target.value }))}
+                    onChange={(e) => startTransition(() => setAppointmentForm(prev => ({ ...prev, clientName: e.target.value })))}
                     required
                     type={privacyMode && !appointmentReveal.clientName ? 'password' : 'text'}
                     readOnly={privacyMode && !appointmentReveal.clientName}
@@ -3816,7 +3852,7 @@ export default function AdminDashboard() {
                     id="clientEmail"
                     type={privacyMode && !appointmentReveal.clientEmail ? 'password' : 'email'}
                     value={appointmentForm.clientEmail || ''}
-                    onChange={(e) => setAppointmentForm(prev => ({ ...prev, clientEmail: e.target.value }))}
+                    onChange={(e) => startTransition(() => setAppointmentForm(prev => ({ ...prev, clientEmail: e.target.value })))}
                     required
                     readOnly={privacyMode && !appointmentReveal.clientEmail}
                   />
@@ -3832,7 +3868,7 @@ export default function AdminDashboard() {
                   <Input
                     id="clientPhone"
                     value={appointmentForm.clientPhone || ''}
-                    onChange={(e) => setAppointmentForm(prev => ({ ...prev, clientPhone: e.target.value }))}
+                    onChange={(e) => startTransition(() => setAppointmentForm(prev => ({ ...prev, clientPhone: e.target.value })))}
                     required
                     type={privacyMode && !appointmentReveal.clientPhone ? 'password' : 'text'}
                     readOnly={privacyMode && !appointmentReveal.clientPhone}
@@ -3867,7 +3903,7 @@ export default function AdminDashboard() {
                   id="date"
                   type="date"
                   value={appointmentForm.date || ''}
-                  onChange={(e) => setAppointmentForm(prev => ({ ...prev, date: e.target.value }))}
+                  onChange={(e) => startTransition(() => setAppointmentForm(prev => ({ ...prev, date: e.target.value })))}
                   required
                 />
               </div>
@@ -3895,7 +3931,7 @@ export default function AdminDashboard() {
                   id="duration"
                   type="number"
                   value={appointmentForm.duration || ''}
-                  onChange={(e) => setAppointmentForm(prev => ({ ...prev, duration: parseInt(e.target.value) }))}
+                  onChange={(e) => startTransition(() => setAppointmentForm(prev => ({ ...prev, duration: parseInt(e.target.value) })))}
                   required
                 />
               </div>
@@ -3908,7 +3944,7 @@ export default function AdminDashboard() {
                   id="price"
                   type="number"
                   value={appointmentForm.price || ''}
-                  onChange={(e) => setAppointmentForm(prev => ({ ...prev, price: parseFloat(e.target.value) }))}
+                  onChange={(e) => startTransition(() => setAppointmentForm(prev => ({ ...prev, price: parseFloat(e.target.value) })))}
                   required
                 />
               </div>
@@ -3937,7 +3973,7 @@ export default function AdminDashboard() {
               <Textarea
                 id="notes"
                 value={appointmentForm.notes || ''}
-                onChange={(e) => setAppointmentForm(prev => ({ ...prev, notes: e.target.value }))}
+                onChange={(e) => startTransition(() => setAppointmentForm(prev => ({ ...prev, notes: e.target.value })))}
                 rows={3}
               />
             </div>
@@ -3988,7 +4024,7 @@ export default function AdminDashboard() {
                   id="amount"
                   type="number"
                   value={paymentForm.amount || ''}
-                  onChange={(e) => setPaymentForm(prev => ({ ...prev, amount: parseFloat(e.target.value) }))}
+                  onChange={(e) => startTransition(() => setPaymentForm(prev => ({ ...prev, amount: parseFloat(e.target.value) })))}
                   required
                 />
               </div>
@@ -4036,7 +4072,7 @@ export default function AdminDashboard() {
               <Input
                 id="transactionId"
                 value={paymentForm.transactionId || ''}
-                onChange={(e) => setPaymentForm(prev => ({ ...prev, transactionId: e.target.value }))}
+                onChange={(e) => startTransition(() => setPaymentForm(prev => ({ ...prev, transactionId: e.target.value })))}
               />
             </div>
 
@@ -4045,7 +4081,7 @@ export default function AdminDashboard() {
               <Textarea
                 id="paymentNotes"
                 value={paymentForm.notes || ''}
-                onChange={(e) => setPaymentForm(prev => ({ ...prev, notes: e.target.value }))}
+                onChange={(e) => startTransition(() => setPaymentForm(prev => ({ ...prev, notes: e.target.value })))}
                 rows={3}
               />
             </div>
@@ -4460,7 +4496,7 @@ export default function AdminDashboard() {
                 <Label htmlFor="recordClientId">Client</Label>
                 <Select
                   value={medicalRecordForm.clientId || ''}
-                  onValueChange={(value) => setMedicalRecordForm(prev => ({ ...prev, clientId: value }))}
+                  onValueChange={(value) => startTransition(() => setMedicalRecordForm(prev => ({ ...prev, clientId: value })))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select client" />
@@ -4480,7 +4516,7 @@ export default function AdminDashboard() {
                   id="recordDate"
                   type="date"
                   value={medicalRecordForm.date || ''}
-                  onChange={(e) => setMedicalRecordForm(prev => ({ ...prev, date: e.target.value }))}
+                  onChange={(e) => startTransition(() => setMedicalRecordForm(prev => ({ ...prev, date: e.target.value })))}
                   required
                 />
               </div>
@@ -4490,8 +4526,8 @@ export default function AdminDashboard() {
               <Label htmlFor="chiefComplaint">Chief Complaint</Label>
               <Textarea
                 id="chiefComplaint"
-                value={medicalRecordForm.chiefComplaint || ''}
-                onChange={(e) => setMedicalRecordForm(prev => ({ ...prev, chiefComplaint: e.target.value }))}
+                name="chiefComplaint"
+                defaultValue={chiefComplaintText}
                 rows={3}
                 required
               />
@@ -4501,11 +4537,8 @@ export default function AdminDashboard() {
               <Label htmlFor="medicalHistory">Medical History (one per line)</Label>
               <Textarea
                 id="medicalHistory"
-                value={Array.isArray(medicalRecordForm.medicalHistory) ? medicalRecordForm.medicalHistory.join('\n') : ''}
-                onChange={(e) => setMedicalRecordForm(prev => ({ 
-                  ...prev, 
-                  medicalHistory: e.target.value.split('\n').filter(item => item.trim()) 
-                }))}
+                name="medicalHistory"
+                defaultValue={medicalHistoryText}
                 rows={3}
               />
             </div>
@@ -4515,11 +4548,8 @@ export default function AdminDashboard() {
                 <Label htmlFor="allergies">Allergies (one per line)</Label>
                 <Textarea
                   id="allergies"
-                  value={Array.isArray(medicalRecordForm.allergies) ? medicalRecordForm.allergies.join('\n') : ''}
-                  onChange={(e) => setMedicalRecordForm(prev => ({ 
-                    ...prev, 
-                    allergies: e.target.value.split('\n').filter(item => item.trim()) 
-                  }))}
+                  name="allergies"
+                  defaultValue={allergiesText}
                   rows={3}
                 />
               </div>
@@ -4527,11 +4557,8 @@ export default function AdminDashboard() {
                 <Label htmlFor="currentMedications">Current Medications (one per line)</Label>
                 <Textarea
                   id="currentMedications"
-                  value={Array.isArray(medicalRecordForm.currentMedications) ? medicalRecordForm.currentMedications.join('\n') : ''}
-                  onChange={(e) => setMedicalRecordForm(prev => ({ 
-                    ...prev, 
-                    currentMedications: e.target.value.split('\n').filter(item => item.trim()) 
-                  }))}
+                  name="currentMedications"
+                  defaultValue={currentMedicationsText}
                   rows={3}
                 />
               </div>
@@ -4541,8 +4568,8 @@ export default function AdminDashboard() {
               <Label htmlFor="treatmentPlan">Treatment Plan</Label>
               <Textarea
                 id="treatmentPlan"
-                value={medicalRecordForm.treatmentPlan || ''}
-                onChange={(e) => setMedicalRecordForm(prev => ({ ...prev, treatmentPlan: e.target.value }))}
+                name="treatmentPlan"
+                defaultValue={treatmentPlanText}
                 rows={4}
                 required
               />
@@ -4551,10 +4578,7 @@ export default function AdminDashboard() {
             <div className="space-y-3">
               <Label>Treatment Tracking</Label>
               {(() => {
-                const client = clients.find(c => c.id === medicalRecordForm.clientId)
-                const clientName = client ? `${client.firstName} ${client.lastName}`.trim() : ''
-                const items = staff.flatMap(s => (Array.isArray(s.treatments) ? s.treatments.map(t => ({ ...t, staffName: `${s.firstName} ${s.lastName}`.trim() })) : []))
-                  .filter(t => clientName ? (String(t.clientName || '').trim() === clientName) : true)
+                const items = medicalTreatmentItems
                 if (items.length === 0) {
                   return (<div className="text-sm text-muted-foreground">No treatments recorded for this client yet.</div>)
                 }
@@ -4587,8 +4611,8 @@ export default function AdminDashboard() {
               <Label htmlFor="recordNotes">Additional Notes</Label>
               <Textarea
                 id="recordNotes"
-                value={medicalRecordForm.notes || ''}
-                onChange={(e) => setMedicalRecordForm(prev => ({ ...prev, notes: e.target.value }))}
+                name="notes"
+                defaultValue={notesText}
                 rows={3}
               />
             </div>
