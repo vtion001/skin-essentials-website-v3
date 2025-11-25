@@ -915,11 +915,32 @@ export default function AdminDashboard() {
     setIsLoading(true)
     
     try {
+      const formEl = e.currentTarget as HTMLFormElement
+      const fd = new FormData(formEl)
+      const clientName = String(fd.get('clientName') || '')
+      const clientEmail = String(fd.get('clientEmail') || '')
+      const clientPhone = String(fd.get('clientPhone') || '')
+      const durationRaw = String(fd.get('duration') || '')
+      const priceRaw = String(fd.get('price') || '')
+      const notes = String(fd.get('notes') || '')
+      const duration = durationRaw ? parseInt(durationRaw) : (appointmentForm.duration || 0)
+      const price = priceRaw ? parseFloat(priceRaw) : (appointmentForm.price || 0)
+
+      const payloadBase = {
+        ...appointmentForm,
+        clientName,
+        clientEmail,
+        clientPhone,
+        duration,
+        price,
+        notes,
+      }
+
       if (selectedAppointment) {
-        appointmentService.updateAppointment(selectedAppointment.id, appointmentForm)
+        appointmentService.updateAppointment(selectedAppointment.id, payloadBase)
         showNotification("success", "Appointment updated successfully!")
       } else {
-        appointmentService.addAppointment(appointmentForm as Omit<Appointment, "id" | "createdAt" | "updatedAt">)
+        appointmentService.addAppointment(payloadBase as Omit<Appointment, "id" | "createdAt" | "updatedAt">)
         showNotification("success", "Appointment created successfully!")
       }
       
@@ -941,7 +962,18 @@ export default function AdminDashboard() {
     ;(async () => {
       try {
         const method = selectedPayment ? 'PATCH' : 'POST'
-        const payload = selectedPayment ? { id: selectedPayment.id, ...paymentForm } : paymentForm
+        const formEl = e.currentTarget as HTMLFormElement
+        const fd = new FormData(formEl)
+        const amountRaw = String(fd.get('amount') || '')
+        const transactionId = String(fd.get('transactionId') || '')
+        const notes = String(fd.get('notes') || '')
+        const payloadBase = selectedPayment ? { id: selectedPayment.id, ...paymentForm } : paymentForm
+        const payload = {
+          ...payloadBase,
+          amount: amountRaw ? parseFloat(amountRaw) : (payloadBase.amount || 0),
+          transactionId,
+          notes,
+        }
         const res = await fetch('/api/admin/payments', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
         if (!res.ok) throw new Error('Failed')
         const listRes = await fetch('/api/admin/payments', { cache: 'no-store' })
@@ -3865,8 +3897,8 @@ export default function AdminDashboard() {
 </div>
 
     {/* Appointment Modal */}
-      <Dialog open={isAppointmentModalOpen} onOpenChange={setIsAppointmentModalOpen}>
-         <DialogContent className="max-w-2xl will-change-transform [backface-visibility:hidden] [transform:translateZ(0)] [contain:layout_paint]">
+      <Dialog open={isAppointmentModalOpen} onOpenChange={setIsAppointmentModalOpen} modal={false}>
+         <DialogContent className="max-w-2xl pointer-events-auto">
           <DialogHeader>
             <DialogTitle>
               {selectedAppointment ? 'Edit Appointment' : 'New Appointment'}
@@ -3879,11 +3911,14 @@ export default function AdminDashboard() {
                 <div className="flex items-center gap-2">
                   <Input
                     id="clientName"
-                    value={appointmentForm.clientName || ''}
-                    onChange={(e) => startTransition(() => setAppointmentForm(prev => ({ ...prev, clientName: e.target.value })))}
+                    name="clientName"
+                    autoFocus
+                    defaultValue={selectedAppointment ? (selectedAppointment.clientName || '') : (appointmentForm.clientName || '')}
                     required
-                    type={privacyMode && !appointmentReveal.clientName ? 'password' : 'text'}
-                    readOnly={privacyMode && !appointmentReveal.clientName}
+                    type="text"
+                    autoComplete="off"
+                    onKeyDown={(e) => e.stopPropagation()}
+                    onInput={(e) => e.stopPropagation()}
                   />
                   <Button type="button" variant="outline" className="h-9 px-2" onClick={() => setAppointmentReveal(prev => ({ ...prev, clientName: !prev.clientName }))}>{appointmentReveal.clientName ? 'Hide' : 'Reveal'}</Button>
                 </div>
@@ -3893,11 +3928,13 @@ export default function AdminDashboard() {
                 <div className="flex items-center gap-2">
                   <Input
                     id="clientEmail"
-                    type={privacyMode && !appointmentReveal.clientEmail ? 'password' : 'email'}
-                    value={appointmentForm.clientEmail || ''}
-                    onChange={(e) => startTransition(() => setAppointmentForm(prev => ({ ...prev, clientEmail: e.target.value })))}
+                    type="email"
+                    name="clientEmail"
+                    defaultValue={selectedAppointment ? (selectedAppointment.clientEmail || '') : (appointmentForm.clientEmail || '')}
                     required
-                    readOnly={privacyMode && !appointmentReveal.clientEmail}
+                    autoComplete="off"
+                    onKeyDown={(e) => e.stopPropagation()}
+                    onInput={(e) => e.stopPropagation()}
                   />
                   <Button type="button" variant="outline" className="h-9 px-2" onClick={() => setAppointmentReveal(prev => ({ ...prev, clientEmail: !prev.clientEmail }))}>{appointmentReveal.clientEmail ? 'Hide' : 'Reveal'}</Button>
                 </div>
@@ -3910,11 +3947,13 @@ export default function AdminDashboard() {
                 <div className="flex items-center gap-2">
                   <Input
                     id="clientPhone"
-                    value={appointmentForm.clientPhone || ''}
-                    onChange={(e) => startTransition(() => setAppointmentForm(prev => ({ ...prev, clientPhone: e.target.value })))}
+                    name="clientPhone"
+                    defaultValue={selectedAppointment ? (selectedAppointment.clientPhone || '') : (appointmentForm.clientPhone || '')}
                     required
-                    type={privacyMode && !appointmentReveal.clientPhone ? 'password' : 'text'}
-                    readOnly={privacyMode && !appointmentReveal.clientPhone}
+                    type="tel"
+                    autoComplete="off"
+                    onKeyDown={(e) => e.stopPropagation()}
+                    onInput={(e) => e.stopPropagation()}
                   />
                   <Button type="button" variant="outline" className="h-9 px-2" onClick={() => setAppointmentReveal(prev => ({ ...prev, clientPhone: !prev.clientPhone }))}>{appointmentReveal.clientPhone ? 'Hide' : 'Reveal'}</Button>
                 </div>
@@ -3973,9 +4012,11 @@ export default function AdminDashboard() {
                 <Input
                   id="duration"
                   type="number"
-                  value={appointmentForm.duration || ''}
-                  onChange={(e) => startTransition(() => setAppointmentForm(prev => ({ ...prev, duration: parseInt(e.target.value) })))}
+                  name="duration"
+                  defaultValue={selectedAppointment ? String(selectedAppointment.duration || '') : String(appointmentForm.duration || '')}
                   required
+                  onKeyDown={(e) => e.stopPropagation()}
+                  onInput={(e) => e.stopPropagation()}
                 />
               </div>
             </div>
@@ -3986,9 +4027,11 @@ export default function AdminDashboard() {
                 <Input
                   id="price"
                   type="number"
-                  value={appointmentForm.price || ''}
-                  onChange={(e) => startTransition(() => setAppointmentForm(prev => ({ ...prev, price: parseFloat(e.target.value) })))}
+                  name="price"
+                  defaultValue={selectedAppointment ? String(selectedAppointment.price || '') : String(appointmentForm.price || '')}
                   required
+                  onKeyDown={(e) => e.stopPropagation()}
+                  onInput={(e) => e.stopPropagation()}
                 />
               </div>
               <div>
@@ -4015,9 +4058,11 @@ export default function AdminDashboard() {
               <Label htmlFor="notes">Notes</Label>
               <Textarea
                 id="notes"
-                value={appointmentForm.notes || ''}
-                onChange={(e) => startTransition(() => setAppointmentForm(prev => ({ ...prev, notes: e.target.value })))}
+                name="notes"
+                defaultValue={selectedAppointment ? (selectedAppointment.notes || '') : (appointmentForm.notes || '')}
                 rows={3}
+                onKeyDown={(e) => e.stopPropagation()}
+                onInput={(e) => e.stopPropagation()}
               />
             </div>
 
@@ -4065,9 +4110,9 @@ export default function AdminDashboard() {
                 <Label htmlFor="amount">Amount (₱)</Label>
                 <Input
                   id="amount"
+                  name="amount"
                   type="number"
-                  value={paymentForm.amount || ''}
-                  onChange={(e) => startTransition(() => setPaymentForm(prev => ({ ...prev, amount: parseFloat(e.target.value) })))}
+                  defaultValue={selectedPayment ? String(selectedPayment.amount || '') : String(paymentForm.amount || '')}
                   required
                 />
               </div>
@@ -4114,8 +4159,8 @@ export default function AdminDashboard() {
               <Label htmlFor="transactionId">Transaction ID</Label>
               <Input
                 id="transactionId"
-                value={paymentForm.transactionId || ''}
-                onChange={(e) => startTransition(() => setPaymentForm(prev => ({ ...prev, transactionId: e.target.value })))}
+                name="transactionId"
+                defaultValue={selectedPayment ? (selectedPayment.transactionId || '') : (paymentForm.transactionId || '')}
               />
             </div>
 
@@ -4123,8 +4168,8 @@ export default function AdminDashboard() {
               <Label htmlFor="paymentNotes">Notes</Label>
               <Textarea
                 id="paymentNotes"
-                value={paymentForm.notes || ''}
-                onChange={(e) => startTransition(() => setPaymentForm(prev => ({ ...prev, notes: e.target.value })))}
+                name="notes"
+                defaultValue={selectedPayment ? (selectedPayment.notes || '') : (paymentForm.notes || '')}
                 rows={3}
               />
             </div>
