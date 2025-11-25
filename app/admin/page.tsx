@@ -1140,15 +1140,37 @@ export default function AdminDashboard() {
     setIsLoading(true)
     ;(async () => {
       try {
-        const emailOk = !staffForm.email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(staffForm.email))
-        const phoneOk = !staffForm.phone || /\+?\d[\d\s-]{6,}$/.test(String(staffForm.phone))
+        const formEl = e.currentTarget as HTMLFormElement
+        const fd = new FormData(formEl)
+        const firstName = String(fd.get('staffFirstName') || '')
+        const lastName = String(fd.get('staffLastName') || '')
+        const emailVal = String(fd.get('staffEmail') || '')
+        const phoneVal = String(fd.get('staffPhone') || '')
+        const departmentVal = String(fd.get('staffDepartment') || '')
+        const licenseVal = String(fd.get('licenseNumber') || '')
+        const hireDateVal = String(fd.get('hireDate') || '')
+        const specialtiesRaw = String(fd.get('specialties') || '')
+        const notesVal = String(fd.get('staffNotes') || '')
+        const emailOk = !emailVal || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)
+        const phoneOk = !phoneVal || /\+?\d[\d\s-]{6,}$/.test(phoneVal)
         if (!emailOk || !phoneOk) {
           showNotification("error", "Please enter valid email and phone")
           setIsLoading(false)
           return
         }
         const method = selectedStaff ? 'PATCH' : 'POST'
-        const payload = selectedStaff ? { id: selectedStaff.id, ...staffForm } : staffForm
+        const overrides = {
+          firstName,
+          lastName,
+          email: emailVal,
+          phone: phoneVal,
+          department: departmentVal,
+          licenseNumber: licenseVal,
+          hireDate: hireDateVal,
+          specialties: specialtiesRaw.split('\n').filter(i => i.trim()),
+          notes: notesVal,
+        }
+        const payload = selectedStaff ? { id: selectedStaff.id, ...staffForm, ...overrides } : { ...staffForm, ...overrides }
         const res = await fetch('/api/admin/staff', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
         if (!res.ok) throw new Error('Failed')
         try {
@@ -4596,36 +4618,102 @@ export default function AdminDashboard() {
               />
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-4">
               <Label>Treatment Tracking</Label>
-              {(() => {
-                const items = medicalTreatmentItems
-                if (items.length === 0) {
-                  return (<div className="text-sm text-muted-foreground">No treatments recorded for this client yet.</div>)
-                }
-                return (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Procedure</TableHead>
-                        <TableHead>Staff</TableHead>
-                        <TableHead className="text-right">Total</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {items.map((t, i) => (
-                        <TableRow key={i}>
-                          <TableCell>{t.date || '-'}</TableCell>
-                          <TableCell className="max-w-[12rem] truncate">{t.procedure}</TableCell>
-                          <TableCell className="max-w-[12rem] truncate">{t.staffName}</TableCell>
-                          <TableCell className="text-right">{Number(t.total || 0).toLocaleString()}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )
-              })()}
+              {(Array.isArray(medicalRecordForm.treatments) ? medicalRecordForm.treatments : []).map((t, idx) => (
+                <div key={idx} className="grid grid-cols-12 gap-3 items-end">
+                  <div className="col-span-3">
+                    <Label htmlFor={`mr_t_date_${idx}`}>Date</Label>
+                    <Input
+                      id={`mr_t_date_${idx}`}
+                      type="date"
+                      value={t?.date || ''}
+                      onChange={(e) => setMedicalRecordForm(prev => ({
+                        ...prev,
+                        treatments: (prev.treatments || []).map((x, i) => i === idx ? { ...x, date: e.target.value } : x)
+                      }))}
+                    />
+                  </div>
+                  <div className="col-span-4">
+                    <Label htmlFor={`mr_t_procedure_${idx}`}>Procedure</Label>
+                    <Select
+                      value={t?.procedure || ''}
+                      onValueChange={(value) => setMedicalRecordForm(prev => ({
+                        ...prev,
+                        treatments: (prev.treatments || []).map((x, i) => i === idx ? { ...x, procedure: value } : x)
+                      }))}
+                    >
+                      <SelectTrigger id={`mr_t_procedure_${idx}`}>
+                        <SelectValue placeholder="Select procedure" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {procedureOptions.map(name => (
+                          <SelectItem key={name} value={name}>{name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="col-span-3">
+                    <Label htmlFor={`mr_t_staff_${idx}`}>Staff</Label>
+                    <Select
+                      value={t?.aestheticianId || ''}
+                      onValueChange={(value) => setMedicalRecordForm(prev => ({
+                        ...prev,
+                        treatments: (prev.treatments || []).map((x, i) => {
+                          if (i !== idx) return x
+                          const person = staff.find(s => s.id === value)
+                          const staffName = person ? `${person.firstName} ${person.lastName}`.trim() : ''
+                          return { ...x, aestheticianId: value, staffName }
+                        })
+                      }))}
+                    >
+                      <SelectTrigger id={`mr_t_staff_${idx}`}>
+                        <SelectValue placeholder="Select staff" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {staff.map(s => (
+                          <SelectItem key={s.id} value={s.id}>{`${s.firstName} ${s.lastName}`.trim()}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="col-span-2">
+                    <Label htmlFor={`mr_t_total_${idx}`}>Total</Label>
+                    <Input
+                      id={`mr_t_total_${idx}`}
+                      type="number"
+                      value={typeof t?.total === 'number' ? t.total : 0}
+                      onChange={(e) => setMedicalRecordForm(prev => ({
+                        ...prev,
+                        treatments: (prev.treatments || []).map((x, i) => i === idx ? { ...x, total: Number(e.target.value || 0) } : x)
+                      }))}
+                    />
+                  </div>
+                  <div className="col-span-12 flex justify-end">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setMedicalRecordForm(prev => ({
+                        ...prev,
+                        treatments: (prev.treatments || []).filter((_, i) => i !== idx)
+                      }))}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setMedicalRecordForm(prev => ({
+                  ...prev,
+                  treatments: [ ...(prev.treatments || []), { date: prev.date || new Date().toISOString().split('T')[0], procedure: '', aestheticianId: '', staffName: '', total: 0 } ]
+                }))}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Treatment
+              </Button>
             </div>
 
             <div>
@@ -4870,23 +4958,23 @@ export default function AdminDashboard() {
            <form onSubmit={handleStaffSubmit} className="space-y-4">
              <div className="grid grid-cols-2 gap-4">
                <div>
-                 <Label htmlFor="staffFirstName">First Name</Label>
-                 <Input id="staffFirstName" value={staffForm.firstName || ''} onChange={(e) => setStaffForm(prev => ({ ...prev, firstName: e.target.value }))} required />
+                <Label htmlFor="staffFirstName">First Name</Label>
+                <Input id="staffFirstName" name="staffFirstName" defaultValue={staffForm.firstName || ''} required />
                </div>
                <div>
-                 <Label htmlFor="staffLastName">Last Name</Label>
-                 <Input id="staffLastName" value={staffForm.lastName || ''} onChange={(e) => setStaffForm(prev => ({ ...prev, lastName: e.target.value }))} required />
+                <Label htmlFor="staffLastName">Last Name</Label>
+                <Input id="staffLastName" name="staffLastName" defaultValue={staffForm.lastName || ''} required />
                </div>
              </div>
 
              <div className="grid grid-cols-2 gap-4">
                <div>
-                 <Label htmlFor="staffEmail">Email</Label>
-                 <Input id="staffEmail" type="email" value={staffForm.email || ''} onChange={(e) => setStaffForm(prev => ({ ...prev, email: e.target.value }))} required />
+                <Label htmlFor="staffEmail">Email</Label>
+                <Input id="staffEmail" name="staffEmail" type="email" defaultValue={staffForm.email || ''} required />
                </div>
                <div>
-                 <Label htmlFor="staffPhone">Phone</Label>
-                 <Input id="staffPhone" value={staffForm.phone || ''} onChange={(e) => setStaffForm(prev => ({ ...prev, phone: e.target.value }))} required />
+                <Label htmlFor="staffPhone">Phone</Label>
+                <Input id="staffPhone" name="staffPhone" defaultValue={staffForm.phone || ''} required />
                </div>
              </div>
 
@@ -4911,19 +4999,19 @@ export default function AdminDashboard() {
                  </Select>
                </div>
                <div>
-                 <Label htmlFor="staffDepartment">Department</Label>
-                 <Input id="staffDepartment" value={staffForm.department || ''} onChange={(e) => setStaffForm(prev => ({ ...prev, department: e.target.value }))} />
+                <Label htmlFor="staffDepartment">Department</Label>
+                <Input id="staffDepartment" name="staffDepartment" defaultValue={staffForm.department || ''} />
                </div>
              </div>
 
              <div className="grid grid-cols-2 gap-4">
                <div>
-                 <Label htmlFor="licenseNumber">License Number</Label>
-                 <Input id="licenseNumber" value={staffForm.licenseNumber || ''} onChange={(e) => setStaffForm(prev => ({ ...prev, licenseNumber: e.target.value }))} />
+                <Label htmlFor="licenseNumber">License Number</Label>
+                <Input id="licenseNumber" name="licenseNumber" defaultValue={staffForm.licenseNumber || ''} />
                </div>
                <div>
-                 <Label htmlFor="hireDate">Hire Date</Label>
-                 <Input id="hireDate" type="date" value={staffForm.hireDate || ''} onChange={(e) => setStaffForm(prev => ({ ...prev, hireDate: e.target.value }))} />
+                <Label htmlFor="hireDate">Hire Date</Label>
+                <Input id="hireDate" name="hireDate" type="date" defaultValue={staffForm.hireDate || ''} />
                </div>
              </div>
 
@@ -4943,8 +5031,8 @@ export default function AdminDashboard() {
                  </Select>
                </div>
                <div>
-                 <Label htmlFor="specialties">Specialties (one per line)</Label>
-                 <Textarea id="specialties" rows={3} value={Array.isArray(staffForm.specialties) ? staffForm.specialties.join('\n') : ''} onChange={(e) => setStaffForm(prev => ({ ...prev, specialties: e.target.value.split('\n').filter(i => i.trim()) }))} />
+                <Label htmlFor="specialties">Specialties (one per line)</Label>
+                <Textarea id="specialties" name="specialties" rows={3} defaultValue={Array.isArray(staffForm.specialties) ? staffForm.specialties.join('\n') : ''} />
                </div>
              </div>
 
@@ -4996,8 +5084,8 @@ export default function AdminDashboard() {
               </div>
 
              <div>
-               <Label htmlFor="staffNotes">Notes</Label>
-                 <Textarea id="staffNotes" rows={3} value={staffForm.notes || ''} onChange={(e) => setStaffForm(prev => ({ ...prev, notes: e.target.value }))} />
+              <Label htmlFor="staffNotes">Notes</Label>
+                <Textarea id="staffNotes" name="staffNotes" rows={3} defaultValue={staffForm.notes || ''} />
              </div>
 
              <div className="flex justify-end gap-2">
