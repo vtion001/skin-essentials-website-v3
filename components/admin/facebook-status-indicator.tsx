@@ -96,15 +96,15 @@ export function FacebookStatusIndicator() {
   )
 
   useEffect(() => {
-    check()
+    setTimeout(() => { check() }, 0)
     const onStorage = (e: StorageEvent) => {
       if (e.key === 'social_connections_data' || e.key === 'facebook_connection') {
         console.log('[FB_STATUS] storage change detected, rechecking')
-        check()
+        setTimeout(() => { check() }, 0)
       }
     }
     window.addEventListener('storage', onStorage)
-    timer.current = setInterval(check, 10000)
+    timer.current = setInterval(() => { check() }, 10000)
     return () => {
       window.removeEventListener('storage', onStorage)
       if (timer.current) clearInterval(timer.current)

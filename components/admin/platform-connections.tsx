@@ -294,7 +294,7 @@ export function PlatformConnections({ socialMediaService, onConnectionsChange }:
               <ul className="text-sm text-gray-600 space-y-1 ml-4">
                 <li>• Ensure you have admin access to the Facebook page</li>
                 <li>• The page must have messaging enabled</li>
-                <li>• You'll need to grant permissions for message management</li>
+                <li>• You&rsquo;ll need to grant permissions for message management</li>
               </ul>
             </div>
             <div>

@@ -20,40 +20,35 @@ interface BookingModalProps {
 }
 
 export function BookingModal({ isOpen, onClose, defaultServiceId }: BookingModalProps) {
-  const [step, setStep] = useState<1 | 2 | 3>(1)
+  const [step, setStep] = useState<1 | 2 | 3>(() => (isOpen && defaultServiceId ? 2 : 1))
   const [selectedService, setSelectedService] = useState(defaultServiceId ?? "")
   const [serviceQuery, setServiceQuery] = useState("")
   const [formData, setFormData] = useState({ name: "", email: "", phone: "", date: "", time: "", message: "" })
   const contentRef = useRef<HTMLDivElement>(null)
   const [sourcePlatform, setSourcePlatform] = useState<string>("")
   const [useInfluencer, setUseInfluencer] = useState<boolean>(false)
-  const [influencers, setInfluencers] = useState<Influencer[]>([])
   const [selectedInfluencerId, setSelectedInfluencerId] = useState<string>("")
   const [referralCode, setReferralCode] = useState<string>("")
 
   useEffect(() => {
-    if (isOpen && defaultServiceId) {
-      setSelectedService(defaultServiceId)
-      setStep(2)
+    if (isOpen) {
       contentRef.current?.scrollTo({ top: 0, behavior: "smooth" })
     }
-  }, [defaultServiceId, isOpen])
+  }, [isOpen])
 
   useEffect(() => {
     contentRef.current?.scrollTo({ top: 0, behavior: "smooth" })
   }, [step])
 
-  useEffect(() => {
-    try {
-      setInfluencers(influencerService.getAllInfluencers())
-    } catch {}
-  }, [])
+  const [influencers, setInfluencers] = useState<Influencer[]>(() => {
+    try { return influencerService.getAllInfluencers() } catch { return [] }
+  })
 
   const toId = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
   const services = useMemo(
     () => [
       { id: "consultation", name: "Free Consultation", price: "Free", duration: "30 mins", description: "Personalized assessment and treatment planning", popular: true },
-      ...serviceCategories.flatMap((cat) => cat.services.map((s) => ({ id: toId(s.name), name: s.name, price: s.price, duration: s.duration ?? "", description: s.description }))),
+      ...serviceCategories.flatMap((cat) => cat.services.map((s) => ({ id: toId(s.name), name: s.name, price: s.price, duration: s.duration ?? "", description: s.description, popular: false }))),
     ],
     [serviceCategories]
   )

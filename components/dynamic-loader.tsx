@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, lazy, ComponentType } from 'react'
+import { ComponentType, useEffect, useMemo, useState } from 'react'
 
 // Custom skeleton component
 function Skeleton({ className = '' }: { className?: string }) {
@@ -56,15 +56,28 @@ export function DynamicComponent<T extends ComponentType<any>>({
   loading?: ComponentType
   error?: ComponentType<{ error: Error; retry: () => void }>
 } & React.ComponentProps<T>) {
-  const LazyComponent = lazy(loader)
-  
-  const LoadingComponent = loading || (() => <EnhancedLoading />)
-  
-  return (
-    <Suspense fallback={<LoadingComponent />}>
-      <LazyComponent {...props} />
-    </Suspense>
-  )
+  const [Comp, setComp] = useState<T | null>(null)
+  const [err, setErr] = useState<Error | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    loader()
+      .then((mod: { default: T }) => { if (!cancelled) setComp(mod.default) })
+      .catch((e: unknown) => { if (!cancelled) setErr(e instanceof Error ? e : new Error(String(e))) })
+    return () => { cancelled = true }
+  }, [loader])
+
+  const LoadingComponent = useMemo(() => loading || EnhancedLoading, [loading])
+
+  if (err && error) {
+    const ErrorComponent = error
+    return <ErrorComponent error={err} retry={() => setErr(null)} />
+  }
+  if (!Comp) {
+    const LC = LoadingComponent as ComponentType
+    return <LC />
+  }
+  const C = Comp as ComponentType<any>
+  return <C {...props} />
 }
 
 // Preload function for critical components
@@ -76,16 +89,18 @@ export function preloadComponent<T>(loader: () => Promise<{ default: T }>) {
 // Hook for intersection-based lazy loading
 export function useLazyLoad<T extends ComponentType<any>>(
   loader: () => Promise<{ default: T }>,
-  options: IntersectionObserverInit = {}
+  _options: IntersectionObserverInit = {}
 ) {
-  const LazyComponent = lazy(loader)
-  
   return function LazyLoadedComponent(props: React.ComponentProps<T>) {
-    return (
-      <Suspense fallback={<EnhancedLoading />}>
-        <LazyComponent {...props} />
-      </Suspense>
-    )
+    const [Comp, setComp] = useState<T | null>(null)
+    useEffect(() => {
+      let cancelled = false
+      loader().then((mod: { default: T }) => { if (!cancelled) setComp(mod.default) })
+      return () => { cancelled = true }
+    }, [loader])
+    if (!Comp) return <EnhancedLoading />
+    const C = Comp as ComponentType<any>
+    return <C {...props} />
   }
 }
 
@@ -94,13 +109,19 @@ export function createRouteComponent<T extends ComponentType<any>>(
   loader: () => Promise<{ default: T }>,
   LoadingComponent?: ComponentType
 ) {
-  const RouteComponent = lazy(loader)
-  
   return function WrappedRouteComponent(props: React.ComponentProps<T>) {
-    return (
-      <Suspense fallback={LoadingComponent ? <LoadingComponent /> : <EnhancedLoading showSkeleton={false} />}>
-        <RouteComponent {...props} />
-      </Suspense>
-    )
+    const [Comp, setComp] = useState<T | null>(null)
+    useEffect(() => {
+      let cancelled = false
+      loader().then((mod: { default: T }) => { if (!cancelled) setComp(mod.default) })
+      return () => { cancelled = true }
+    }, [loader])
+    if (!Comp) {
+      const LC = LoadingComponent || ((p: any) => <EnhancedLoading showSkeleton={false} {...p} />)
+      const L = LC as ComponentType
+      return <L />
+    }
+    const C = Comp as ComponentType<any>
+    return <C {...props} />
   }
 }

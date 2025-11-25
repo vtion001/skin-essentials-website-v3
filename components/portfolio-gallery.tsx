@@ -12,11 +12,11 @@ import { OptimizedImage } from "@/components/optimized-image"
 import { portfolioService, type PortfolioItem } from "@/lib/portfolio-data"
 
 export function PortfolioGallery() {
-  const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([])
+  const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>(() => portfolioService.getAllItems())
   const [selectedItem, setSelectedItem] = useState<PortfolioItem | null>(null)
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [revealedMap, setRevealedMap] = useState<Record<string, boolean>>({})
   const [showSimilar, setShowSimilar] = useState<boolean>(false)
   const [isBookingOpen, setIsBookingOpen] = useState(false)
@@ -48,12 +48,6 @@ export function PortfolioGallery() {
   }
 
   useEffect(() => {
-    // Load initial data
-    const items = portfolioService.getAllItems()
-    setPortfolioItems(items)
-    setIsLoading(false)
-    console.log("Portfolio gallery loaded:", items.length, "items")
-
     // Subscribe to updates
     const unsubscribe = portfolioService.subscribe((updatedItems) => {
       console.log("Portfolio gallery received update:", updatedItems.length, "items")

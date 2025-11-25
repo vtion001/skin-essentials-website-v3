@@ -69,6 +69,7 @@ export function OptimizedImage({
           {fill ? (
             <Image
               {...imageProps}
+              alt={alt}
               fill
               priority={priority}
               placeholder={placeholder}
@@ -77,6 +78,7 @@ export function OptimizedImage({
           ) : (
             <Image
               {...imageProps}
+              alt={alt}
               width={width}
               height={height}
               priority={priority}

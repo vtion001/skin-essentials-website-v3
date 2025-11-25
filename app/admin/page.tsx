@@ -4759,6 +4759,33 @@ export default function AdminDashboard() {
                 <Plus className="w-4 h-4 mr-2" />
                 Add Treatment
               </Button>
+              {(() => {
+                const items = Array.isArray(medicalRecordForm.treatments) ? medicalRecordForm.treatments : []
+                const overall = items.reduce((s, t) => s + (typeof t?.total === 'number' ? t.total : 0), 0)
+                const byStaff: Record<string, number> = {}
+                for (const t of items) {
+                  const name = (t?.staffName && t.staffName.trim()) ? t.staffName.trim() : 'Unassigned'
+                  const amt = typeof t?.total === 'number' ? t.total : 0
+                  byStaff[name] = (byStaff[name] || 0) + amt
+                }
+                const currency = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' })
+                return (
+                  <div className="mt-4 border rounded-lg p-3 bg-white/60">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Customer Total</span>
+                      <span className="text-sm font-bold">{currency.format(overall)}</span>
+                    </div>
+                    <div className="mt-2 space-y-1">
+                      {Object.entries(byStaff).map(([name, sum]) => (
+                        <div key={name} className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">{name}</span>
+                          <span className="text-sm">{currency.format(sum)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })()}
             </div>
 
             <div>

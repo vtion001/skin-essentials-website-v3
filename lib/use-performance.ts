@@ -41,20 +41,18 @@ export function debounce<T extends (...args: any[]) => any>(
 
 // Custom hook for optimized scroll handling
 export function useOptimizedScroll(
-  callback: (scrollY: number) => void,
-  deps: any[] = []
+  callback: (scrollY: number) => void
 ) {
   const callbackRef = useRef(callback)
-  callbackRef.current = callback
+  useEffect(() => { callbackRef.current = callback }, [callback])
 
   useEffect(() => {
     const handleScroll = throttle(() => {
       callbackRef.current(window.scrollY)
-    }, 16) // ~60fps
-
+    }, 16)
     window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
-  }, deps)
+  }, [])
 }
 
 // Custom hook for intersection observer with performance optimizations
@@ -64,7 +62,7 @@ export function useIntersectionObserver(
   options: IntersectionObserverInit = {}
 ) {
   const callbackRef = useRef(callback)
-  callbackRef.current = callback
+  useEffect(() => { callbackRef.current = callback }, [callback])
 
   useEffect(() => {
     const element = elementRef.current
@@ -85,7 +83,7 @@ export function useIntersectionObserver(
 
     observer.observe(element)
     return () => observer.disconnect()
-  }, [elementRef, options.threshold, options.rootMargin])
+  }, [elementRef, options])
 }
 
 // Performance monitoring utilities
