@@ -331,7 +331,7 @@ export default function PrivacyPolicyPage() {
                       <div className="space-y-6">
                         <p className="text-gray-700">
                           We use cookies and similar tracking technologies to enhance your browsing experience 
-                          and analyze website traffic. Here's how we use different types of cookies:
+                          and analyze website traffic. Here&rsquo;s how we use different types of cookies:
                         </p>
                         <div className="grid md:grid-cols-3 gap-4">
                           <div className="bg-green-50 p-4 rounded-lg border border-green-200">
@@ -740,7 +740,7 @@ export default function PrivacyPolicyPage() {
                               <li>• Email notification to registered users</li>
                               <li>• Prominent notice on our website</li>
                               <li>• In-clinic notifications for significant changes</li>
-                              <li>• Updated "Last Modified" date on this page</li>
+                              <li>• Updated &quot;Last Modified&quot; date on this page</li>
                             </ul>
                           </div>
                           

@@ -523,7 +523,7 @@ function ServicesContent() {
 
   useEffect(() => {
     const list = categories.length ? categories : serviceCategories
-    if (list.length && !activeCategoryId) setActiveCategoryId(list[0].id)
+    if (list.length && !activeCategoryId) setTimeout(() => setActiveCategoryId(list[0].id), 0)
     const observers: IntersectionObserver[] = []
     list.forEach((cat) => {
       const el = document.getElementById(cat.id)
@@ -566,17 +566,17 @@ function ServicesContent() {
         <section className="pt-24 pb-16 bg-gradient-to-br from-gray-50 to-white">
           <div className="container mx-auto px-4">
             <div className="text-center max-w-4xl mx-auto">
-              <Badge className="bg-[#fbc6c5]/10 text-[#d09d80] px-4 py-2 mb-6">Quezon City's Premier Aesthetic Clinic</Badge>
+              <Badge className="bg-[#fbc6c5]/10 text-[#d09d80] px-4 py-2 mb-6">Quezon City&rsquo;s Premier Aesthetic Clinic</Badge>
 
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-                Quezon City's Complete Range of
+                Quezon City&rsquo;s Complete Range of
                 <span className="bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] bg-clip-text text-transparent block">
                   Aesthetic Services
                 </span>
               </h1>
 
               <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-                Discover Quezon City's most comprehensive collection of medical-grade aesthetic treatments, including our signature 
+                Discover Quezon City&rsquo;s most comprehensive collection of medical-grade aesthetic treatments, including our signature 
                 <span className="font-semibold text-[#d09d80]"> Hiko Nose Thread Lifts</span>, designed to enhance your
                 natural beauty with <span className="font-semibold text-[#d09d80]">FDA-approved materials</span> and expert care.
               </p>

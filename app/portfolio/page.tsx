@@ -12,27 +12,20 @@ import { Button } from '@/components/ui/button'
 import { Shield } from 'lucide-react'
 
 export default function PortfolioPage() {
-  const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([])
-  const [ageConfirmed, setAgeConfirmed] = useState<boolean>(false)
-  const [ageGateOpen, setAgeGateOpen] = useState<boolean>(false)
+  const [ageConfirmed, setAgeConfirmed] = useState<boolean>(() => {
+    try { return localStorage.getItem('age_gate_18_portfolio') === 'true' } catch { return false }
+  })
+  const [ageGateOpen, setAgeGateOpen] = useState<boolean>(() => {
+    try { return localStorage.getItem('age_gate_18_portfolio') !== 'true' } catch { return true }
+  })
+  const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>(() => {
+    try { portfolioService.resetToDefaults() } catch {}
+    try { return portfolioService.getAllItems() } catch { return [] }
+  })
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem('age_gate_18_portfolio')
-      const isConfirmed = stored === 'true'
-      setAgeConfirmed(isConfirmed)
-      setAgeGateOpen(!isConfirmed)
-    } catch (e) {
-      setAgeGateOpen(true)
-    }
-
-    // Reset to defaults to load updated Cloudinary URLs
     portfolioService.resetToDefaults()
     
-    // Load portfolio items
-    const items = portfolioService.getAllItems()
-    setPortfolioItems(items)
-
     // Subscribe to updates
     const unsubscribe = portfolioService.subscribe((updatedItems) => {
       setPortfolioItems(updatedItems)

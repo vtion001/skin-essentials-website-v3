@@ -11,7 +11,9 @@ import { AlertCircle, Eye, EyeOff, Shield, CheckCircle } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 
 export default function AdminLoginPage() {
-  const [email, setEmail] = useState("")
+  const [email, setEmail] = useState<string>(() => {
+    try { return localStorage.getItem('admin_login_email') || '' } catch { return '' }
+  })
   const [password, setPassword] = useState("")
   const [mfaCode, setMfaCode] = useState("")
   const [mfaRequired, setMfaRequired] = useState(false)
@@ -19,7 +21,9 @@ export default function AdminLoginPage() {
   const [error, setError] = useState("")
   const [message, setMessage] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [rememberMe, setRememberMe] = useState(false)
+  const [rememberMe, setRememberMe] = useState<boolean>(() => {
+    try { return !!localStorage.getItem('admin_login_email') } catch { return false }
+  })
   const router = useRouter()
   const search = useSearchParams()
   const initialError = search.get('error') === 'not_admin' ? 'You are not authorized to access the admin dashboard' : ''
@@ -36,15 +40,7 @@ export default function AdminLoginPage() {
     }
   }
 
-  useEffect(() => {
-    try {
-      const saved = typeof window !== 'undefined' ? localStorage.getItem('admin_login_email') : null
-      if (saved) {
-        setEmail(saved)
-        setRememberMe(true)
-      }
-    } catch {}
-  }, [])
+  useEffect(() => {}, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

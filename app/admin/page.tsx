@@ -203,7 +203,121 @@ const AnimatedSelect = memo(({
   )
 })
 
-AnimatedSelect.displayName = 'AnimatedSelect'
+  AnimatedSelect.displayName = 'AnimatedSelect'
+
+  const InfluencerModal = memo(({ 
+    open,
+    onOpenChange,
+    selectedInfluencer,
+    influencerForm,
+    setInfluencerForm,
+    privacyMode,
+    isLoading,
+    handleSubmit,
+  }: {
+    open: boolean
+    onOpenChange: (v: boolean) => void
+    selectedInfluencer: Influencer | null
+    influencerForm: Partial<Influencer>
+    setInfluencerForm: (updater: (prev: Partial<Influencer>) => Partial<Influencer>) => void
+    privacyMode: boolean
+    isLoading: boolean
+    handleSubmit: (e: React.FormEvent) => void
+  }) => {
+    const [form, setForm] = useState<Partial<Influencer>>({})
+    const [reveal, setReveal] = useState<{ referralCode: boolean; email: boolean; phone: boolean }>({ referralCode: true, email: true, phone: true })
+    useEffect(() => {
+      if (open) {
+        if (selectedInfluencer) setForm(selectedInfluencer)
+        else setForm({ name: '', handle: '', platform: 'instagram', email: '', phone: '', referralCode: '', commissionRate: 0.10, status: 'active', notes: '' })
+        setReveal({ referralCode: true, email: true, phone: true })
+      }
+    }, [open, selectedInfluencer])
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-2xl will-change-transform [backface-visibility:hidden] [transform:translateZ(0)] [contain:layout_paint]">
+          <DialogHeader>
+            <DialogTitle>{selectedInfluencer ? 'Edit Influencer' : 'Add New Influencer'}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={(e) => { e.preventDefault(); setInfluencerForm(() => form); handleSubmit(e) }} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="infName">Name</Label>
+                <Input id="infName" value={form.name || ''} onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))} required />
+              </div>
+              <div>
+                <Label htmlFor="infHandle">Handle</Label>
+                <Input id="infHandle" value={form.handle || ''} onChange={(e) => setForm(prev => ({ ...prev, handle: e.target.value }))} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="infPlatform">Platform</Label>
+                <Select value={form.platform || ''} onValueChange={(v) => setForm(prev => ({ ...prev, platform: v as Influencer['platform'] }))}>
+                  <SelectTrigger><SelectValue placeholder="Select platform" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="instagram">Instagram</SelectItem>
+                    <SelectItem value="facebook">Facebook</SelectItem>
+                    <SelectItem value="tiktok">TikTok</SelectItem>
+                    <SelectItem value="youtube">YouTube</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="infReferralCode">Referral Code</Label>
+                <div className="flex items-center gap-2">
+                  <Input id="infReferralCode" value={form.referralCode || ''} onChange={(e) => setForm(prev => ({ ...prev, referralCode: e.target.value }))} type={privacyMode && !reveal.referralCode ? 'password' : 'text'} readOnly={privacyMode && !reveal.referralCode} />
+                  <Button type="button" variant="outline" className="h-9 px-2" onClick={() => setReveal(prev => ({ ...prev, referralCode: !prev.referralCode }))}>{reveal.referralCode ? 'Hide' : 'Reveal'}</Button>
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="infEmail">Email</Label>
+                <div className="flex items-center gap-2">
+                  <Input id="infEmail" value={form.email || ''} onChange={(e) => setForm(prev => ({ ...prev, email: e.target.value }))} type={privacyMode && !reveal.email ? 'password' : 'email'} readOnly={privacyMode && !reveal.email} />
+                  <Button type="button" variant="outline" className="h-9 px-2" onClick={() => setReveal(prev => ({ ...prev, email: !prev.email }))}>{reveal.email ? 'Hide' : 'Reveal'}</Button>
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="infPhone">Phone</Label>
+                <div className="flex items-center gap-2">
+                  <Input id="infPhone" value={form.phone || ''} onChange={(e) => setForm(prev => ({ ...prev, phone: e.target.value }))} type={privacyMode && !reveal.phone ? 'password' : 'text'} readOnly={privacyMode && !reveal.phone} />
+                  <Button type="button" variant="outline" className="h-9 px-2" onClick={() => setReveal(prev => ({ ...prev, phone: !prev.phone }))}>{reveal.phone ? 'Hide' : 'Reveal'}</Button>
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="infRate">Commission Rate (%)</Label>
+                <Input id="infRate" type="number" step="1" value={Math.round((form.commissionRate || 0.10) * 100)} onChange={(e) => setForm(prev => ({ ...prev, commissionRate: Math.max(0, Math.min(100, Number(e.target.value))) / 100 }))} />
+              </div>
+              <div>
+                <Label htmlFor="infStatus">Status</Label>
+                <Select value={form.status || ''} onValueChange={(v) => setForm(prev => ({ ...prev, status: v as Influencer['status'] }))}>
+                  <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="infNotes">Notes</Label>
+              <Textarea id="infNotes" rows={3} value={form.notes || ''} onChange={(e) => setForm(prev => ({ ...prev, notes: e.target.value }))} />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+              <Button type="submit" disabled={isLoading}>{isLoading ? 'Saving...' : 'Save Influencer'}</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+    )
+  })
+  InfluencerModal.displayName = 'InfluencerModal'
 
 // Lazy loading wrapper for tab content
 const LazyTabContent = memo(({ 
@@ -1445,19 +1559,33 @@ export default function AdminDashboard() {
       setSelectedInfluencer(null)
       setInfluencerForm({ name: '', handle: '', platform: 'instagram', email: '', phone: '', referralCode: '', commissionRate: 0.10, status: 'active', notes: '' })
     }
+    setInfluencerReveal({ referralCode: true, email: true, phone: true })
     setIsInfluencerModalOpen(true)
   }
 
   return (
     <>
       <div className="min-h-screen relative bg-gradient-to-br from-slate-50 via-purple-50/30 to-blue-50/20">
-      {/* Animated background elements */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-16 -left-24 w-96 h-96 bg-gradient-to-br from-purple-400/20 via-pink-300/15 to-transparent rounded-full blur-3xl animate-pulse" />
-        <div className="absolute top-1/4 -right-32 w-80 h-80 bg-gradient-to-br from-blue-400/20 via-cyan-300/15 to-transparent rounded-full blur-3xl animate-pulse delay-1000" />
-        <div className="absolute bottom-1/4 left-1/4 w-72 h-72 bg-gradient-to-br from-amber-400/20 via-orange-300/15 to-transparent rounded-full blur-3xl animate-pulse delay-2000" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-to-br from-emerald-400/10 via-teal-300/8 to-transparent rounded-full blur-3xl animate-pulse delay-3000" />
-      </div>
+      {(() => {
+        const reduceMotion = 
+          isAppointmentModalOpen ||
+          isPaymentModalOpen ||
+          isMedicalRecordModalOpen ||
+          isClientModalOpen ||
+          isSocialReplyModalOpen ||
+          isStaffModalOpen ||
+          isInfluencerModalOpen ||
+          isReferralModalOpen ||
+          isStaffTreatmentQuickOpen
+        return !reduceMotion ? (
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            <div className="absolute -top-16 -left-24 w-96 h-96 bg-gradient-to-br from-purple-400/20 via-pink-300/15 to-transparent rounded-full blur-3xl animate-pulse" />
+            <div className="absolute top-1/4 -right-32 w-80 h-80 bg-gradient-to-br from-blue-400/20 via-cyan-300/15 to-transparent rounded-full blur-3xl animate-pulse delay-1000" />
+            <div className="absolute bottom-1/4 left-1/4 w-72 h-72 bg-gradient-to-br from-amber-400/20 via-orange-300/15 to-transparent rounded-full blur-3xl animate-pulse delay-2000" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-to-br from-emerald-400/10 via-teal-300/8 to-transparent rounded-full blur-3xl animate-pulse delay-3000" />
+          </div>
+        ) : null
+      })()}
       
 
       {/* Premium Notification */}
@@ -1999,6 +2127,7 @@ export default function AdminDashboard() {
                     const start = (page - 1) * appointmentsPageSize
                     const pageItems = filtered.slice(start, start + appointmentsPageSize)
 
+                    
                     return (
                       <div className="space-y-3">
                         <Table>
@@ -3303,6 +3432,16 @@ export default function AdminDashboard() {
                       .filter(r => staffTotalsFilter === 'all' ? true : r.staffId === staffTotalsFilter)
                     if (rows.length === 0) return (<div className="text-sm text-muted-foreground">No treatments recorded.</div>)
                     const grandTotal = rows.reduce((acc, r) => acc + r.total, 0)
+
+                    const byStaff = new Map<string, { staffName: string; clients: Map<string, number>; staffTotal: number }>()
+                    for (const r of rows) {
+                      const staffEntry = byStaff.get(r.staffId) || { staffName: r.staffName, clients: new Map<string, number>(), staffTotal: 0 }
+                      const cname = r.clientName || ''
+                      if (cname) staffEntry.clients.set(cname, (staffEntry.clients.get(cname) || 0) + r.total)
+                      staffEntry.staffTotal += r.total
+                      byStaff.set(r.staffId, staffEntry)
+                    }
+
                     return (
                       <div className="space-y-3">
                         <Table>
@@ -3329,6 +3468,33 @@ export default function AdminDashboard() {
                         </Table>
                         <div className="flex items-center justify-end gap-6 text-sm">
                           <div className="font-medium">Grand Total: {grandTotal.toLocaleString()}</div>
+                        </div>
+
+                        <div className="pt-2">
+                          {[...byStaff.entries()].map(([staffId, info]) => (
+                            <div key={staffId} className="mb-3">
+                              <div className="flex items-center justify-between">
+                                <div className="text-sm font-medium">{info.staffName}</div>
+                                <div className="text-xs text-muted-foreground">{info.staffTotal.toLocaleString()}</div>
+                              </div>
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead>Client</TableHead>
+                                    <TableHead className="text-right">Total</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {[...info.clients.entries()].map(([clientName, total]) => (
+                                    <TableRow key={clientName}>
+                                      <TableCell className="max-w-[16rem] truncate">{privacyMode ? maskName(clientName) : clientName}</TableCell>
+                                      <TableCell className="text-right">{total.toLocaleString()}</TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     )
@@ -3518,10 +3684,26 @@ export default function AdminDashboard() {
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <Input placeholder="Search influencers..." value={influencerSearch} onChange={(e) => setInfluencerSearch(e.target.value)} className="pl-10 w-64" />
                   </div>
-                  <Button onClick={() => openInfluencerModal()} className="bg-gradient-to-r from-fuchsia-500 via-violet-600 to-indigo-600 hover:from-fuchsia-600 hover:via-violet-700 hover:to-indigo-700 text-white shadow-2xl shadow-fuchsia-500/30 hover:shadow-fuchsia-500/40 transition-all duration-300 hover:scale-105 font-bold px-6 py-3 rounded-2xl">
-                    <UserPlus className="w-4 h-4 mr-2" />
-                    Add Influencer
-                  </Button>
+                  {(() => {
+                    const reduceMotion = 
+                      isAppointmentModalOpen ||
+                      isPaymentModalOpen ||
+                      isMedicalRecordModalOpen ||
+                      isClientModalOpen ||
+                      isSocialReplyModalOpen ||
+                      isStaffModalOpen ||
+                      isInfluencerModalOpen ||
+                      isReferralModalOpen ||
+                      isStaffTreatmentQuickOpen
+                    const base = "bg-gradient-to-r from-fuchsia-500 via-violet-600 to-indigo-600 text-white font-bold px-6 py-3 rounded-2xl"
+                    const fx = "hover:from-fuchsia-600 hover:via-violet-700 hover:to-indigo-700 shadow-2xl shadow-fuchsia-500/30 hover:shadow-fuchsia-500/40 transition-all duration-300 hover:scale-105"
+                    return (
+                      <Button onClick={() => openInfluencerModal()} className={`${base} ${reduceMotion ? "" : fx}`}>
+                        <UserPlus className="w-4 h-4 mr-2" />
+                        Add Influencer
+                      </Button>
+                    )
+                  })()}
                 </div>
               </div>
 
@@ -3655,20 +3837,6 @@ export default function AdminDashboard() {
                 const bookedApts = appointments.filter(a => inRangeDateOnly(a.date))
                 const completedApts = appointments.filter(a => a.status === 'completed' && inRangeDateOnly(a.date))
 
-                const bySourcePayments: Record<string, number> = {}
-                completedPayments.forEach(p => {
-                  const c = clients.find(x => x.id === p.clientId)
-                  const src = c?.source || 'unknown'
-                  if (clientsSourceFilter === 'all' || src === clientsSourceFilter) {
-                    bySourcePayments[src] = (bySourcePayments[src] || 0) + 1
-                  }
-                })
-                const completedPaymentsForSource = completedPayments.filter(p => {
-                  const c = clients.find(x => x.id === p.clientId)
-                  const src = c?.source || 'unknown'
-                  return clientsSourceFilter === 'all' || src === clientsSourceFilter
-                })
-
                 const bySourceClients: Record<string, number> = {}
                 clientsInRange.forEach(c => {
                   const src = c.source || 'unknown'
@@ -3678,9 +3846,8 @@ export default function AdminDashboard() {
                 })
                 const clientsForSource = clientsInRange.filter(c => clientsSourceFilter === 'all' || c.source === clientsSourceFilter)
 
-                const useClientCounts = clientsSourceFilter !== 'all'
-                const displayBySource = useClientCounts ? bySourceClients : bySourcePayments
-                const displayDenominator = useClientCounts ? clientsForSource.length : completedPaymentsForSource.length
+                const displayBySource = bySourceClients
+                const displayDenominator = clientsForSource.length
 
                 const platformAgg: Record<string, { referrals: number; revenue: number }> = {}
                 influencers.forEach(i => {
@@ -4241,87 +4408,16 @@ export default function AdminDashboard() {
         </DialogContent>
       </Dialog>
 
-       <Dialog open={isInfluencerModalOpen} onOpenChange={setIsInfluencerModalOpen}>
-         <DialogContent className="max-w-2xl will-change-transform [backface-visibility:hidden] [transform:translateZ(0)] [contain:layout_paint]">
-           <DialogHeader>
-             <DialogTitle>{selectedInfluencer ? 'Edit Influencer' : 'Add New Influencer'}</DialogTitle>
-           </DialogHeader>
-           <form onSubmit={handleInfluencerSubmit} className="space-y-4">
-             <div className="grid grid-cols-2 gap-4">
-               <div>
-                 <Label htmlFor="infName">Name</Label>
-                 <Input id="infName" value={influencerForm.name || ''} onChange={(e) => setInfluencerForm(prev => ({ ...prev, name: e.target.value }))} required />
-               </div>
-               <div>
-                 <Label htmlFor="infHandle">Handle</Label>
-                 <Input id="infHandle" value={influencerForm.handle || ''} onChange={(e) => setInfluencerForm(prev => ({ ...prev, handle: e.target.value }))} />
-               </div>
-             </div>
-             <div className="grid grid-cols-2 gap-4">
-               <div>
-                 <Label htmlFor="infPlatform">Platform</Label>
-                 <Select value={influencerForm.platform || ''} onValueChange={(v) => setInfluencerForm(prev => ({ ...prev, platform: v as Influencer['platform'] }))}>
-                   <SelectTrigger><SelectValue placeholder="Select platform" /></SelectTrigger>
-                   <SelectContent>
-                     <SelectItem value="instagram">Instagram</SelectItem>
-                     <SelectItem value="facebook">Facebook</SelectItem>
-                     <SelectItem value="tiktok">TikTok</SelectItem>
-                     <SelectItem value="youtube">YouTube</SelectItem>
-                     <SelectItem value="other">Other</SelectItem>
-                   </SelectContent>
-                 </Select>
-               </div>
-               <div>
-                 <Label htmlFor="infReferralCode">Referral Code</Label>
-                <div className="flex items-center gap-2">
-                  <Input id="infReferralCode" value={influencerForm.referralCode || ''} onChange={(e) => setInfluencerForm(prev => ({ ...prev, referralCode: e.target.value }))} type={privacyMode && !influencerReveal.referralCode ? 'password' : 'text'} readOnly={privacyMode && !influencerReveal.referralCode} />
-                  <Button type="button" variant="outline" className="h-9 px-2" onClick={() => setInfluencerReveal(prev => ({ ...prev, referralCode: !prev.referralCode }))}>{influencerReveal.referralCode ? 'Hide' : 'Reveal'}</Button>
-                </div>
-               </div>
-             </div>
-             <div className="grid grid-cols-2 gap-4">
-               <div>
-                 <Label htmlFor="infEmail">Email</Label>
-                <div className="flex items-center gap-2">
-                  <Input id="infEmail" value={influencerForm.email || ''} onChange={(e) => setInfluencerForm(prev => ({ ...prev, email: e.target.value }))} type={privacyMode && !influencerReveal.email ? 'password' : 'email'} readOnly={privacyMode && !influencerReveal.email} />
-                  <Button type="button" variant="outline" className="h-9 px-2" onClick={() => setInfluencerReveal(prev => ({ ...prev, email: !prev.email }))}>{influencerReveal.email ? 'Hide' : 'Reveal'}</Button>
-                </div>
-               </div>
-               <div>
-                 <Label htmlFor="infPhone">Phone</Label>
-                <div className="flex items-center gap-2">
-                  <Input id="infPhone" value={influencerForm.phone || ''} onChange={(e) => setInfluencerForm(prev => ({ ...prev, phone: e.target.value }))} type={privacyMode && !influencerReveal.phone ? 'password' : 'text'} readOnly={privacyMode && !influencerReveal.phone} />
-                  <Button type="button" variant="outline" className="h-9 px-2" onClick={() => setInfluencerReveal(prev => ({ ...prev, phone: !prev.phone }))}>{influencerReveal.phone ? 'Hide' : 'Reveal'}</Button>
-                </div>
-               </div>
-             </div>
-             <div className="grid grid-cols-2 gap-4">
-               <div>
-                 <Label htmlFor="infRate">Commission Rate (%)</Label>
-                 <Input id="infRate" type="number" step="1" value={Math.round((influencerForm.commissionRate || 0.10) * 100)} onChange={(e) => setInfluencerForm(prev => ({ ...prev, commissionRate: Math.max(0, Math.min(100, Number(e.target.value))) / 100 }))} />
-               </div>
-               <div>
-                 <Label htmlFor="infStatus">Status</Label>
-                 <Select value={influencerForm.status || ''} onValueChange={(v) => setInfluencerForm(prev => ({ ...prev, status: v as Influencer['status'] }))}>
-                   <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
-                   <SelectContent>
-                     <SelectItem value="active">Active</SelectItem>
-                     <SelectItem value="inactive">Inactive</SelectItem>
-                   </SelectContent>
-                 </Select>
-               </div>
-             </div>
-             <div>
-               <Label htmlFor="infNotes">Notes</Label>
-               <Textarea id="infNotes" rows={3} value={influencerForm.notes || ''} onChange={(e) => setInfluencerForm(prev => ({ ...prev, notes: e.target.value }))} />
-             </div>
-             <div className="flex justify-end gap-2">
-               <Button type="button" variant="outline" onClick={() => setIsInfluencerModalOpen(false)}>Cancel</Button>
-               <Button type="submit" disabled={isLoading}>{isLoading ? 'Saving...' : 'Save Influencer'}</Button>
-             </div>
-           </form>
-         </DialogContent>
-       </Dialog>
+       <InfluencerModal
+         open={isInfluencerModalOpen}
+         onOpenChange={setIsInfluencerModalOpen}
+         selectedInfluencer={selectedInfluencer}
+         influencerForm={influencerForm}
+         setInfluencerForm={(updater) => setInfluencerForm(updater(influencerForm))}
+         privacyMode={privacyMode}
+         isLoading={isLoading}
+         handleSubmit={handleInfluencerSubmit}
+       />
 
        <Dialog open={isReferralModalOpen} onOpenChange={setIsReferralModalOpen}>
          <DialogContent className="max-w-lg will-change-transform [backface-visibility:hidden] [transform:translateZ(0)] [contain:layout_paint]">

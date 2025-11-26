@@ -107,7 +107,7 @@ export default function TestSocialMediaService() {
         <div className="bg-yellow-50 border border-yellow-200 p-4 rounded">
           <h3 className="font-semibold text-yellow-800 mb-2">Test Instructions:</h3>
           <ol className="list-decimal list-inside text-sm text-yellow-700 space-y-1">
-            <li>Click "Test Facebook Connection" to open the login window</li>
+            <li>Click &quot;Test Facebook Connection&quot; to open the login window</li>
             <li>Log in to your Facebook account</li>
             <li>Grant the requested permissions</li>
             <li>You should be redirected back to the admin dashboard</li>

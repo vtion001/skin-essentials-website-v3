@@ -555,7 +555,7 @@ export function FacebookConnection({ onConnectionChange }: FacebookConnectionPro
               <Alert>
                 <Shield className="h-4 w-4" />
                 <AlertDescription>
-                  You'll be redirected to Facebook to authorize the required permissions. 
+                  You&rsquo;ll be redirected to Facebook to authorize the required permissions. 
                   Your data is handled securely and only used for the specified purposes.
                 </AlertDescription>
               </Alert>
