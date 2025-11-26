@@ -18,7 +18,8 @@ import {
   Search,
   MoreVertical,
   Check,
-  CheckCheck
+  CheckCheck,
+  Image as ImageIcon
 } from "lucide-react"
 import { SocialMessage, SocialConversation, SocialPlatformConnection } from "@/lib/admin-services"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog"
@@ -45,6 +46,7 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
   const autoTimer = useRef<NodeJS.Timeout | null>(null)
   const convoTimer = useRef<NodeJS.Timeout | null>(null)
   const refreshing = useRef(false)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
   const formatTimestamp = (iso: string) => {
     const d = new Date(iso)
     const now = Date.now()
@@ -209,6 +211,41 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      const file = e.target.files?.[0]
+      if (!file || !selectedConversation) return
+      const allowed = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
+      if (!allowed.includes(file.type)) return
+      const form = new FormData()
+      form.append('file', file)
+      form.append('type', 'chat')
+      setIsLoading(true)
+      const res = await fetch('/api/upload', { method: 'POST', body: form })
+      const data = await res.json().catch(() => ({}))
+      const url = data?.url
+      if (url) {
+        const ok = await socialMediaService.sendMediaLinkViaPlatform(
+          selectedConversation.id,
+          url,
+          selectedConversation.platform
+        )
+        if (ok) {
+          loadMessages(selectedConversation.id)
+          loadConversations()
+        }
+      }
+    } catch {}
+    finally {
+      setIsLoading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click()
   }
 
   const handleBookAppointment = () => {
@@ -550,22 +587,36 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
             {/* Message Input */}
             <div className="p-3 sm:p-4 border-t bg-white/80">
               <div className="flex gap-2">
-                <Input
-                  placeholder="Type a message..."
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-                  disabled={isLoading}
-                  aria-label="Message input"
-                  className="h-10 sm:h-9"
-                />
-                <Button 
-                  onClick={handleSendMessage} 
-                  disabled={!newMessage.trim() || isLoading}
-                  className="motion-safe:transition-all motion-safe:hover:scale-[1.02] min-h-10 sm:min-h-9"
-                >
-                  <Send className="h-4 w-4" />
-                </Button>
+            <Input
+              placeholder="Type a message..."
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+              disabled={isLoading}
+              aria-label="Message input"
+              className="h-10 sm:h-9"
+            />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={onFileChange}
+              style={{ display: 'none' }}
+            />
+            <Button 
+              onClick={handleUploadClick} 
+              disabled={!selectedConversation || isLoading}
+              className="motion-safe:transition-all motion-safe:hover:scale-[1.02] min-h-10 sm:min-h-9"
+            >
+              <ImageIcon className="h-4 w-4" />
+            </Button>
+            <Button 
+              onClick={handleSendMessage} 
+              disabled={!newMessage.trim() || isLoading}
+              className="motion-safe:transition-all motion-safe:hover:scale-[1.02] min-h-10 sm:min-h-9"
+            >
+              <Send className="h-4 w-4" />
+            </Button>
               </div>
             </div>
           </>

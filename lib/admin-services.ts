@@ -1527,6 +1527,70 @@ class SocialMediaService {
     }
   }
 
+  async sendMediaLinkViaPlatform(conversationId: string, mediaUrl: string, platform: "facebook" | "instagram"): Promise<boolean> {
+    try {
+      if (!this.initialized) this.loadFromStorage()
+
+      const conversation = this.conversations.find(c => c.id === conversationId)
+      if (!conversation) {
+        console.error('Conversation not found')
+        return false
+      }
+
+      const connection = this.platformConnections.find(c => 
+        c.platform === platform && c.pageId === conversation.pageId && c.isConnected
+      )
+      
+      if (!connection) {
+        console.error(`No connected ${platform} account found for this conversation`)
+        return false
+      }
+
+      let result
+      if (platform === 'facebook') {
+        result = await facebookAPI.sendMessage(connection.accessToken, conversation.participantId, mediaUrl)
+      } else if (platform === 'instagram') {
+        result = await instagramAPI.sendMessage(connection.accessToken, conversation.participantId, mediaUrl)
+      } else {
+        return false
+      }
+
+      if (result?.message_id) {
+        const sentMessage: SocialMessage = {
+          id: result.message_id,
+          platform: platform,
+          senderId: connection.pageId,
+          senderName: connection.pageName,
+          message: mediaUrl,
+          timestamp: new Date().toISOString(),
+          isRead: true,
+          isReplied: false,
+          attachments: [mediaUrl],
+          conversationId: conversationId,
+          messageType: 'image',
+          isFromPage: true
+        }
+
+        this.messages.push(sentMessage)
+
+        const conv = this.conversations.find(c => c.id === conversationId)
+        if (conv) {
+          conv.lastMessage = ''
+          conv.lastMessageTimestamp = sentMessage.timestamp
+          conv.messages.push(sentMessage)
+        }
+
+        this.saveToStorage()
+        return true
+      }
+
+      return false
+    } catch (error) {
+      console.error(`Error sending media via ${platform}:`, error)
+      return false
+    }
+  }
+
   setConversationClient(conversationId: string, clientId: string): boolean {
     if (!this.initialized) this.loadFromStorage()
     const conv = this.conversations.find(c => c.id === conversationId)
