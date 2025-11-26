@@ -71,7 +71,12 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
     loadPlatformConnections()
     setTimeout(() => { handleRefresh().catch(() => {}) }, 0)
     const onStorage = (e: StorageEvent) => {
-      if (e.key === 'social_connections_data' || e.key === 'facebook_connection') {
+      if (
+        e.key === 'social_connections_data' ||
+        e.key === 'facebook_connection' ||
+        e.key === 'social_conversations_data' ||
+        e.key === 'social_messages_data'
+      ) {
         console.log('[SM_UI] storage change detected, reloading')
         loadPlatformConnections()
         loadConversations()
@@ -82,23 +87,6 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
     const interval = setInterval(() => {
       loadPlatformConnections()
     }, 10000)
-    autoTimer.current = setInterval(async () => {
-      if (refreshing.current) return
-      if (document.visibilityState !== 'visible') return
-      try {
-        refreshing.current = true
-        if (activeTab === "facebook" || activeTab === "all") {
-          await socialMediaService.syncMessagesFromPlatform("facebook")
-        }
-        if (activeTab === "instagram" || activeTab === "all") {
-          await socialMediaService.syncMessagesFromPlatform("instagram")
-        }
-        loadConversations()
-        if (selectedConversation) loadMessages(selectedConversation.id)
-      } finally {
-        refreshing.current = false
-      }
-    }, getPollMs())
     const onVisible = () => { if (document.visibilityState === 'visible') handleRefresh().catch(() => {}) }
     const onFocus = () => handleRefresh().catch(() => {})
     const onOnline = () => handleRefresh().catch(() => {})
@@ -116,14 +104,41 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
   }, [])
 
   useEffect(() => {
+    if (autoTimer.current) {
+      clearInterval(autoTimer.current)
+      autoTimer.current = null
+    }
+    const pollMs = activeTab === 'facebook' ? 2000 : getPollMs()
+    autoTimer.current = setInterval(async () => {
+      if (refreshing.current) return
+      if (document.visibilityState !== 'visible') return
+      try {
+        refreshing.current = true
+        if (activeTab === 'facebook' || activeTab === 'all') {
+          await socialMediaService.syncMessagesFromPlatform('facebook')
+        }
+        if (activeTab === 'instagram' || activeTab === 'all') {
+          await socialMediaService.syncMessagesFromPlatform('instagram')
+        }
+        loadConversations()
+        if (selectedConversation) loadMessages(selectedConversation.id)
+      } finally {
+        refreshing.current = false
+      }
+    }, pollMs)
+    return () => { if (autoTimer.current) { clearInterval(autoTimer.current); autoTimer.current = null } }
+  }, [activeTab])
+
+  useEffect(() => {
     if (selectedConversation) {
       loadMessages(selectedConversation.id)
       if (convoTimer.current) clearInterval(convoTimer.current)
+      const intervalMs = selectedConversation.platform === 'facebook' ? 1000 : 3000
       convoTimer.current = setInterval(async () => {
         const platform = selectedConversation.platform
         await socialMediaService.syncMessagesFromPlatform(platform)
         loadMessages(selectedConversation.id)
-      }, 3000)
+      }, intervalMs)
     } else {
       if (convoTimer.current) { clearInterval(convoTimer.current); convoTimer.current = null }
     }
