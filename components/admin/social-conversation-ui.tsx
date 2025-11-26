@@ -337,6 +337,34 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
     return provided || ''
   }
 
+  const handleRecordPaymentFromImage = (url: string) => {
+    if (!selectedConversation) return
+    try {
+      const msgs = socialMediaService.getMessagesByConversation(selectedConversation.id) as SocialMessage[]
+      const text = msgs.map(m => m.message).join(' ')
+      const emailMatch = text.match(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/)
+      const phoneMatch = text.match(/\+?\d[\d\s-]{6,}/)
+      const draft = {
+        clientId: selectedConversation.clientId || '',
+        clientName: selectedConversation.participantName,
+        clientEmail: emailMatch ? emailMatch[0] : '',
+        clientPhone: phoneMatch ? phoneMatch[0].replace(/\s+/g, '') : '',
+        amount: undefined,
+        method: 'bank_transfer',
+        status: 'pending',
+        transactionId: '',
+        notes: `Captured from chat ${selectedConversation.id}`,
+        uploadedFiles: [url],
+        receiptUrl: url,
+      }
+      localStorage.setItem('payment_draft', JSON.stringify(draft))
+      localStorage.setItem('payment_conversation_id', selectedConversation.id)
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('record_payment'))
+      }
+    } catch {}
+  }
+
   return (
     <div className="flex flex-col lg:flex-row w-full max-w-full h-[68vh] sm:h-[72vh] lg:h-[74vh] xl:h-[78vh] border rounded-xl overflow-hidden bg-gradient-to-br from-white to-white/60 shadow-sm">
       <div className="hidden sm:flex w-14 bg-white/80 backdrop-blur-sm border-r flex-col items-center gap-4 py-4">
@@ -652,8 +680,15 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
               .filter(Boolean)
               .slice(0,8)
               .map((url, i) => (
-                <div key={`${url}-${i}`} className="aspect-square rounded-md overflow-hidden">
+                <div key={`${url}-${i}`} className="aspect-square rounded-md overflow-hidden relative group">
                   <img src={url as string} alt="media" className="w-full h-full object-cover" loading="lazy" />
+                  <button
+                    className="absolute bottom-1 right-1 text-xs px-2 py-1 rounded-md bg-green-600 text-white opacity-0 group-hover:opacity-100 transition"
+                    onClick={() => handleRecordPaymentFromImage(String(url))}
+                    aria-label="Record payment"
+                  >
+                    Record Payment
+                  </button>
                 </div>
               ))}
           </div>

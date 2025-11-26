@@ -645,6 +645,27 @@ export default function AdminDashboard() {
         }
       }
       window.addEventListener('book_appointment', onBook as EventListener)
+
+      const onRecordPayment = () => {
+        const d = localStorage.getItem('payment_draft')
+        const l = localStorage.getItem('payment_conversation_id')
+        if (d && l) {
+          setPaymentForm(JSON.parse(d))
+          setIsPaymentModalOpen(true)
+        }
+      }
+      window.addEventListener('record_payment', onRecordPayment as EventListener)
+      const onStoragePayment = (e: StorageEvent) => {
+        if (e.key === 'payment_draft') {
+          const d = localStorage.getItem('payment_draft')
+          const l = localStorage.getItem('payment_conversation_id')
+          if (d && l) {
+            setPaymentForm(JSON.parse(d))
+            setIsPaymentModalOpen(true)
+          }
+        }
+      }
+      window.addEventListener('storage', onStoragePayment)
       return () => window.removeEventListener('storage', onStorage)
     
     } catch {}
@@ -667,6 +688,15 @@ export default function AdminDashboard() {
       } catch {}
     }
   }, [isAppointmentModalOpen])
+
+  useEffect(() => {
+    if (!isPaymentModalOpen) {
+      try {
+        localStorage.removeItem('payment_draft')
+        localStorage.removeItem('payment_conversation_id')
+      } catch {}
+    }
+  }, [isPaymentModalOpen])
 
   const loadAllData = async () => {
     await appointmentService.fetchFromSupabase?.()
