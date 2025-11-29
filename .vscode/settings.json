@@ -27,5 +27,6 @@
     "security.olympix.detectors.callWithoutGasBudget": true,
     "security.olympix.detectors.msgValueReuse": true,
     "security.olympix.detectors.abiEncoderArray": true,
-    "security.olympix.detectors.blockRandomness": true
+    "security.olympix.detectors.blockRandomness": true,
+    "security.olympix.project.analyzeWholeProject": true
 }

@@ -1477,6 +1477,17 @@ export default function AdminDashboard() {
     setIsPaymentModalOpen(true)
   }
 
+  const openPaymentModalPrefill = (prefill: Partial<Payment>) => {
+    setSelectedPayment(null)
+    setPaymentForm({
+      status: 'pending',
+      method: 'gcash',
+      uploadedFiles: [],
+      ...prefill,
+    })
+    setIsPaymentModalOpen(true)
+  }
+
   const openMedicalRecordModal = (record?: MedicalRecord, clientId?: string) => {
     if (record) {
       setSelectedMedicalRecord(record)
@@ -3463,6 +3474,19 @@ export default function AdminDashboard() {
                     if (rows.length === 0) return (<div className="text-sm text-muted-foreground">No treatments recorded.</div>)
                     const grandTotal = rows.reduce((acc, r) => acc + r.total, 0)
 
+                    const nameById = new Map<string, string>()
+                    for (const c of clients) {
+                      nameById.set(c.id, `${c.firstName} ${c.lastName}`.trim())
+                    }
+                    const paymentsByClient = new Map<string, number>()
+                    for (const p of payments) {
+                      if (String(p.status || '').toLowerCase() !== 'completed') continue
+                      const nm = nameById.get(String(p.clientId)) || ''
+                      if (!nm) continue
+                      paymentsByClient.set(nm, (paymentsByClient.get(nm) || 0) + Number(p.amount || 0))
+                    }
+                    const paymentsGrandTotal = rows.reduce((sum, r) => sum + (paymentsByClient.get(r.clientName || '') || 0), 0)
+
                     const byStaff = new Map<string, { staffName: string; clients: Map<string, number>; staffTotal: number }>()
                     for (const r of rows) {
                       const staffEntry = byStaff.get(r.staffId) || { staffName: r.staffName, clients: new Map<string, number>(), staffTotal: 0 }
@@ -3498,6 +3522,8 @@ export default function AdminDashboard() {
                         </Table>
                         <div className="flex items-center justify-end gap-6 text-sm">
                           <div className="font-medium">Grand Total: {grandTotal.toLocaleString()}</div>
+                          <div className="font-medium">Payments Grand Total: {paymentsGrandTotal.toLocaleString()}</div>
+                          <div className="font-medium">Difference: {(paymentsGrandTotal - grandTotal).toLocaleString()}</div>
                         </div>
 
                         <div className="pt-2">
@@ -3511,7 +3537,9 @@ export default function AdminDashboard() {
                                 <TableHeader>
                                   <TableRow>
                                     <TableHead>Client</TableHead>
-                                    <TableHead className="text-right">Total</TableHead>
+                                    <TableHead className="text-right">Treatment Total</TableHead>
+                                    <TableHead className="text-right">Payment Total</TableHead>
+                                    <TableHead className="text-right">Difference</TableHead>
                                   </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -3519,6 +3547,8 @@ export default function AdminDashboard() {
                                     <TableRow key={clientName}>
                                       <TableCell className="max-w-[16rem] truncate">{privacyMode ? maskName(clientName) : clientName}</TableCell>
                                       <TableCell className="text-right">{total.toLocaleString()}</TableCell>
+                                      <TableCell className="text-right">{(paymentsByClient.get(clientName) || 0).toLocaleString()}</TableCell>
+                                      <TableCell className="text-right">{(((paymentsByClient.get(clientName) || 0) - total) || 0).toLocaleString()}</TableCell>
                                     </TableRow>
                                   ))}
                                 </TableBody>
@@ -4912,6 +4942,54 @@ export default function AdminDashboard() {
                   </div>
                 )
               })()}
+              <div className="mt-6 space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>Payment Preview</Label>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      openPaymentModalPrefill({
+                        clientId: medicalRecordForm.clientId || '',
+                        status: 'pending',
+                        method: 'gcash',
+                        notes: 'Encoded from treatment tracking',
+                      })
+                    }}
+                    aria-label="Encode Payment"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Encode Payment
+                  </Button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {payments
+                    .filter(p => String(p.clientId) === String(medicalRecordForm.clientId || ''))
+                    .slice(0,3)
+                    .map((p) => (
+                      <div key={p.id} className="rounded-md border bg-white/60 p-3 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Badge variant="outline">{String(p.status || '').toUpperCase()}</Badge>
+                          <span className="text-sm font-medium">₱{Number(p.amount || 0).toLocaleString()}</span>
+                        </div>
+                        <div className="text-xs text-gray-500">{String(p.method || '').toUpperCase()}</div>
+                        <div className="grid grid-cols-3 gap-2">
+                          {[p.receiptUrl, ...(Array.isArray(p.uploadedFiles) ? p.uploadedFiles : [])]
+                            .filter(Boolean)
+                            .slice(0,3)
+                            .map((url, i) => (
+                              <a key={`${p.id}-${i}`} href={String(url)} target="_blank" rel="noreferrer" className="block aspect-square rounded-md overflow-hidden">
+                                <img src={String(url)} alt="receipt" className="w-full h-full object-cover" loading="lazy" />
+                              </a>
+                            ))}
+                        </div>
+                      </div>
+                    ))}
+                  {payments.filter(p => String(p.clientId) === String(medicalRecordForm.clientId || '')).length === 0 && (
+                    <div className="rounded-md border bg-white/60 p-3 text-sm text-gray-600">No payments yet</div>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div>
