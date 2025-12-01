@@ -507,6 +507,9 @@ export default function AdminDashboard() {
   // Deletion confirmation (Client)
   const [confirmClient, setConfirmClient] = useState<Client | null>(null)
   const [confirmDeleting, setConfirmDeleting] = useState(false)
+  // Deletion confirmation (Medical Record)
+  const [confirmMedicalRecord, setConfirmMedicalRecord] = useState<MedicalRecord | null>(null)
+  const [confirmMedicalDeleting, setConfirmMedicalDeleting] = useState(false)
   
   // Calendar and search states
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
@@ -544,6 +547,8 @@ export default function AdminDashboard() {
   const [staffTreatmentTarget, setStaffTreatmentTarget] = useState<Staff | null>(null)
   const [staffTreatmentForm, setStaffTreatmentForm] = useState<{ procedure: string; clientName?: string; total: number; date?: string }[]>([])
   const [isStaffTotalsOpen, setIsStaffTotalsOpen] = useState(false)
+  const [isStaffPreviewOpen, setIsStaffPreviewOpen] = useState(false)
+  const [staffPreviewTarget, setStaffPreviewTarget] = useState<Staff | null>(null)
   const [openQuickCalendarIdx, setOpenQuickCalendarIdx] = useState<number | null>(null)
   const [staffStatusFilter, setStaffStatusFilter] = useState<string>("all")
   const [staffTotalsFilter, setStaffTotalsFilter] = useState<string>("all")
@@ -1160,7 +1165,13 @@ export default function AdminDashboard() {
           allergies: allergiesRaw.split('\n').filter(item => item.trim()),
           currentMedications: currentMedicationsRaw.split('\n').filter(item => item.trim()),
         }
-        const res = await fetch('/api/admin/medical-records', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+        const csrf = typeof document !== 'undefined' ? (document.cookie.match(/(?:^|; )csrf_token=([^;]+)/)?.[1] || '') : ''
+        const res = await fetch('/api/admin/medical-records', {
+          method,
+          headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrf },
+          credentials: 'include',
+          body: JSON.stringify(payload)
+        })
         if (!res.ok) throw new Error('Failed')
         try {
           const json = await res.json()
@@ -1172,6 +1183,36 @@ export default function AdminDashboard() {
           }
         } catch {}
         await refreshMedical()
+        try {
+          const items = Array.isArray(medicalRecordForm.treatments) ? medicalRecordForm.treatments : []
+          if (items.length > 0) {
+            const client = clients.find(c => c.id === (medicalRecordForm.clientId || ''))
+            const clientName = client ? `${client.firstName} ${client.lastName}`.trim() : ''
+            const byStaff: Record<string, { procedure: string; clientName: string; total: number; date: string }[]> = {}
+            for (const t of items) {
+              const sid = String(t?.aestheticianId || '')
+              if (!sid) continue
+              const entry = { procedure: String(t?.procedure || ''), clientName, total: Number(t?.total || 0), date: String(t?.date || medicalRecordForm.date || new Date().toISOString().split('T')[0]) }
+              if (!byStaff[sid]) byStaff[sid] = []
+              byStaff[sid].push(entry)
+            }
+            const csrf2 = typeof document !== 'undefined' ? (document.cookie.match(/(?:^|; )csrf_token=([^;]+)/)?.[1] || '') : ''
+            for (const [staffId, entries] of Object.entries(byStaff)) {
+              const person = staff.find(s => s.id === staffId)
+              const existing = Array.isArray(person?.treatments) ? person!.treatments.slice() : []
+              const dedup = new Set(existing.map(x => `${x.date}|${x.procedure}|${x.clientName}|${x.total}`))
+              const next = existing.concat(entries.filter(x => !dedup.has(`${x.date}|${x.procedure}|${x.clientName}|${x.total}`)))
+              await fetch('/api/admin/staff', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrf2 },
+                credentials: 'include',
+                body: JSON.stringify({ id: staffId, treatments: next })
+              }).catch(() => {})
+            }
+            await staffService.fetchFromSupabase?.()
+            setStaff(staffService.getAllStaff())
+          }
+        } catch {}
           showNotification("success", selectedMedicalRecord ? "Medical record updated successfully!" : "Medical record created successfully!")
           setIsMedicalRecordModalOpen(false)
           setMedicalRecordForm({})
@@ -3171,14 +3212,86 @@ export default function AdminDashboard() {
                               >
                                 <Eye className="w-4 h-4" />
                               </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setConfirmMedicalRecord(record)}
+                                aria-label="Delete medical record"
+                                className="ml-2"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
                             </TableCell>
                           </TableRow>
                         )
                       })}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+            <Dialog open={!!confirmMedicalRecord} onOpenChange={(open) => { if (!open && !confirmMedicalDeleting) setConfirmMedicalRecord(null) }}>
+              <DialogContent className="max-w-md bg-white/80 backdrop-blur-sm border border-rose-200/60 shadow-2xl">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <AlertCircle className="w-5 h-5 text-rose-600" />
+                    Delete Medical Record
+                  </DialogTitle>
+                </DialogHeader>
+                {confirmMedicalRecord && (
+                  <div className="space-y-3 text-sm text-gray-700">
+                    <p>Are you sure you want to delete this medical record? This action cannot be undone.</p>
+                    <div className="rounded-lg border bg-white/70 p-3">
+                      <div className="font-medium">
+                        {(() => {
+                          const c = clients.find(x => x.id === confirmMedicalRecord.clientId)
+                          return c ? `${c.firstName} ${c.lastName}` : 'Unknown Client'
+                        })()}
+                      </div>
+                      <div className="text-gray-600">{new Date(confirmMedicalRecord.date).toLocaleDateString()}</div>
+                      {confirmMedicalRecord.chiefComplaint && <div className="text-gray-600 truncate">{confirmMedicalRecord.chiefComplaint}</div>}
+                      {confirmMedicalRecord.treatmentPlan && <div className="text-gray-600 truncate">{confirmMedicalRecord.treatmentPlan}</div>}
+                    </div>
+                  </div>
+                )}
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button variant="outline" onClick={() => setConfirmMedicalRecord(null)} disabled={confirmMedicalDeleting}>Cancel</Button>
+                  <Button
+                    variant="destructive"
+                    onClick={async () => {
+                      if (!confirmMedicalRecord) return
+                      setConfirmMedicalDeleting(true)
+                      try {
+                        const csrf = typeof document !== 'undefined' ? (document.cookie.match(/(?:^|; )csrf_token=([^;]+)/)?.[1] || '') : ''
+                        const res = await fetch('/api/admin/medical-records', {
+                          method: 'DELETE',
+                          headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrf },
+                          credentials: 'include',
+                          body: JSON.stringify({ id: confirmMedicalRecord.id })
+                        })
+                        if (res.ok) {
+                          await refreshMedical()
+                          showNotification('success', 'Medical record deleted')
+                          setConfirmMedicalRecord(null)
+                        } else {
+                          showNotification('error', 'Failed to delete medical record')
+                        }
+                      } finally {
+                        setConfirmMedicalDeleting(false)
+                      }
+                    }}
+                  >
+                    {confirmMedicalDeleting ? (
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
             </TabsContent>
             </LazyTabContent>
 
@@ -3628,6 +3741,9 @@ export default function AdminDashboard() {
                               <Button size="sm" variant="outline" onClick={() => openStaffModal(s)}>
                                 <Edit className="w-4 h-4" />
                               </Button>
+                              <Button size="sm" variant="outline" onClick={() => { setStaffPreviewTarget(s); setIsStaffPreviewOpen(true) }} aria-label="Preview">
+                                <Eye className="w-4 h-4" />
+                              </Button>
                               <Button size="sm" variant="outline" onClick={async () => {
                                 if (!confirmTwice(`${s.firstName} ${s.lastName}`.trim() || 'this staff')) return
                                 const res = await fetch('/api/admin/staff', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: s.id }) })
@@ -3643,6 +3759,84 @@ export default function AdminDashboard() {
                   </Table>
               </CardContent>
               </Card>
+              <Dialog open={isStaffPreviewOpen} onOpenChange={setIsStaffPreviewOpen}>
+                <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto p-4">
+                  <DialogHeader>
+                    <DialogTitle>Staff Preview</DialogTitle>
+                  </DialogHeader>
+                  {staffPreviewTarget && (
+                    <div className="space-y-6">
+                      <div className="space-y-1">
+                        <div className="font-semibold text-lg">{staffPreviewTarget.firstName} {staffPreviewTarget.lastName}</div>
+                        <div className="text-sm text-gray-600">{staffPreviewTarget.email}</div>
+                        <div className="text-sm text-gray-600">{staffPreviewTarget.phone}</div>
+                      </div>
+                      <div className="space-y-3">
+                        <div className="font-medium">Treatment Tracking</div>
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Date</TableHead>
+                              <TableHead>Procedure</TableHead>
+                              <TableHead>Client</TableHead>
+                              <TableHead className="text-right">Total</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {(Array.isArray(staffPreviewTarget.treatments) ? staffPreviewTarget.treatments : []).map((t, i) => (
+                              <TableRow key={i}>
+                                <TableCell>{t.date || '-'}</TableCell>
+                                <TableCell className="max-w-[18rem] truncate">{t.procedure}</TableCell>
+                                <TableCell className="max-w-[14rem] truncate">{privacyMode ? maskName(t.clientName || '') : (t.clientName || '-')}</TableCell>
+                                <TableCell className="text-right">{Number(t.total || 0).toLocaleString()}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                      <div className="space-y-3">
+                        <div className="font-medium">Payment Preview</div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {(() => {
+                            const names = new Set<string>((Array.isArray(staffPreviewTarget.treatments) ? staffPreviewTarget.treatments : []).map(t => String(t.clientName || '').trim()).filter(Boolean))
+                            const ids = new Set<string>()
+                            for (const n of names) {
+                              const c = clients.find(x => `${x.firstName} ${x.lastName}`.trim() === n)
+                              if (c) ids.add(c.id)
+                            }
+                            const items = payments.filter(p => ids.has(String(p.clientId)))
+                            if (items.length === 0) return [
+                              <div key="empty" className="rounded-md border bg-white/60 p-3 text-sm text-gray-600">No payments found</div>
+                            ]
+                            return items.slice(0,6).map((p) => (
+                              <div key={p.id} className="rounded-md border bg-white/60 p-3 space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <Badge variant="outline">{String(p.status || '').toUpperCase()}</Badge>
+                                  <span className="text-sm font-medium">₱{Number(p.amount || 0).toLocaleString()}</span>
+                                </div>
+                                <div className="text-xs text-gray-500">{new Date(p.createdAt || p.updatedAt || Date.now()).toLocaleDateString()}</div>
+                                <div className="grid grid-cols-3 gap-2">
+                                  {[p.receiptUrl, ...(Array.isArray(p.uploadedFiles) ? p.uploadedFiles : [])]
+                                    .filter(Boolean)
+                                    .slice(0,3)
+                                    .map((url, i) => (
+                                      <a key={`${p.id}-${i}`} href={String(url)} target="_blank" rel="noreferrer" className="block aspect-square rounded-md overflow-hidden">
+                                        <img src={String(url)} alt="receipt" className="w-full h-full object-cover" loading="lazy" />
+                                      </a>
+                                    ))}
+                                </div>
+                              </div>
+                            ))
+                          })()}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex justify-end mt-4">
+                    <Button variant="outline" onClick={() => setIsStaffPreviewOpen(false)}>Close</Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
               <Dialog open={isStaffTreatmentQuickOpen} onOpenChange={setIsStaffTreatmentQuickOpen}>
                 <DialogContent className="max-w-md sm:max-w-xl max-h-[70vh] overflow-y-auto p-4 sm:p-4">
                   <DialogHeader>
