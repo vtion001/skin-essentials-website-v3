@@ -16,7 +16,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const cookiesMap = new Map<string, string>()
   cookieStore.getAll().forEach(c => cookiesMap.set(c.name, c.value))
   if (!verifyCsrfToken(req.headers, cookiesMap)) {
@@ -47,7 +47,7 @@ export async function POST(req: Request) {
 }
 
 export async function PATCH(req: Request) {
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const cookiesMap = new Map<string, string>()
   cookieStore.getAll().forEach(c => cookiesMap.set(c.name, c.value))
   if (!verifyCsrfToken(req.headers, cookiesMap)) {

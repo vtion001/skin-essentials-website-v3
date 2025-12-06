@@ -81,6 +81,20 @@ import { PlatformConnections } from "@/components/admin/platform-connections"
 import { FacebookConnection } from "@/components/admin/facebook-connection"
 import { serviceCategories } from "@/lib/services-data"
 import { portfolioService, type PortfolioItem } from "@/lib/portfolio-data"
+import { AnimatedInput } from "@/components/ui/animated-input"
+import { AnimatedSelect } from "@/components/ui/animated-select"
+import { EnhancedButton } from "@/components/ui/enhanced-button"
+import { LazyTabContent } from "@/components/ui/lazy-tab-content"
+import { InfluencerModal } from "@/components/admin/modals/influencer-modal"
+import { DashboardTab } from "@/components/admin/tabs/dashboard-tab"
+import { AppointmentsTab } from "@/components/admin/tabs/appointments-tab"
+import { ClientsTab } from "@/components/admin/tabs/clients-tab"
+import { PaymentsTab } from "@/components/admin/tabs/payments-tab"
+import { useAdminData } from "@/lib/hooks/use-admin-data"
+import { useFileUpload } from "@/lib/hooks/use-file-upload"
+import { useAdminCommunication } from "@/lib/hooks/use-admin-communication"
+import { useAdminEventSync } from "@/lib/hooks/use-admin-event-sync"
+import { useAdminFilters } from "@/lib/hooks/use-admin-filters"
 
 const services = [
   "Thread Lifts - Nose Enhancement",
@@ -105,293 +119,13 @@ const services = [
 const procedureOptions = Array.from(new Set(serviceCategories.flatMap(c => c.services.map(s => s.name))))
 const categoryOptions = Array.from(new Set(serviceCategories.map(c => c.category)))
 
-// Enhanced form input component with animations
-const AnimatedInput = memo(({ 
-  id, 
-  label, 
-  value, 
-  onChange, 
-  type = "text", 
-  required = false,
-  placeholder = "",
-  className = ""
-}: {
-  id: string
-  label: string
-  value: string | number
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
-  type?: string
-  required?: boolean
-  placeholder?: string
-  className?: string
-}) => {
-  return (
-    <motion.div 
-      className="space-y-2"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2 }}
-    >
-      <Label htmlFor={id} className="text-sm font-medium text-gray-700">
-        {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
-      </Label>
-      <motion.div
-        whileFocus={{ scale: 1.02 }}
-        transition={{ duration: 0.1 }}
-      >
-        <Input
-          id={id}
-          type={type}
-          value={value}
-          onChange={onChange}
-          required={required}
-          placeholder={placeholder}
-          className={cn(
-            "transition-all duration-200 focus:ring-2 focus:ring-purple-500 focus:border-transparent",
-            "hover:shadow-md focus:shadow-lg",
-            className
-          )}
-        />
-      </motion.div>
-    </motion.div>
-  )
-})
 
-AnimatedInput.displayName = 'AnimatedInput'
 
-// Enhanced select component with animations
-const AnimatedSelect = memo(({
-  value,
-  onValueChange,
-  placeholder,
-  options,
-  label
-}: {
-  value: string
-  onValueChange: (value: string) => void
-  placeholder: string
-  options: Array<{ value: string; label: string }>
-  label: string
-}) => {
-  return (
-    <motion.div 
-      className="space-y-2"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2 }}
-    >
-      <Label className="text-sm font-medium text-gray-700">{label}</Label>
-      <motion.div
-        whileFocus={{ scale: 1.02 }}
-        transition={{ duration: 0.1 }}
-      >
-        <Select value={value} onValueChange={onValueChange}>
-          <SelectTrigger className="transition-all duration-200 focus:ring-2 focus:ring-purple-500 focus:border-transparent hover:shadow-md focus:shadow-lg">
-            <SelectValue placeholder={placeholder} />
-          </SelectTrigger>
-          <SelectContent>
-            {options.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </motion.div>
-    </motion.div>
-  )
-})
 
-  AnimatedSelect.displayName = 'AnimatedSelect'
 
-  const InfluencerModal = memo(({ 
-    open,
-    onOpenChange,
-    selectedInfluencer,
-    influencerForm,
-    setInfluencerForm,
-    privacyMode,
-    isLoading,
-    handleSubmit,
-  }: {
-    open: boolean
-    onOpenChange: (v: boolean) => void
-    selectedInfluencer: Influencer | null
-    influencerForm: Partial<Influencer>
-    setInfluencerForm: (updater: (prev: Partial<Influencer>) => Partial<Influencer>) => void
-    privacyMode: boolean
-    isLoading: boolean
-    handleSubmit: (e: React.FormEvent) => void
-  }) => {
-    const [form, setForm] = useState<Partial<Influencer>>({})
-    const [reveal, setReveal] = useState<{ referralCode: boolean; email: boolean; phone: boolean }>({ referralCode: true, email: true, phone: true })
-    useEffect(() => {
-      if (open) {
-        if (selectedInfluencer) setForm(selectedInfluencer)
-        else setForm({ name: '', handle: '', platform: 'instagram', email: '', phone: '', referralCode: '', commissionRate: 0.10, status: 'active', notes: '' })
-        setReveal({ referralCode: true, email: true, phone: true })
-      }
-    }, [open, selectedInfluencer])
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl will-change-transform [backface-visibility:hidden] [transform:translateZ(0)] [contain:layout_paint]">
-          <DialogHeader>
-            <DialogTitle>{selectedInfluencer ? 'Edit Influencer' : 'Add New Influencer'}</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={(e) => { e.preventDefault(); setInfluencerForm(() => form); handleSubmit(e) }} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="infName">Name</Label>
-                <Input id="infName" value={form.name || ''} onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))} required />
-              </div>
-              <div>
-                <Label htmlFor="infHandle">Handle</Label>
-                <Input id="infHandle" value={form.handle || ''} onChange={(e) => setForm(prev => ({ ...prev, handle: e.target.value }))} />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="infPlatform">Platform</Label>
-                <Select value={form.platform || ''} onValueChange={(v) => setForm(prev => ({ ...prev, platform: v as Influencer['platform'] }))}>
-                  <SelectTrigger><SelectValue placeholder="Select platform" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="instagram">Instagram</SelectItem>
-                    <SelectItem value="facebook">Facebook</SelectItem>
-                    <SelectItem value="tiktok">TikTok</SelectItem>
-                    <SelectItem value="youtube">YouTube</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="infReferralCode">Referral Code</Label>
-                <div className="flex items-center gap-2">
-                  <Input id="infReferralCode" value={form.referralCode || ''} onChange={(e) => setForm(prev => ({ ...prev, referralCode: e.target.value }))} type={privacyMode && !reveal.referralCode ? 'password' : 'text'} readOnly={privacyMode && !reveal.referralCode} />
-                  <Button type="button" variant="outline" className="h-9 px-2" onClick={() => setReveal(prev => ({ ...prev, referralCode: !prev.referralCode }))}>{reveal.referralCode ? 'Hide' : 'Reveal'}</Button>
-                </div>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="infEmail">Email</Label>
-                <div className="flex items-center gap-2">
-                  <Input id="infEmail" value={form.email || ''} onChange={(e) => setForm(prev => ({ ...prev, email: e.target.value }))} type={privacyMode && !reveal.email ? 'password' : 'email'} readOnly={privacyMode && !reveal.email} />
-                  <Button type="button" variant="outline" className="h-9 px-2" onClick={() => setReveal(prev => ({ ...prev, email: !prev.email }))}>{reveal.email ? 'Hide' : 'Reveal'}</Button>
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="infPhone">Phone</Label>
-                <div className="flex items-center gap-2">
-                  <Input id="infPhone" value={form.phone || ''} onChange={(e) => setForm(prev => ({ ...prev, phone: e.target.value }))} type={privacyMode && !reveal.phone ? 'password' : 'text'} readOnly={privacyMode && !reveal.phone} />
-                  <Button type="button" variant="outline" className="h-9 px-2" onClick={() => setReveal(prev => ({ ...prev, phone: !prev.phone }))}>{reveal.phone ? 'Hide' : 'Reveal'}</Button>
-                </div>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="infRate">Commission Rate (%)</Label>
-                <Input id="infRate" type="number" step="1" value={Math.round((form.commissionRate || 0.10) * 100)} onChange={(e) => setForm(prev => ({ ...prev, commissionRate: Math.max(0, Math.min(100, Number(e.target.value))) / 100 }))} />
-              </div>
-              <div>
-                <Label htmlFor="infStatus">Status</Label>
-                <Select value={form.status || ''} onValueChange={(v) => setForm(prev => ({ ...prev, status: v as Influencer['status'] }))}>
-                  <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="infNotes">Notes</Label>
-              <Textarea id="infNotes" rows={3} value={form.notes || ''} onChange={(e) => setForm(prev => ({ ...prev, notes: e.target.value }))} />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-              <Button type="submit" disabled={isLoading}>{isLoading ? 'Saving...' : 'Save Influencer'}</Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-    )
-  })
-  InfluencerModal.displayName = 'InfluencerModal'
 
-// Lazy loading wrapper for tab content
-const LazyTabContent = memo(({ 
-  children, 
-  isActive 
-}: { 
-  children: React.ReactNode
-  isActive: boolean
-}) => {
-  if (!isActive) return null
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.3, ease: "easeInOut" }}
-      className="w-full"
-    >
-      {children}
-    </motion.div>
-  )
-})
 
-LazyTabContent.displayName = 'LazyTabContent'
 
-// Enhanced button with loading states
-const EnhancedButton = memo(({
-  onClick,
-  children,
-  variant = "default",
-  size = "default",
-  loading = false,
-  disabled = false,
-  className = ""
-}: {
-  onClick?: () => void
-  children: React.ReactNode
-  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link"
-  size?: "default" | "sm" | "lg" | "icon"
-  loading?: boolean
-  disabled?: boolean
-  className?: string
-}) => {
-  return (
-    <motion.div
-      whileHover={{ scale: disabled || loading ? 1 : 1.05 }}
-      whileTap={{ scale: disabled || loading ? 1 : 0.95 }}
-      transition={{ duration: 0.1 }}
-    >
-      <Button
-        onClick={onClick}
-        variant={variant}
-        size={size}
-        disabled={disabled || loading}
-        className={cn(
-          "transition-all duration-200",
-          "focus:ring-2 focus:ring-offset-2 focus:ring-purple-500",
-          className
-        )}
-      >
-        {loading ? (
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-          >
-            <RefreshCw className="w-4 h-4" />
-          </motion.div>
-        ) : children}
-      </Button>
-    </motion.div>
-  )
-})
-
-EnhancedButton.displayName = 'EnhancedButton'
 
 export default function AdminDashboard() {
   // Authentication and navigation
@@ -403,13 +137,24 @@ export default function AdminDashboard() {
   const [notification, setNotification] = useState<{ type: "success" | "error"; message: string } | null>(null)
   
   // Data states
-  const [appointments, setAppointments] = useState<Appointment[]>([])
-  const [payments, setPayments] = useState<Payment[]>([])
-  const [medicalRecords, setMedicalRecords] = useState<MedicalRecord[]>([])
-  const [clients, setClients] = useState<Client[]>([])
-  const [socialMessages, setSocialMessages] = useState<SocialMessage[]>([])
-  const [staff, setStaff] = useState<Staff[]>([])
-  const [influencers, setInfluencers] = useState<Influencer[]>([])
+  const {
+    appointments, setAppointments,
+    payments, setPayments,
+    medicalRecords, setMedicalRecords,
+    clients, setClients,
+    socialMessages, setSocialMessages,
+    staff, setStaff,
+    influencers, setInfluencers,
+    refreshData: loadAllData,
+    isLoading: isDataLoading,
+    refreshAppointments,
+    refreshClients,
+    refreshPayments,
+    refreshMedicalRecords,
+    refreshStaff,
+    refreshInfluencers,
+    refreshSocialMessages
+  } = useAdminData()
   const [typingPending, startTransition] = useTransition()
   
   // Modal states
@@ -446,29 +191,24 @@ export default function AdminDashboard() {
   const [staffForm, setStaffForm] = useState<Partial<Staff>>({})
   const [influencerForm, setInfluencerForm] = useState<Partial<Influencer>>({ commissionRate: 0.10, status: 'active' })
   const [referralForm, setReferralForm] = useState<Partial<ReferralRecord>>({})
-  const [emailPreview, setEmailPreview] = useState<Array<{ id: string; from: string; to: string; subject: string; snippet: string }>>([])
-  const [emailLoading, setEmailLoading] = useState(false)
-  const refreshEmailPreview = useCallback(async () => {
-    try {
-      setEmailLoading(true)
-      const resp = await fetch('/api/email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'list' }) })
-      const j = await resp.json()
-      if (j?.ok && Array.isArray(j.messages)) setEmailPreview(j.messages)
-    } finally {
-      setEmailLoading(false)
-    }
-  }, [])
+  
+  // Communication hooks
+  const { 
+    emailPreview, 
+    emailLoading, 
+    refreshEmailPreview, 
+    smsStatus, 
+    refreshSmsStatus 
+  } = useAdminCommunication()
+  
+  // File upload hook
+  const { uploadToSupabase, uploadToApi } = useFileUpload()
+
   useEffect(() => { if (activeTab === 'email') refreshEmailPreview() }, [activeTab, refreshEmailPreview])
   const [smsForm, setSmsForm] = useState<{ to: string; message: string }>({ to: '', message: '' })
-  const [smsStatus, setSmsStatus] = useState<{ configured: boolean; sender?: string } | null>(null)
-  const refreshSmsStatus = useCallback(async () => {
-    try {
-      const r = await fetch('/api/sms')
-      const j = await r.json()
-      setSmsStatus(j)
-    } catch {}
-  }, [])
+  
   useEffect(() => { if (activeTab === 'sms') refreshSmsStatus() }, [activeTab, refreshSmsStatus])
+
 
   const [contentServices, setContentServices] = useState<{ id: string; category: string; services: any[] }[]>([])
   const [contentSelectedCategory, setContentSelectedCategory] = useState("")
@@ -488,13 +228,7 @@ export default function AdminDashboard() {
   const addResultAfterRef = React.useRef<HTMLInputElement | null>(null)
   const uploadPortfolioFile = async (file: File, kind: 'before' | 'after', target: 'create' | 'edit' = 'create') => {
     try {
-      const fd = new FormData()
-      fd.append('file', file)
-      fd.append('type', kind)
-      const res = await fetch('/api/upload', { method: 'POST', body: fd })
-      const j = await res.json()
-      const url = j?.url ? String(j.url) : ''
-      if (!url) { showNotification('error', 'Upload failed'); return }
+      const url = await uploadToApi(file, kind)
       if (target === 'create') {
         setPortfolioForm(prev => ({ ...prev, [kind === 'before' ? 'beforeImage' : 'afterImage']: url }))
       } else {
@@ -505,44 +239,67 @@ export default function AdminDashboard() {
   }
 
   // Deletion confirmation (Client)
-  const [confirmClient, setConfirmClient] = useState<Client | null>(null)
-  const [confirmDeleting, setConfirmDeleting] = useState(false)
+
   // Deletion confirmation (Medical Record)
   const [confirmMedicalRecord, setConfirmMedicalRecord] = useState<MedicalRecord | null>(null)
   const [confirmMedicalDeleting, setConfirmMedicalDeleting] = useState(false)
   
   // Calendar and search states
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date())
-  const [searchQuery, setSearchQuery] = useState("")
-  const [filterStatus, setFilterStatus] = useState("all")
-
-  const [clientsStatusFilter, setClientsStatusFilter] = useState<string>("all")
-  const [clientsSourceFilter, setClientsSourceFilter] = useState<string>("all")
-  const [clientsSort, setClientsSort] = useState<string>("name_asc")
+  const {
+    appointments: {
+      search: appointmentsSearch, setSearch: setAppointmentsSearch,
+      statusFilter: appointmentsStatusFilter, setStatusFilter: setAppointmentsStatusFilter,
+      serviceFilter: appointmentsServiceFilter, setServiceFilter: setAppointmentsServiceFilter,
+      dateFrom: appointmentsDateFrom, setDateFrom: setAppointmentsDateFrom,
+      dateTo: appointmentsDateTo, setDateTo: setAppointmentsDateTo,
+      sort: appointmentsSort, setSort: setAppointmentsSort,
+      page: appointmentsPage, setPage: setAppointmentsPage,
+      pageSize: appointmentsPageSize, setPageSize: setAppointmentsPageSize,
+    },
+    clients: {
+      statusFilter: clientsStatusFilter, setStatusFilter: setClientsStatusFilter,
+      sourceFilter: clientsSourceFilter, setSourceFilter: setClientsSourceFilter,
+      sort: clientsSort, setSort: setClientsSort,
+    },
+    payments: {
+      search: paymentSearch, setSearch: setPaymentSearch,
+      methodFilter: paymentMethodFilter, setMethodFilter: setPaymentMethodFilter,
+      statusFilter: paymentStatusFilter, setStatusFilter: setPaymentStatusFilter,
+      dateFrom: paymentDateFrom, setDateFrom: setPaymentDateFrom,
+      dateTo: paymentDateTo, setDateTo: setPaymentDateTo,
+      sort: paymentSort, setSort: setPaymentSort,
+      page: paymentPage, setPage: setPaymentPage,
+      pageSize: paymentPageSize, setPageSize: setPaymentPageSize,
+    },
+    staff: {
+      search: staffSearch, setSearch: setStaffSearch,
+      positionFilter: staffPositionFilter, setPositionFilter: setStaffPositionFilter,
+      statusFilter: staffStatusFilter, setStatusFilter: setStaffStatusFilter,
+      totalsFilter: staffTotalsFilter, setTotalsFilter: setStaffTotalsFilter,
+    },
+    influencers: {
+      search: influencerSearch, setSearch: setInfluencerSearch,
+      platformFilter: influencerPlatformFilter, setPlatformFilter: setInfluencerPlatformFilter,
+      statusFilter: influencerStatusFilter, setStatusFilter: setInfluencerStatusFilter,
+    },
+    general: {
+      searchQuery, setSearchQuery,
+      filterStatus, setFilterStatus,
+      selectedDate, setSelectedDate,
+    },
+    analytics: {
+      dateFrom: analyticsDateFrom, setDateFrom: setAnalyticsDateFrom,
+      dateTo: analyticsDateTo, setDateTo: setAnalyticsDateTo,
+    }
+  } = useAdminFilters()
   const [clientDuplicateWarning, setClientDuplicateWarning] = useState<string | null>(null)
 
-  const [appointmentsSearch, setAppointmentsSearch] = useState("")
-  const [appointmentsStatusFilter, setAppointmentsStatusFilter] = useState<string>("all")
-  const [appointmentsServiceFilter, setAppointmentsServiceFilter] = useState<string>("all")
-  const [appointmentsDateFrom, setAppointmentsDateFrom] = useState<string>("")
-  const [appointmentsDateTo, setAppointmentsDateTo] = useState<string>("")
-  const [appointmentsSort, setAppointmentsSort] = useState<string>("date_desc")
-  const [appointmentsPage, setAppointmentsPage] = useState<number>(1)
-  const [appointmentsPageSize, setAppointmentsPageSize] = useState<number>(10)
+
   const [privacyMode, setPrivacyMode] = useState<boolean>(false)
   const [clientReveal, setClientReveal] = useState<{ name: boolean; email: boolean; phone: boolean; address: boolean }>({ name: false, email: false, phone: false, address: false })
   const [appointmentReveal, setAppointmentReveal] = useState<{ clientName: boolean; clientEmail: boolean; clientPhone: boolean }>({ clientName: false, clientEmail: false, clientPhone: false })
   const [influencerReveal, setInfluencerReveal] = useState<{ referralCode: boolean; email: boolean; phone: boolean }>({ referralCode: false, email: false, phone: false })
-  const [paymentSearch, setPaymentSearch] = useState("")
-  const [paymentMethodFilter, setPaymentMethodFilter] = useState<string>("all")
-  const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>("all")
-  const [paymentDateFrom, setPaymentDateFrom] = useState<string>("")
-  const [paymentDateTo, setPaymentDateTo] = useState<string>("")
-  const [paymentSort, setPaymentSort] = useState<string>("date_desc")
-  const [paymentPage, setPaymentPage] = useState<number>(1)
-  const [paymentPageSize, setPaymentPageSize] = useState<number>(10)
-  const [staffSearch, setStaffSearch] = useState("")
-  const [staffPositionFilter, setStaffPositionFilter] = useState<string>("all")
+
   const [isStaffTreatmentQuickOpen, setIsStaffTreatmentQuickOpen] = useState(false)
   const [staffTreatmentTarget, setStaffTreatmentTarget] = useState<Staff | null>(null)
   const [staffTreatmentForm, setStaffTreatmentForm] = useState<{ procedure: string; clientName?: string; total: number; date?: string }[]>([])
@@ -550,13 +307,7 @@ export default function AdminDashboard() {
   const [isStaffPreviewOpen, setIsStaffPreviewOpen] = useState(false)
   const [staffPreviewTarget, setStaffPreviewTarget] = useState<Staff | null>(null)
   const [openQuickCalendarIdx, setOpenQuickCalendarIdx] = useState<number | null>(null)
-  const [staffStatusFilter, setStaffStatusFilter] = useState<string>("all")
-  const [staffTotalsFilter, setStaffTotalsFilter] = useState<string>("all")
-  const [influencerSearch, setInfluencerSearch] = useState("")
-  const [influencerPlatformFilter, setInfluencerPlatformFilter] = useState<string>('all')
-  const [influencerStatusFilter, setInfluencerStatusFilter] = useState<string>('all')
-  const [analyticsDateFrom, setAnalyticsDateFrom] = useState<string>("")
-  const [analyticsDateTo, setAnalyticsDateTo] = useState<string>("")
+
 
   const filteredStaff = React.useMemo(() => {
     const q = staffSearch.toLowerCase()
@@ -602,167 +353,25 @@ export default function AdminDashboard() {
     } catch {}
   }, [])
 
-  // Load data
-  useEffect(() => {
-    loadAllData()
-  }, [])
+
 
   useEffect(() => {
     setReferralPage(1)
   }, [referralDetailsSearch, referralDateFrom, referralDateTo, referralSort, selectedInfluencer])
 
-  useEffect(() => {
-    try {
-      const draft = localStorage.getItem('potential_client_draft')
-      const link = localStorage.getItem('potential_conversation_id')
-      if (draft && link) {
-        const data = JSON.parse(draft)
-        setClientForm(data)
-        setIsClientModalOpen(true)
-      }
-      const onStorage = (e: StorageEvent) => {
-        if (e.key === 'potential_client_draft') {
-          const d = localStorage.getItem('potential_client_draft')
-          const l = localStorage.getItem('potential_conversation_id')
-          if (d && l) {
-            setClientForm(JSON.parse(d))
-            setIsClientModalOpen(true)
-          }
-        }
-      }
-      window.addEventListener('storage', onStorage)
-      const onCapture = () => {
-        const d = localStorage.getItem('potential_client_draft')
-        const l = localStorage.getItem('potential_conversation_id')
-        if (d && l) {
-          setClientForm(JSON.parse(d))
-          setIsClientModalOpen(true)
-        }
-      }
-      window.addEventListener('capture_client', onCapture as EventListener)
-      const onBook = () => {
-        const d = localStorage.getItem('appointment_draft')
-        const l = localStorage.getItem('appointment_conversation_id')
-        if (d && l) {
-          const data = JSON.parse(d)
-          setAppointmentForm(data)
-          setIsAppointmentModalOpen(true)
-        }
-      }
-      window.addEventListener('book_appointment', onBook as EventListener)
+  useAdminEventSync({
+    setClientForm,
+    setIsClientModalOpen,
+    setAppointmentForm,
+    setIsAppointmentModalOpen,
+    setPaymentForm,
+    setIsPaymentModalOpen,
+    isClientModalOpen,
+    isAppointmentModalOpen,
+    isPaymentModalOpen
+  })
 
-      const onRecordPayment = () => {
-        const d = localStorage.getItem('payment_draft')
-        const l = localStorage.getItem('payment_conversation_id')
-        if (d && l) {
-          setPaymentForm(JSON.parse(d))
-          setIsPaymentModalOpen(true)
-        }
-      }
-      window.addEventListener('record_payment', onRecordPayment as EventListener)
-      const onStoragePayment = (e: StorageEvent) => {
-        if (e.key === 'payment_draft') {
-          const d = localStorage.getItem('payment_draft')
-          const l = localStorage.getItem('payment_conversation_id')
-          if (d && l) {
-            setPaymentForm(JSON.parse(d))
-            setIsPaymentModalOpen(true)
-          }
-        }
-      }
-      window.addEventListener('storage', onStoragePayment)
-      return () => window.removeEventListener('storage', onStorage)
-    
-    } catch {}
-  }, [])
 
-  useEffect(() => {
-    if (!isClientModalOpen) {
-      try {
-        localStorage.removeItem('potential_client_draft')
-        localStorage.removeItem('potential_conversation_id')
-      } catch {}
-    }
-  }, [isClientModalOpen])
-
-  useEffect(() => {
-    if (!isAppointmentModalOpen) {
-      try {
-        localStorage.removeItem('appointment_draft')
-        localStorage.removeItem('appointment_conversation_id')
-      } catch {}
-    }
-  }, [isAppointmentModalOpen])
-
-  useEffect(() => {
-    if (!isPaymentModalOpen) {
-      try {
-        localStorage.removeItem('payment_draft')
-        localStorage.removeItem('payment_conversation_id')
-      } catch {}
-    }
-  }, [isPaymentModalOpen])
-
-  const loadAllData = async () => {
-    await appointmentService.fetchFromSupabase?.()
-    setAppointments(appointmentService.getAllAppointments())
-    await clientService.fetchFromSupabase?.()
-    setClients(clientService.getAllClients())
-    try {
-      const payRes = await fetch('/api/admin/payments', { cache: 'no-store' })
-      const payJson = await payRes.json()
-      const arr = Array.isArray(payJson?.payments) ? payJson.payments : []
-      const normalized = arr.map((p: any) => ({
-        id: String(p.id),
-        appointmentId: p.appointment_id ?? undefined,
-        clientId: String(p.client_id ?? ''),
-        amount: Number(p.amount ?? 0),
-        method: String(p.method ?? 'gcash'),
-        status: String(p.status ?? 'pending'),
-        transactionId: p.transaction_id ?? undefined,
-        receiptUrl: p.receipt_url ?? undefined,
-        uploadedFiles: Array.isArray(p.uploaded_files) ? p.uploaded_files : [],
-        notes: p.notes ?? '',
-        createdAt: String(p.created_at ?? new Date().toISOString()),
-        updatedAt: String(p.updated_at ?? new Date().toISOString()),
-      })) as Payment[]
-      setPayments(normalized)
-    } catch {}
-    try {
-      const recRes = await fetch('/api/admin/medical-records', { cache: 'no-store' })
-      const recJson = await recRes.json()
-      const arr = Array.isArray(recJson?.records) ? recJson.records : []
-      const localMap = new Map<string, { date: string; procedure: string; aestheticianId?: string }[]>(
-        medicalRecordService.getAllRecords().map(r => [r.id, Array.isArray(r.treatments) ? r.treatments! : []])
-      )
-      const normalized = arr.map((r: any) => ({
-        id: String(r.id),
-        clientId: String(r.client_id ?? r.clientId ?? ''),
-        appointmentId: r.appointment_id ?? r.appointmentId ?? undefined,
-        date: String(r.date ?? ''),
-        chiefComplaint: String(r.chief_complaint ?? r.chiefComplaint ?? ''),
-        medicalHistory: Array.isArray(r.medical_history) ? r.medical_history : [],
-        allergies: Array.isArray(r.allergies) ? r.allergies : [],
-        currentMedications: Array.isArray(r.current_medications) ? r.current_medications : [],
-        treatmentPlan: String(r.treatment_plan ?? r.treatmentPlan ?? ''),
-        notes: String(r.notes ?? ''),
-        attachments: Array.isArray(r.attachments) ? r.attachments : [],
-        createdBy: String(r.created_by ?? r.createdBy ?? ''),
-        createdAt: String(r.created_at ?? new Date().toISOString()),
-        updatedAt: String(r.updated_at ?? new Date().toISOString()),
-        isConfidential: Boolean(r.is_confidential ?? r.isConfidential ?? false),
-        treatments: localMap.get(String(r.id)) || []
-      })) as MedicalRecord[]
-      setMedicalRecords(normalized)
-    } catch {}
-    setSocialMessages(socialMediaService.getAllMessages())
-    await staffService.syncLocalToSupabaseIfEmpty?.()
-    await staffService.fetchFromSupabase?.()
-    setStaff(staffService.getAllStaff())
-    await influencerService.syncLocalToSupabaseIfEmpty?.()
-    await influencerService.fetchFromSupabase?.()
-    setInfluencers(influencerService.getAllInfluencers())
-  }
 
   const handleLogout = async () => {
     try {
@@ -799,10 +408,6 @@ export default function AdminDashboard() {
 
   const uploadReceiptFile = async (file: File) => {
     try {
-      if (!supabaseBrowser) {
-        showNotification('error', 'Supabase is not configured')
-        return null
-      }
       const clientId = String(paymentForm.clientId || 'unknown')
       const today = new Date()
       const y = today.getFullYear()
@@ -812,13 +417,9 @@ export default function AdminDashboard() {
       const ext = file.name.split('.').pop() || 'jpg'
       const filename = `receipt_${Date.now()}.${ext}`
       const path = `${folder}/${filename}`
-      const { error } = await supabaseBrowser.storage.from('payment-receipts').upload(path, file, { upsert: true, contentType: file.type })
-      if (error) {
-        showNotification('error', 'Upload failed')
-        return null
-      }
-      const { data } = supabaseBrowser.storage.from('payment-receipts').getPublicUrl(path)
-      const publicUrl = data.publicUrl
+      
+      const publicUrl = await uploadToSupabase(file, 'payment-receipts', path)
+      
       const nextFiles = [...(Array.isArray(paymentForm.uploadedFiles) ? paymentForm.uploadedFiles : []), publicUrl]
       setPaymentForm(prev => ({ ...prev, uploadedFiles: nextFiles, receiptUrl: prev.receiptUrl || publicUrl }))
       showNotification('success', 'Receipt uploaded')
@@ -888,10 +489,6 @@ export default function AdminDashboard() {
 
   const uploadMedicalFile = async (file: File) => {
     try {
-      if (!supabaseBrowser) {
-        showNotification('error', 'Supabase is not configured')
-        return null
-      }
       const clientId = String(medicalRecordForm.clientId || 'unknown')
       const today = new Date()
       const y = today.getFullYear()
@@ -901,13 +498,9 @@ export default function AdminDashboard() {
       const ext = file.name.split('.').pop() || 'jpg'
       const filename = `attachment_${Date.now()}.${ext}`
       const path = `${folder}/${filename}`
-      const { error } = await supabaseBrowser.storage.from('medical-attachments').upload(path, file, { upsert: true, contentType: file.type })
-      if (error) {
-        showNotification('error', 'Upload failed')
-        return null
-      }
-      const { data } = supabaseBrowser.storage.from('medical-attachments').getPublicUrl(path)
-      const publicUrl = data.publicUrl
+      
+      const publicUrl = await uploadToSupabase(file, 'medical-attachments', path)
+      
       const nextFiles = [...(Array.isArray(medicalRecordForm.attachments) ? medicalRecordForm.attachments : []), publicUrl]
       setMedicalRecordForm(prev => ({ ...prev, attachments: nextFiles }))
       showNotification('success', 'Attachment uploaded')
@@ -931,77 +524,7 @@ export default function AdminDashboard() {
     e.target.value = ''
   }
 
-  const refreshAppointments = async () => {
-    await appointmentService.fetchFromSupabase?.()
-    setAppointments(appointmentService.getAllAppointments())
-  }
-  const refreshClients = async () => {
-    await clientService.fetchFromSupabase?.()
-    setClients(clientService.getAllClients())
-  }
-  const refreshStaff = async () => {
-    await staffService.fetchFromSupabase?.()
-    setStaff(staffService.getAllStaff())
-  }
-  const refreshPayments = async () => {
-    try {
-      const res = await fetch('/api/admin/payments', { cache: 'no-store' })
-      const json = await res.json()
-      const arr = Array.isArray(json?.payments) ? json.payments : []
-      const normalized = arr.map((p: any) => ({
-        id: String(p.id),
-        appointmentId: p.appointment_id ?? undefined,
-        clientId: String(p.client_id ?? ''),
-        amount: Number(p.amount ?? 0),
-        method: String(p.method ?? 'gcash'),
-        status: String(p.status ?? 'pending'),
-        transactionId: p.transaction_id ?? undefined,
-        receiptUrl: p.receipt_url ?? undefined,
-        uploadedFiles: Array.isArray(p.uploaded_files) ? p.uploaded_files : [],
-        notes: p.notes ?? '',
-        createdAt: String(p.created_at ?? new Date().toISOString()),
-        updatedAt: String(p.updated_at ?? new Date().toISOString()),
-      })) as Payment[]
-      setPayments(normalized)
-    } catch {}
-  }
-  const refreshMedical = async () => {
-    try {
-      const res = await fetch('/api/admin/medical-records', { cache: 'no-store' })
-      const json = await res.json()
-      const arr = Array.isArray(json?.records) ? json.records : []
-      const localMap = new Map<string, { date: string; procedure: string; aestheticianId?: string }[]>(
-        medicalRecordService.getAllRecords().map(r => [r.id, Array.isArray(r.treatments) ? r.treatments! : []])
-      )
-      const normalized = arr.map((r: any) => ({
-        id: String(r.id),
-        clientId: String(r.client_id ?? r.clientId ?? ''),
-        appointmentId: r.appointment_id ?? r.appointmentId ?? undefined,
-        date: String(r.date ?? ''),
-        chiefComplaint: String(r.chief_complaint ?? r.chiefComplaint ?? ''),
-        medicalHistory: Array.isArray(r.medical_history) ? r.medical_history : [],
-        allergies: Array.isArray(r.allergies) ? r.allergies : [],
-        currentMedications: Array.isArray(r.current_medications) ? r.current_medications : [],
-        treatmentPlan: String(r.treatment_plan ?? r.treatmentPlan ?? ''),
-        notes: String(r.notes ?? ''),
-        attachments: Array.isArray(r.attachments) ? r.attachments : [],
-        createdBy: String(r.created_by ?? r.createdBy ?? ''),
-        createdAt: String(r.created_at ?? new Date().toISOString()),
-        updatedAt: String(r.updated_at ?? new Date().toISOString()),
-        isConfidential: Boolean(r.is_confidential ?? r.isConfidential ?? false),
-        treatments: localMap.get(String(r.id)) || []
-      })) as MedicalRecord[]
-      setMedicalRecords(normalized)
-    } catch {}
-  }
-  const refreshInfluencers = async () => {
-    await influencerService.fetchFromSupabase?.()
-    setInfluencers(influencerService.getAllInfluencers())
-  }
-  const refreshReferrals = async () => {
-    await influencerService.fetchFromSupabase?.()
-    setInfluencers(influencerService.getAllInfluencers())
-  }
+
 
   useEffect(() => {
     if (!supabaseBrowser) return
@@ -1010,12 +533,12 @@ export default function AdminDashboard() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' }, () => { refreshClients() })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'staff' }, () => { refreshStaff() })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'payments' }, () => { refreshPayments() })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'medical_records' }, () => { refreshMedical() })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'medical_records' }, () => { refreshMedicalRecords() })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'influencers' }, () => { refreshInfluencers() })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'influencer_referrals' }, () => { refreshReferrals() })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'influencer_referrals' }, () => { refreshInfluencers() })
       .subscribe()
     return () => { supabaseBrowser.removeChannel(channel) }
-  }, [])
+  }, [refreshAppointments, refreshClients, refreshStaff, refreshPayments, refreshMedicalRecords, refreshInfluencers])
 
   // Dashboard Statistics
   const getDashboardStats = () => {
@@ -1182,7 +705,7 @@ export default function AdminDashboard() {
             medicalRecordService.updateRecord(selectedMedicalRecord.id, { treatments: medicalRecordForm.treatments || [] })
           }
         } catch {}
-        await refreshMedical()
+        await refreshMedicalRecords()
         try {
           const items = Array.isArray(medicalRecordForm.treatments) ? medicalRecordForm.treatments : []
           if (items.length > 0) {
@@ -2983,182 +2506,30 @@ export default function AdminDashboard() {
             {/* Payment Processing - Premium Animated */}
             <LazyTabContent isActive={activeTab === "payments"}>
               <TabsContent value="payments" className="space-y-8">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-gray-900">Payment Management</h2>
-                <Button
-                  onClick={() => openPaymentModal()}
-                  className="bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 hover:from-green-600 hover:via-emerald-600 hover:to-teal-600 text-white shadow-2xl shadow-green-500/30 hover:shadow-green-500/40 transition-all duration-300 hover:scale-105 font-bold px-6 py-3 rounded-2xl"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Record Payment
-                </Button>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                <div className="relative sm:col-span-2">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <Input
-                    placeholder="Search by client or transaction"
-                    value={paymentSearch}
-                    onChange={(e) => { setPaymentSearch(e.target.value); setPaymentPage(1) }}
-                    className="pl-10"
-                  />
-                </div>
-                <Select value={paymentMethodFilter} onValueChange={(v) => { setPaymentMethodFilter(v); setPaymentPage(1) }}>
-                  <SelectTrigger className="h-9"><SelectValue placeholder="Method" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Methods</SelectItem>
-                    <SelectItem value="gcash">GCash</SelectItem>
-                    <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                    <SelectItem value="cash">Cash</SelectItem>
-                    <SelectItem value="card">Card</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={paymentStatusFilter} onValueChange={(v) => { setPaymentStatusFilter(v); setPaymentPage(1) }}>
-                  <SelectTrigger className="h-9"><SelectValue placeholder="Status" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="failed">Failed</SelectItem>
-                    <SelectItem value="refunded">Refunded</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Input type="date" value={paymentDateFrom} onChange={(e) => { setPaymentDateFrom(e.target.value); setPaymentPage(1) }} className="h-9" />
-                <Input type="date" value={paymentDateTo} onChange={(e) => { setPaymentDateTo(e.target.value); setPaymentPage(1) }} className="h-9" />
-                <Select value={paymentSort} onValueChange={(v) => { setPaymentSort(v); setPaymentPage(1) }}>
-                  <SelectTrigger className="h-9"><SelectValue placeholder="Sort" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="date_desc">Date ↓</SelectItem>
-                    <SelectItem value="date_asc">Date ↑</SelectItem>
-                    <SelectItem value="amount_desc">Amount ↓</SelectItem>
-                    <SelectItem value="amount_asc">Amount ↑</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Card className="bg-white/60 backdrop-blur-sm border border-[#fbc6c5]/20">
-                <CardContent className="p-4 sm:p-6">
-                  {(() => {
-                    const inRange = (iso: string) => {
-                      if (!paymentDateFrom && !paymentDateTo) return true
-                      const t = new Date(iso).getTime()
-                      const from = paymentDateFrom ? new Date(paymentDateFrom).getTime() : -Infinity
-                      const to = paymentDateTo ? new Date(paymentDateTo).getTime() : Infinity
-                      return t >= from && t <= to
-                    }
-                    const filtered = payments
-                      .filter(p => inRange(p.createdAt))
-                      .filter(p => paymentMethodFilter === 'all' ? true : p.method === paymentMethodFilter)
-                      .filter(p => paymentStatusFilter === 'all' ? true : p.status === paymentStatusFilter)
-                      .filter(p => {
-                        const q = paymentSearch.trim().toLowerCase()
-                        if (!q) return true
-                        const client = clients.find(c => c.id === p.clientId)
-                        const name = client ? `${client.firstName} ${client.lastName}`.toLowerCase() : ''
-                        return name.includes(q) || (p.transactionId || '').toLowerCase().includes(q)
-                      })
-                      .sort((a, b) => {
-                        if (paymentSort === 'date_desc') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-                        if (paymentSort === 'date_asc') return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-                        if (paymentSort === 'amount_desc') return b.amount - a.amount
-                        if (paymentSort === 'amount_asc') return a.amount - b.amount
-                        return 0
-                      })
-
-                    const totalPages = Math.max(1, Math.ceil(filtered.length / paymentPageSize))
-                    const page = Math.max(1, Math.min(paymentPage, totalPages))
-                    const start = (page - 1) * paymentPageSize
-                    const pageItems = filtered.slice(start, start + paymentPageSize)
-
-                    return (
-                      <div className="space-y-3">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Client</TableHead>
-                              <TableHead>Amount</TableHead>
-                              <TableHead>Method</TableHead>
-                              <TableHead>Status</TableHead>
-                              <TableHead>Date</TableHead>
-                              <TableHead>Actions</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {pageItems.map((payment) => {
-                              const client = clients.find(c => c.id === payment.clientId)
-                              return (
-                                <TableRow key={payment.id}>
-                                  <TableCell>{client ? `${client.firstName} ${client.lastName}` : 'Unknown Client'}</TableCell>
-                                  <TableCell>₱{payment.amount.toLocaleString()}</TableCell>
-                                  <TableCell className="capitalize">{payment.method.replace('_', ' ')}</TableCell>
-                                  <TableCell>
-                                    <Badge className={
-                                      payment.status === 'completed' ? 'bg-green-100 text-green-800' :
-                                      payment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                      payment.status === 'failed' ? 'bg-red-100 text-red-800' :
-                                      'bg-gray-100 text-gray-800'
-                                    }>
-                                      {payment.status}
-                                    </Badge>
-                                  </TableCell>
-                                  <TableCell>{new Date(payment.createdAt).toLocaleDateString()}</TableCell>
-                                  <TableCell>
-                                    <div className="flex items-center gap-2">
-                                      <Button size="sm" variant="outline" onClick={() => openPaymentModal(payment)}>
-                                        <Edit className="w-4 h-4" />
-                                      </Button>
-                                      {payment.receiptUrl && (
-                                        <Button size="sm" variant="outline">
-                                          <Download className="w-4 h-4" />
-                                        </Button>
-                                      )}
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={async () => {
-                                          if (!confirmTwice('this payment')) return
-                                          try {
-                                            const res = await fetch('/api/admin/payments', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: payment.id }) })
-                                            if (res.ok) { await refreshPayments(); showNotification('success', 'Payment deleted') } else { showNotification('error', 'Failed to delete payment') }
-                                          } catch { showNotification('error', 'Failed to delete payment') }
-                                        }}
-                                      >
-                                        <Trash2 className="w-4 h-4" />
-                                      </Button>
-                                    </div>
-                                  </TableCell>
-                                </TableRow>
-                              )
-                            })}
-                            {pageItems.length === 0 && (
-                              <TableRow>
-                                <TableCell colSpan={6} className="text-center text-gray-500">No payments</TableCell>
-                              </TableRow>
-                            )}
-                          </TableBody>
-                        </Table>
-                        <div className="flex items-center justify-between">
-                          <div className="text-sm text-gray-600">Page {page} of {totalPages}</div>
-                          <div className="flex items-center gap-2">
-                            <Select value={String(paymentPageSize)} onValueChange={(v) => { setPaymentPageSize(parseInt(v)); setPaymentPage(1) }}>
-                              <SelectTrigger className="w-24 h-9"><SelectValue placeholder="Rows" /></SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="10">10</SelectItem>
-                                <SelectItem value="25">25</SelectItem>
-                                <SelectItem value="50">50</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <Button variant="outline" onClick={() => setPaymentPage(Math.max(1, page - 1))}>Prev</Button>
-                            <Button variant="outline" onClick={() => setPaymentPage(Math.min(totalPages, page + 1))}>Next</Button>
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })()}
-                </CardContent>
-              </Card>
-            </TabsContent>
+                <PaymentsTab
+                  payments={payments}
+                  clients={clients}
+                  search={paymentSearch}
+                  setSearch={setPaymentSearch}
+                  methodFilter={paymentMethodFilter}
+                  setMethodFilter={setPaymentMethodFilter}
+                  statusFilter={paymentStatusFilter}
+                  setStatusFilter={setPaymentStatusFilter}
+                  dateFrom={paymentDateFrom}
+                  setDateFrom={setPaymentDateFrom}
+                  dateTo={paymentDateTo}
+                  setDateTo={setPaymentDateTo}
+                  sort={paymentSort}
+                  setSort={setPaymentSort}
+                  page={paymentPage}
+                  setPage={setPaymentPage}
+                  pageSize={paymentPageSize}
+                  setPageSize={setPaymentPageSize}
+                  openPaymentModal={openPaymentModal}
+                  refreshPayments={refreshPayments}
+                  showNotification={showNotification}
+                />
+              </TabsContent>
             </LazyTabContent>
 
             {/* Electronic Medical Records - Premium Animated */}
@@ -3269,7 +2640,7 @@ export default function AdminDashboard() {
                           body: JSON.stringify({ id: confirmMedicalRecord.id })
                         })
                         if (res.ok) {
-                          await refreshMedical()
+                          await refreshMedicalRecords()
                           showNotification('success', 'Medical record deleted')
                           setConfirmMedicalRecord(null)
                         } else {
@@ -3298,195 +2669,24 @@ export default function AdminDashboard() {
             {/* User Management - Premium Animated */}
             <LazyTabContent isActive={activeTab === "clients"}>
               <TabsContent value="clients" className="space-y-8">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-gray-900">Client Management</h2>
-                <div className="flex items-center gap-4">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <Input
-                      placeholder="Search clients..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10 w-64"
-                    />
-                  </div>
-                  <Button
-                    onClick={() => openClientModal()}
-                    className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white shadow-2xl shadow-indigo-500/30 hover:shadow-indigo-500/40 transition-all duration-300 hover:scale-105 font-bold px-6 py-3 rounded-2xl"
-                  >
-                    <UserPlus className="w-4 h-4 mr-2" />
-                    Add Client
-                  </Button>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-3 mb-4">
-                <Select value={clientsStatusFilter} onValueChange={setClientsStatusFilter}>
-                  <SelectTrigger className="h-9"><SelectValue placeholder="Status" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
-                    <SelectItem value="blocked">Blocked</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={clientsSourceFilter} onValueChange={setClientsSourceFilter}>
-                  <SelectTrigger className="h-9"><SelectValue placeholder="Source" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Sources</SelectItem>
-                    <SelectItem value="website">Website</SelectItem>
-                    <SelectItem value="facebook">Facebook</SelectItem>
-                    <SelectItem value="instagram">Instagram</SelectItem>
-                    <SelectItem value="tiktok">TikTok</SelectItem>
-                    <SelectItem value="referral">Referral</SelectItem>
-                    <SelectItem value="walk_in">Walk-in</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={clientsSort} onValueChange={setClientsSort}>
-                  <SelectTrigger className="h-9"><SelectValue placeholder="Sort" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="name_asc">Name (A→Z)</SelectItem>
-                    <SelectItem value="name_desc">Name (Z→A)</SelectItem>
-                    <SelectItem value="spent_desc">Total Spent (High→Low)</SelectItem>
-                    <SelectItem value="last_visit_desc">Last Visit (Newest)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Card className="bg-white/60 backdrop-blur-sm border border-white/70 shadow-2xl">
-                <CardContent className="p-0">
-                  <div className="overflow-x-auto">
-                    <Table className="min-w-[700px]">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead scope="col">Name</TableHead>
-                      <TableHead scope="col">Email</TableHead>
-                      <TableHead scope="col">Phone</TableHead>
-                      <TableHead scope="col">Status</TableHead>
-                      <TableHead scope="col">Total Spent</TableHead>
-                      <TableHead scope="col">Last Visit</TableHead>
-                      <TableHead scope="col">Source</TableHead>
-                      <TableHead scope="col" className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {clients
-                      .filter(client => 
-                        searchQuery === '' || 
-                        client.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                        client.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                        (client.email || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-                        (client.phone || '').includes(searchQuery)
-                      )
-                      .filter(c => clientsStatusFilter === 'all' ? true : c.status === clientsStatusFilter)
-                      .filter(c => clientsSourceFilter === 'all' ? true : c.source === clientsSourceFilter)
-                      .sort((a, b) => {
-                        if (clientsSort === 'name_asc') return `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`)
-                        if (clientsSort === 'name_desc') return `${b.firstName} ${b.lastName}`.localeCompare(`${a.firstName} ${a.lastName}`)
-                        if (clientsSort === 'spent_desc') return (b.totalSpent || 0) - (a.totalSpent || 0)
-                        if (clientsSort === 'last_visit_desc') return new Date(b.lastVisit || 0).getTime() - new Date(a.lastVisit || 0).getTime()
-                        return 0
-                      })
-                      .map((client) => (
-                        <TableRow key={client.id}>
-                          <TableCell className="font-medium">{privacyMode ? maskName(`${client.firstName} ${client.lastName}`) : `${client.firstName} ${client.lastName}`}</TableCell>
-                          <TableCell className="truncate max-w-[220px]">{privacyMode ? maskEmail(client.email) : client.email}</TableCell>
-                          <TableCell className="truncate max-w-[160px]">{privacyMode ? maskPhone(client.phone) : client.phone}</TableCell>
-                          <TableCell>
-                            <Badge className={
-                              client.status === 'active' ? 'bg-green-100 text-green-800' :
-                              client.status === 'inactive' ? 'bg-gray-100 text-gray-800' :
-                              'bg-red-100 text-red-800'
-                            }>
-                              {client.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>₱{client.totalSpent.toLocaleString()}</TableCell>
-                          <TableCell>{client.lastVisit ? new Date(client.lastVisit).toLocaleDateString() : '-'}</TableCell>
-                          <TableCell>{client.source.replace('_', ' ')}</TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button size="sm" variant="outline" onClick={() => openClientModal(client)} aria-label="Edit client">
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <Button size="sm" variant="outline" onClick={() => openMedicalRecordModal(undefined, client.id)} aria-label="Open medical records">
-                                <FileText className="w-4 h-4" />
-                              </Button>
-                              <Button size="sm" variant="outline" aria-label="Call client">
-                                <Phone className="w-4 h-4" />
-                              </Button>
-                              <Button size="sm" variant="outline" aria-label="Email client">
-                                <Mail className="w-4 h-4" />
-                              </Button>
-                              <Button size="sm" variant="outline" onClick={() => setConfirmClient(client)} aria-label="Delete client">
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                  </TableBody>
-                    </Table>
-                  </div>
-                </CardContent>
-              </Card>
-                </TabsContent>
-                </LazyTabContent>
-
-                {/* Confirm Delete Client Dialog */}
-                <Dialog open={!!confirmClient} onOpenChange={(open) => { if (!open && !confirmDeleting) setConfirmClient(null) }}>
-                  <DialogContent className="max-w-md bg-white/80 backdrop-blur-sm border border-rose-200/60 shadow-2xl">
-                    <DialogHeader>
-                      <DialogTitle className="flex items-center gap-2">
-                        <AlertCircle className="w-5 h-5 text-rose-600" />
-                        Delete Client
-                      </DialogTitle>
-                    </DialogHeader>
-                    {confirmClient && (
-                      <div className="space-y-3 text-sm text-gray-700">
-                        <p>Are you sure you want to delete this client? This action cannot be undone.</p>
-                        <div className="rounded-lg border bg-white/70 p-3">
-                          <div className="font-medium">{confirmClient.firstName} {confirmClient.lastName}</div>
-                          {confirmClient.email && <div className="text-gray-600">{privacyMode ? maskEmail(confirmClient.email) : confirmClient.email}</div>}
-                          {confirmClient.phone && <div className="text-gray-600">{privacyMode ? maskPhone(confirmClient.phone) : confirmClient.phone}</div>}
-                          {confirmClient.address && <div className="text-gray-600">{privacyMode ? maskAddress(confirmClient.address) : confirmClient.address}</div>}
-                        </div>
-                      </div>
-                    )}
-                    <div className="flex justify-end gap-2 pt-2">
-                      <Button variant="outline" onClick={() => setConfirmClient(null)} disabled={confirmDeleting}>Cancel</Button>
-                      <Button
-                        variant="destructive"
-                        onClick={async () => {
-                          if (!confirmClient) return
-                          setConfirmDeleting(true)
-                          try {
-                            const res = await fetch('/api/admin/clients', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: confirmClient.id }) })
-                            if (res.ok) {
-                              await clientService.fetchFromSupabase?.()
-                              setClients(clientService.getAllClients())
-                              showNotification('success', 'Client deleted')
-                              setConfirmClient(null)
-                            } else {
-                              showNotification('error', 'Failed to delete client')
-                            }
-                          } finally {
-                            setConfirmDeleting(false)
-                          }
-                        }}
-                      >
-                        {confirmDeleting ? (
-                          <RefreshCw className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <>
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Delete
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
+                <ClientsTab
+                  clients={clients}
+                  searchQuery={searchQuery}
+                  setSearchQuery={setSearchQuery}
+                  statusFilter={clientsStatusFilter}
+                  setStatusFilter={setClientsStatusFilter}
+                  sourceFilter={clientsSourceFilter}
+                  setSourceFilter={setClientsSourceFilter}
+                  sort={clientsSort}
+                  setSort={setClientsSort}
+                  privacyMode={privacyMode}
+                  openClientModal={openClientModal}
+                  openMedicalRecordModal={openMedicalRecordModal}
+                  onRefresh={refreshClients}
+                  showNotification={showNotification}
+                />
+              </TabsContent>
+            </LazyTabContent>
 
             <LazyTabContent isActive={activeTab === "staff"}>
               <TabsContent value="staff" className="space-y-8">

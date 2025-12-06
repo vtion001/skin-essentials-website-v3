@@ -7,20 +7,26 @@ export function supabaseBrowserClient() {
   return createBrowserClient(url, key)
 }
 
-export function supabaseServerClient() {
-  const cookieStore = cookies()
+export async function supabaseServerClient() {
+  const cookieStore = await cookies()
   const url = String(process.env.NEXT_PUBLIC_SUPABASE_URL)
   const key = String(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+  
   return createServerClient(url, key, {
     cookies: {
-      get(name: string) {
-        return cookieStore.get(name)?.value
+      getAll() {
+        return cookieStore.getAll()
       },
-      set(name: string, value: string, options: any) {
-        cookieStore.set({ name, value, ...options })
-      },
-      remove(name: string, options: any) {
-        cookieStore.delete({ name, ...options })
+      setAll(cookiesToSet) {
+        try {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            cookieStore.set(name, value, options)
+          )
+        } catch {
+          // The `setAll` method was called from a Server Component.
+          // This can be ignored if you have middleware refreshing
+          // user sessions.
+        }
       },
     },
   })

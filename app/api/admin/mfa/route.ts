@@ -3,7 +3,7 @@ import { cookies } from "next/headers"
 import { verifyCsrfToken } from "@/lib/utils"
 
 export async function POST(request: Request) {
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const cookiesMap = new Map<string, string>()
   cookieStore.getAll().forEach(c => cookiesMap.set(c.name, c.value))
   if (!verifyCsrfToken(request.headers, cookiesMap)) {

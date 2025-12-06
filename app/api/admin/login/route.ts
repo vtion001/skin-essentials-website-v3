@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { supabaseAdminClient } from "@/lib/supabase-admin"
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
+import { supabaseServerClient } from "@/lib/supabase-clients"
 import { cookies } from "next/headers"
 import { verifyCsrfToken } from "@/lib/utils"
 
@@ -10,7 +10,7 @@ function supabaseEnvOk() {
 
 export async function POST(request: Request) {
   try {
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const cookiesMap = new Map<string, string>()
     cookieStore.getAll().forEach(c => cookiesMap.set(c.name, c.value))
     if (!verifyCsrfToken(request.headers, cookiesMap)) {
@@ -23,7 +23,7 @@ export async function POST(request: Request) {
       )
     }
     const { email, password } = await request.json()
-    const supabase = createRouteHandlerClient({ cookies })
+    const supabase = await supabaseServerClient()
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error || !data.session) {
       const msg = error?.message || 'Invalid credentials'
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
 
 export async function DELETE() {
   try {
-    const supabase = createRouteHandlerClient({ cookies })
+    const supabase = await supabaseServerClient()
     await supabase.auth.signOut()
     return NextResponse.json({ success: true })
   } catch (error) {

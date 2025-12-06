@@ -485,19 +485,17 @@ export default function FAQPage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center max-w-2xl mx-auto">
               <Button
-                size="lg"
-                variant="secondary"
-              size="lg"
-              className="text-brand-tan px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold rounded-2xl w-full sm:w-auto"
-              >
+          size="lg"
+          variant="secondary"
+          className="text-brand-tan px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold rounded-2xl w-full sm:w-auto"
+        >
                 <Phone className="w-4 h-4 sm:w-5 sm:h-5 mr-2 sm:mr-3 flex-shrink-0" />
                 <span className="break-words">Call 0995-260-3451</span>
               </Button>
               <Button
                 size="lg"
                 variant="outline"
-              size="lg"
-              className="border-2 border-white text-white hover:bg-white hover:text-brand-tan bg-transparent px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold rounded-2xl w-full sm:w-auto"
+                className="border-2 border-white text-white hover:bg-white hover:text-brand-tan bg-transparent px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold rounded-2xl w-full sm:w-auto"
               >
                 <span className="break-words">Book Free Consultation</span>
               </Button>

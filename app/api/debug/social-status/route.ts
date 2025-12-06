@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
     const connections = socialMediaService.getPlatformConnections()
     
     // Get all conversations
-    const conversations = socialMediaService.getConversations()
+    const conversations = socialMediaService.getAllConversations()
     
     return NextResponse.json({
       success: true,
