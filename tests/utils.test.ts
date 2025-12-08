@@ -14,7 +14,7 @@ describe('getEncryptionKey', () => {
     const buf = getEncryptionKey()
     expect(buf).toBeInstanceOf(Buffer)
     expect(buf.length).toBe(32)
-    expect(Buffer.compare(buf, key)).toBe(0)
+    expect(buf.toString('hex')).toBe(key.toString('hex'))
   })
 
   it('derives key from string if not base64', () => {

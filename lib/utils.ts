@@ -23,11 +23,11 @@ export function getEncryptionKey() {
 
 export function aesEncrypt(payload: any) {
   const keyBuf = getEncryptionKey()
-  const secret = crypto.createSecretKey(keyBuf)
+  const secret = crypto.createSecretKey(keyBuf as any)
   const ivArr = new Uint8Array(crypto.randomBytes(12))
   const cipher = crypto.createCipheriv('aes-256-gcm', secret, ivArr)
   const jsonBytes = new TextEncoder().encode(JSON.stringify(payload))
-  const encBuf = Buffer.concat([cipher.update(jsonBytes), cipher.final()])
+  const encBuf = Buffer.concat([cipher.update(jsonBytes as any), cipher.final() as any])
   const tagBuf = cipher.getAuthTag()
   return {
     iv: Buffer.from(ivArr).toString('base64'),
@@ -39,13 +39,13 @@ export function aesEncrypt(payload: any) {
 export function aesDecrypt(blob: { iv: string; tag: string; data: string } | null) {
   if (!blob || !blob.iv || !blob.tag || !blob.data) return null
   const keyBuf = getEncryptionKey()
-  const secret = crypto.createSecretKey(keyBuf)
+  const secret = crypto.createSecretKey(keyBuf as any)
   const ivArr = new Uint8Array(Buffer.from(blob.iv, 'base64'))
   const tagBuf = Buffer.from(blob.tag, 'base64')
   const dataArr = new Uint8Array(Buffer.from(blob.data, 'base64'))
   const decipher = crypto.createDecipheriv('aes-256-gcm', secret, ivArr)
-  decipher.setAuthTag(tagBuf)
-  const dec = Buffer.concat([decipher.update(dataArr), decipher.final()])
+  decipher.setAuthTag(tagBuf as any)
+  const dec = Buffer.concat([decipher.update(dataArr as any), decipher.final() as any])
   try {
     return JSON.parse(dec.toString('utf-8'))
   } catch {

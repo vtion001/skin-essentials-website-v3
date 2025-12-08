@@ -2,7 +2,6 @@
 
 import "./admin-styles.css"
 import React, { useState, useEffect, useTransition, useMemo, useCallback, memo } from "react"
-import { createClient } from "@supabase/supabase-js"
 import { Button } from "@/components/ui/button"
 import { patchJson } from "@/lib/request"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -687,7 +686,6 @@ export default function AdminDashboard() {
   }
 
   const supabaseRealtimeEnabled = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
-  const supabaseBrowser = supabaseRealtimeEnabled ? createClient(String(process.env.NEXT_PUBLIC_SUPABASE_URL), String(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)) : null
 
   const paymentFileInputRef = React.useRef<HTMLInputElement | null>(null)
   const [isCameraDialogOpen, setIsCameraDialogOpen] = useState(false)
@@ -821,18 +819,27 @@ export default function AdminDashboard() {
 
 
   useEffect(() => {
-    if (!supabaseBrowser) return
-    const channel = supabaseBrowser.channel('admin-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, () => { refreshAppointments() })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' }, () => { refreshClients() })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'staff' }, () => { refreshStaff() })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'payments' }, () => { refreshPayments() })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'medical_records' }, () => { refreshMedicalRecords() })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'influencers' }, () => { refreshInfluencers() })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'influencer_referrals' }, () => { refreshInfluencers() })
-      .subscribe()
-    return () => { supabaseBrowser.removeChannel(channel) }
-  }, [refreshAppointments, refreshClients, refreshStaff, refreshPayments, refreshMedicalRecords, refreshInfluencers])
+    let client: any = null
+    let channel: any = null
+    ;(async () => {
+      if (!supabaseRealtimeEnabled) return
+      try {
+        const mod = await import('@supabase/supabase-js')
+        client = mod.createClient(String(process.env.NEXT_PUBLIC_SUPABASE_URL), String(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY))
+        channel = client
+          .channel('admin-realtime')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, () => { refreshAppointments() })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' }, () => { refreshClients() })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'staff' }, () => { refreshStaff() })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'payments' }, () => { refreshPayments() })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'medical_records' }, () => { refreshMedicalRecords() })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'influencers' }, () => { refreshInfluencers() })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'influencer_referrals' }, () => { refreshInfluencers() })
+          .subscribe()
+      } catch {}
+    })()
+    return () => { if (client && channel) client.removeChannel(channel) }
+  }, [supabaseRealtimeEnabled, refreshAppointments, refreshClients, refreshStaff, refreshPayments, refreshMedicalRecords, refreshInfluencers])
 
   // Dashboard Statistics
   const getDashboardStats = () => {

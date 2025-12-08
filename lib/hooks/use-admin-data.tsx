@@ -46,6 +46,9 @@ export function useAdminData() {
   const refreshPayments = useCallback(async () => {
     try {
       const payRes = await fetch('/api/admin/payments', { cache: 'no-store' })
+      if (!payRes.ok) { setPayments([]); return }
+      const ctype = payRes.headers.get('content-type') || ''
+      if (!ctype.includes('application/json')) { setPayments([]); return }
       const payJson = await payRes.json()
       const arr = Array.isArray(payJson?.payments) ? payJson.payments : []
       const normalized = arr.map((p: any) => ({
@@ -71,6 +74,9 @@ export function useAdminData() {
   const refreshMedicalRecords = useCallback(async () => {
     try {
       const recRes = await fetch('/api/admin/medical-records', { cache: 'no-store' })
+      if (!recRes.ok) { setMedicalRecords([]); return }
+      const ctype = recRes.headers.get('content-type') || ''
+      if (!ctype.includes('application/json')) { setMedicalRecords([]); return }
       const recJson = await recRes.json()
       const arr = Array.isArray(recJson?.records) ? recJson.records : []
       const localMap = new Map<string, { date: string; procedure: string; aestheticianId?: string }[]>(

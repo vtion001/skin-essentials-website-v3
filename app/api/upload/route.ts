@@ -39,8 +39,8 @@ export async function POST(request: NextRequest) {
 
     // Convert file to buffer and save
     const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
-    await writeFile(filepath, buffer)
+    const arr = new Uint8Array(bytes)
+    await writeFile(filepath, arr)
 
     // Return the public URL
     const url = `/uploads/portfolio/${filename}`
