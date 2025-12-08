@@ -74,7 +74,7 @@ export function SharedHeader({ showBackButton = false, backHref = "/", variant =
                       alt="Skin Essentials by HER - Premier Aesthetic Clinic in Quezon City specializing in Hiko Nose Thread Lifts"
                       width={120}
                       height={60}
-                      className="h-10 w-auto object-contain"
+                      className="h-16 w-auto object-contain"
                       priority
                     />
                   </div>

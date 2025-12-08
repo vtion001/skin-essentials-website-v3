@@ -462,17 +462,19 @@ export default function AdminDashboard() {
   const [addResultForm, setAddResultForm] = useState<{ beforeImage: string; afterImage: string }>({ beforeImage: "", afterImage: "" })
   const addResultBeforeRef = React.useRef<HTMLInputElement | null>(null)
   const addResultAfterRef = React.useRef<HTMLInputElement | null>(null)
-  const uploadPortfolioFile = async (file: File, kind: 'before' | 'after', target: 'create' | 'edit' = 'create') => {
-    try {
-      const url = await uploadToApi(file, kind)
-      if (target === 'create') {
-        setPortfolioForm(prev => ({ ...prev, [kind === 'before' ? 'beforeImage' : 'afterImage']: url }))
-      } else {
-        setEditPortfolioForm(prev => ({ ...prev, [kind === 'before' ? 'beforeImage' : 'afterImage']: url }))
-      }
-      showNotification('success', 'Image uploaded')
-    } catch { showNotification('error', 'Upload failed') }
-  }
+ const uploadPortfolioFile = async (file: File, kind: 'before' | 'after', target: 'create' | 'edit' | 'addResult' = 'create') => {
+  try {
+    const url = await uploadToApi(file, kind)
+    if (target === 'create') {
+      setPortfolioForm(prev => ({ ...prev, [kind === 'before' ? 'beforeImage' : 'afterImage']: url }))
+    } else if (target === 'edit') {
+      setEditPortfolioForm(prev => ({ ...prev, [kind === 'before' ? 'beforeImage' : 'afterImage']: url }))
+    } else if (target === 'addResult') {
+      setAddResultForm(prev => ({ ...prev, [kind === 'before' ? 'beforeImage' : 'afterImage']: url }))
+    }
+    showNotification('success', 'Image uploaded')
+  } catch { showNotification('error', 'Upload failed') }
+}
 
   // Deletion confirmation (Client)
 
@@ -2553,7 +2555,7 @@ export default function AdminDashboard() {
                                 type="file"
                                 accept="image/*"
                                 className="hidden"
-                                onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadPortfolioFile(f, 'before', 'create'); e.currentTarget.value = '' }}
+                                onChange={(e) => { const input = e.currentTarget; const f = input.files?.[0]; input.value = ''; if (f) uploadPortfolioFile(f, 'before', 'create') }}
                               />
                             </div>
                           </div>
@@ -2575,7 +2577,7 @@ export default function AdminDashboard() {
                                 type="file"
                                 accept="image/*"
                                 className="hidden"
-                                onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadPortfolioFile(f, 'after', 'create'); e.currentTarget.value = '' }}
+                                onChange={(e) => { const input = e.currentTarget; const f = input.files?.[0]; input.value = ''; if (f) uploadPortfolioFile(f, 'after', 'create') }}
                               />
                             </div>
                           </div>
@@ -2710,7 +2712,7 @@ export default function AdminDashboard() {
                                     type="file"
                                     accept="image/*"
                                     className="hidden"
-                                    onChange={async (e) => { const f = e.target.files?.[0]; if (f) { await uploadPortfolioFile(f, 'before', 'edit'); setAddResultForm(prev => ({ ...prev, beforeImage: editPortfolioForm.beforeImage || prev.beforeImage })) } e.currentTarget.value = '' }}
+                                    onChange={async (e) => { const input = e.currentTarget; const f = input.files?.[0]; input.value = ''; if (f) { await uploadPortfolioFile(f, 'before', 'addResult') } }}
                                   />
                                 </div>
                               </div>
@@ -2731,7 +2733,7 @@ export default function AdminDashboard() {
                                     type="file"
                                     accept="image/*"
                                     className="hidden"
-                                    onChange={async (e) => { const f = e.target.files?.[0]; if (f) { await uploadPortfolioFile(f, 'after', 'edit'); setAddResultForm(prev => ({ ...prev, afterImage: editPortfolioForm.afterImage || prev.afterImage })) } e.currentTarget.value = '' }}
+                                    onChange={async (e) => { const input = e.currentTarget; const f = input.files?.[0]; input.value = ''; if (f) { await uploadPortfolioFile(f, 'after', 'addResult') } }}
                                   />
                                 </div>
                               </div>
@@ -2747,20 +2749,28 @@ export default function AdminDashboard() {
                                   if (!b || !a) { showNotification('error', 'Please provide both images'); return }
                                   ;(async () => {
                                     try {
-                                      const currRes = await fetch(`/api/portfolio/${addResultTarget.id}`)
-                                      const currJson = await currRes.json()
-                                      const curr = currJson?.data || currJson
-                                      const list = Array.isArray(curr?.extraResults) ? curr.extraResults : []
-                                      const put = await fetch(`/api/portfolio/${addResultTarget.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ extraResults: [...list, { beforeImage: b, afterImage: a }] }) })
-                                      const ok = put.ok
-                                      if (ok) {
-                                        const r = await fetch('/api/portfolio')
+                                      const payload = {
+                                        title: addResultTarget.title,
+                                        category: addResultTarget.category,
+                                        beforeImage: b,
+                                        afterImage: a,
+                                        description: addResultTarget.description,
+                                        treatment: addResultTarget.treatment,
+                                        duration: addResultTarget.duration,
+                                        results: addResultTarget.results,
+                                        extraResults: []
+                                      }
+                                      const res = await fetch('/api/portfolio', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+                                      if (res.ok) {
+                                        const r = await fetch('/api/portfolio', { cache: 'no-store' })
                                         const jr = await r.json()
                                         if (jr?.ok && Array.isArray(jr.data)) setContentPortfolioItems(jr.data)
                                         setAddResultTarget(null)
                                         setAddResultForm({ beforeImage: '', afterImage: '' })
                                         showNotification('success', 'Result added')
-                                      } else showNotification('error', 'Failed to add result')
+                                      } else {
+                                        showNotification('error', 'Failed to add result')
+                                      }
                                     } catch { showNotification('error', 'Failed to add result') }
                                   })()
                                 }}

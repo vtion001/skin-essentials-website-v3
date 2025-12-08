@@ -193,9 +193,10 @@ export default function AboutPage() {
                       <Image
                         src={member.image}
                         alt={member.name}
-                        width={300}
-                        height={300}
-                        className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
+                        width={400}
+                        height={400}
+                        className="w-full h-90 object-cover group-hover:scale-95 transition-transform duration-300"
+                        style={{ objectPosition: "center 60%" }}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     </div>
