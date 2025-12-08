@@ -1,5 +1,13 @@
-import next from 'eslint-config-next'
+import nextConfig from 'eslint-config-next'
 
 export default [
-  ...next,
+  ...nextConfig,
+  {
+    rules: {
+      'react/no-unescaped-entities': 'warn',
+      'react-hooks/exhaustive-deps': 'warn',
+      '@next/next/no-img-element': 'warn',
+    },
+  },
 ]
+

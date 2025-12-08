@@ -734,7 +734,6 @@ function ServicesContent() {
                       whileHover={reduceMotion ? undefined : { y: -1 }}
                       whileTap={reduceMotion ? undefined : { scale: 0.99 }}
                       role="listitem"
-                      aria-haspopup="dialog"
                       aria-label={`${service.name}, ${service.price}`}
                       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setPreview({ service, category }); setIsPreviewOpen(true) } }}
                     >

@@ -86,6 +86,106 @@ import { AnimatedSelect } from "@/components/ui/animated-select"
 import { EnhancedButton } from "@/components/ui/enhanced-button"
 import { LazyTabContent } from "@/components/ui/lazy-tab-content"
 import { InfluencerModal } from "@/components/admin/modals/influencer-modal"
+
+const ServiceEditDialog = memo(function ServiceEditDialog({ open, onOpenChange, target, selectedCategory, onSaved }: { open: boolean; onOpenChange: (v: boolean) => void; target: { name: string; price: string; description: string; duration?: string; results?: string; sessions?: string; includes?: string; originalPrice?: string; badge?: string; pricing?: string; benefits?: string[]; faqs?: { q: string; a: string }[] } | null; selectedCategory: string; onSaved: () => void }) {
+  const [draft, setDraft] = useState<{ name: string; price: string; description: string; duration?: string; results?: string; sessions?: string; includes?: string; originalPrice?: string; badge?: string; pricing?: string; benefits?: string[]; faqs?: { q: string; a: string }[] }>({ name: "", price: "", description: "", benefits: [], faqs: [] })
+  useEffect(() => {
+    if (open) {
+      setDraft(target || { name: "", price: "", description: "", benefits: [], faqs: [] })
+    }
+  }, [open, target])
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Edit Service</DialogTitle>
+        </DialogHeader>
+        <div className="grid md:grid-cols-2 gap-4">
+          <div>
+            <Label>Name</Label>
+            <Input value={draft.name} onChange={(e) => setDraft(prev => ({ ...prev, name: e.target.value }))} placeholder="Service name" />
+          </div>
+          <div>
+            <Label>Price</Label>
+            <Input value={draft.price} onChange={(e) => setDraft(prev => ({ ...prev, price: e.target.value }))} placeholder="₱0" />
+          </div>
+          <div>
+            <Label>Duration</Label>
+            <Input value={draft.duration || ''} onChange={(e) => setDraft(prev => ({ ...prev, duration: e.target.value }))} placeholder="e.g. 45 minutes" />
+          </div>
+          <div>
+            <Label>Results</Label>
+            <Input value={draft.results || ''} onChange={(e) => setDraft(prev => ({ ...prev, results: e.target.value }))} placeholder="e.g. 6-12 months" />
+          </div>
+          <div>
+            <Label>Sessions</Label>
+            <Input value={draft.sessions || ''} onChange={(e) => setDraft(prev => ({ ...prev, sessions: e.target.value }))} placeholder="e.g. 6-8 sessions" />
+          </div>
+          <div>
+            <Label>Includes</Label>
+            <Input value={draft.includes || ''} onChange={(e) => setDraft(prev => ({ ...prev, includes: e.target.value }))} placeholder="e.g. Post-care kit" />
+          </div>
+          <div>
+            <Label>Original Price</Label>
+            <Input value={draft.originalPrice || ''} onChange={(e) => setDraft(prev => ({ ...prev, originalPrice: e.target.value }))} placeholder="₱0" />
+          </div>
+          <div>
+            <Label>Badge</Label>
+            <Input value={draft.badge || ''} onChange={(e) => setDraft(prev => ({ ...prev, badge: e.target.value }))} placeholder="e.g. PROMO" />
+          </div>
+          <div className="md:col-span-2">
+            <Label>Pricing Notes</Label>
+            <Input value={draft.pricing || ''} onChange={(e) => setDraft(prev => ({ ...prev, pricing: e.target.value }))} placeholder="e.g. per thread/cc" />
+          </div>
+          <div className="md:col-span-2">
+            <Label>Description</Label>
+            <Textarea value={draft.description} onChange={(e) => setDraft(prev => ({ ...prev, description: e.target.value }))} placeholder="Describe the service" />
+          </div>
+          <div className="md:col-span-2 space-y-2">
+            <Label>Benefits</Label>
+            {(draft.benefits || []).map((b, idx) => (
+              <div key={idx} className="flex gap-2">
+                <Input value={b} onChange={(e) => setDraft(prev => ({ ...prev, benefits: (prev.benefits || []).map((x, i) => i === idx ? e.target.value : x) }))} placeholder={`Benefit ${idx+1}`} />
+                <Button variant="outline" onClick={() => setDraft(prev => ({ ...prev, benefits: (prev.benefits || []).filter((_, i) => i !== idx) }))}>Remove</Button>
+              </div>
+            ))}
+            <Button variant="secondary" onClick={() => setDraft(prev => ({ ...prev, benefits: [ ...(prev.benefits || []), '' ] }))}>Add Benefit</Button>
+          </div>
+          <div className="md:col-span-2 space-y-2">
+            <Label>FAQs</Label>
+            {(draft.faqs || []).map((f, idx) => (
+              <div key={idx} className="grid md:grid-cols-2 gap-2">
+                <Input value={f?.q || ''} onChange={(e) => setDraft(prev => ({ ...prev, faqs: (prev.faqs || []).map((x, i) => i === idx ? { ...x, q: e.target.value } : x) }))} placeholder={`Question ${idx+1}`} />
+                <Textarea value={f?.a || ''} onChange={(e) => setDraft(prev => ({ ...prev, faqs: (prev.faqs || []).map((x, i) => i === idx ? { ...x, a: e.target.value } : x) }))} placeholder="Answer" />
+                <div className="md:col-span-2 flex justify-end">
+                  <Button variant="outline" onClick={() => setDraft(prev => ({ ...prev, faqs: (prev.faqs || []).filter((_, i) => i !== idx) }))}>Remove FAQ</Button>
+                </div>
+              </div>
+            ))}
+            <Button variant="secondary" onClick={() => setDraft(prev => ({ ...prev, faqs: [ ...(prev.faqs || []), { q: '', a: '' } ] }))}>Add FAQ</Button>
+          </div>
+        </div>
+        <div className="flex items-center justify-end gap-2 mt-4">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button
+            variant="brand"
+            onClick={async () => {
+              if (!target) return
+              try {
+                const res = await fetch('/api/services', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'updateService', categoryId: selectedCategory, originalName: target.name, service: draft }) })
+                if (!res.ok) throw new Error('Failed')
+                onOpenChange(false)
+                onSaved()
+              } catch {}
+            }}
+          >
+            Save Changes
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+})
 import { DashboardTab } from "@/components/admin/tabs/dashboard-tab"
 import { AppointmentsTab } from "@/components/admin/tabs/appointments-tab"
 import { ClientsTab } from "@/components/admin/tabs/clients-tab"
@@ -203,6 +303,20 @@ export default function AdminDashboard() {
   
   // File upload hook
   const { uploadToSupabase, uploadToApi } = useFileUpload()
+
+  function updateMedicalTreatment(idx: number, key: 'date' | 'procedure' | 'staffName' | 'total' | 'aestheticianId', value: any) {
+    setMedicalRecordForm(prev => ({
+      ...prev,
+      treatments: (prev.treatments || []).map((x, i) => i === idx ? { ...x, [key]: value } : x)
+    }))
+  }
+
+  function updateStaffTreatment(idx: number, updates: { procedure?: string; clientName?: string; total?: number; date?: string }) {
+    setStaffForm(prev => ({
+      ...prev,
+      treatments: (prev.treatments || []).map((x, i) => i === idx ? { ...x, ...updates } : x)
+    }))
+  }
 
   useEffect(() => { if (activeTab === 'email') refreshEmailPreview() }, [activeTab, refreshEmailPreview])
   const [smsForm, setSmsForm] = useState<{ to: string; message: string }>({ to: '', message: '' })
@@ -878,6 +992,41 @@ export default function AdminDashboard() {
     }
   }
 
+  function parseStaffFormData(fd: FormData) {
+    const firstName = String(fd.get('staffFirstName') || '')
+    const lastName = String(fd.get('staffLastName') || '')
+    const email = String(fd.get('staffEmail') || '')
+    const phone = String(fd.get('staffPhone') || '')
+    const department = String(fd.get('staffDepartment') || '')
+    const licenseNumber = String(fd.get('licenseNumber') || '')
+    const hireDate = String(fd.get('hireDate') || '')
+    const specialtiesRaw = String(fd.get('specialties') || '')
+    const notes = String(fd.get('staffNotes') || '')
+    return {
+      firstName,
+      lastName,
+      email,
+      phone,
+      department,
+      licenseNumber,
+      hireDate,
+      specialties: specialtiesRaw.split('\n').filter(i => i.trim()),
+      notes,
+    }
+  }
+
+  function isValidContact(email: string, phone: string) {
+    const emailOk = !email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    const phoneOk = !phone || /\+?\d[\d\s-]{6,}$/.test(phone)
+    return emailOk && phoneOk
+  }
+
+  function buildStaffPayload(selectedStaff: { id: string } | null, staffForm: any, overrides: any) {
+    return selectedStaff
+      ? { id: selectedStaff.id, ...staffForm, ...overrides }
+      : { ...staffForm, ...overrides }
+  }
+
   const handleStaffSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
@@ -885,35 +1034,14 @@ export default function AdminDashboard() {
       try {
         const formEl = e.currentTarget as HTMLFormElement
         const fd = new FormData(formEl)
-        const firstName = String(fd.get('staffFirstName') || '')
-        const lastName = String(fd.get('staffLastName') || '')
-        const emailVal = String(fd.get('staffEmail') || '')
-        const phoneVal = String(fd.get('staffPhone') || '')
-        const departmentVal = String(fd.get('staffDepartment') || '')
-        const licenseVal = String(fd.get('licenseNumber') || '')
-        const hireDateVal = String(fd.get('hireDate') || '')
-        const specialtiesRaw = String(fd.get('specialties') || '')
-        const notesVal = String(fd.get('staffNotes') || '')
-        const emailOk = !emailVal || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)
-        const phoneOk = !phoneVal || /\+?\d[\d\s-]{6,}$/.test(phoneVal)
-        if (!emailOk || !phoneOk) {
+        const parsed = parseStaffFormData(fd)
+        if (!isValidContact(parsed.email, parsed.phone)) {
           showNotification("error", "Please enter valid email and phone")
           setIsLoading(false)
           return
         }
         const method = selectedStaff ? 'PATCH' : 'POST'
-        const overrides = {
-          firstName,
-          lastName,
-          email: emailVal,
-          phone: phoneVal,
-          department: departmentVal,
-          licenseNumber: licenseVal,
-          hireDate: hireDateVal,
-          specialties: specialtiesRaw.split('\n').filter(i => i.trim()),
-          notes: notesVal,
-        }
-        const payload = selectedStaff ? { id: selectedStaff.id, ...staffForm, ...overrides } : { ...staffForm, ...overrides }
+        const payload = buildStaffPayload(selectedStaff, staffForm, parsed)
         const res = await fetch('/api/admin/staff', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
         if (!res.ok) throw new Error('Failed')
         try {
@@ -2080,105 +2208,7 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                     </div>
-                    <Dialog open={isServiceEditOpen} onOpenChange={setIsServiceEditOpen}>
-                      <DialogContent className="max-w-2xl">
-                        <DialogHeader>
-                          <DialogTitle>Edit Service</DialogTitle>
-                        </DialogHeader>
-                        <div className="grid md:grid-cols-2 gap-4">
-                          <div>
-                            <Label>Name</Label>
-                            <Input value={serviceEditForm.name} onChange={(e) => setServiceEditForm(prev => ({ ...prev, name: e.target.value }))} placeholder="Service name" />
-                          </div>
-                          <div>
-                            <Label>Price</Label>
-                            <Input value={serviceEditForm.price} onChange={(e) => setServiceEditForm(prev => ({ ...prev, price: e.target.value }))} placeholder="₱0" />
-                          </div>
-                          <div>
-                            <Label>Duration</Label>
-                            <Input value={serviceEditForm.duration || ''} onChange={(e) => setServiceEditForm(prev => ({ ...prev, duration: e.target.value }))} placeholder="e.g. 45 minutes" />
-                          </div>
-                          <div>
-                            <Label>Results</Label>
-                            <Input value={serviceEditForm.results || ''} onChange={(e) => setServiceEditForm(prev => ({ ...prev, results: e.target.value }))} placeholder="e.g. 6-12 months" />
-                          </div>
-                          <div>
-                            <Label>Sessions</Label>
-                            <Input value={serviceEditForm.sessions || ''} onChange={(e) => setServiceEditForm(prev => ({ ...prev, sessions: e.target.value }))} placeholder="e.g. 6-8 sessions" />
-                          </div>
-                          <div>
-                            <Label>Includes</Label>
-                            <Input value={serviceEditForm.includes || ''} onChange={(e) => setServiceEditForm(prev => ({ ...prev, includes: e.target.value }))} placeholder="e.g. Post-care kit" />
-                          </div>
-                          <div>
-                            <Label>Original Price</Label>
-                            <Input value={serviceEditForm.originalPrice || ''} onChange={(e) => setServiceEditForm(prev => ({ ...prev, originalPrice: e.target.value }))} placeholder="₱0" />
-                          </div>
-                          <div>
-                            <Label>Badge</Label>
-                            <Input value={serviceEditForm.badge || ''} onChange={(e) => setServiceEditForm(prev => ({ ...prev, badge: e.target.value }))} placeholder="e.g. PROMO" />
-                          </div>
-                          <div className="md:col-span-2">
-                            <Label>Pricing Notes</Label>
-                            <Input value={serviceEditForm.pricing || ''} onChange={(e) => setServiceEditForm(prev => ({ ...prev, pricing: e.target.value }))} placeholder="e.g. per thread/cc" />
-                          </div>
-                          <div className="md:col-span-2">
-                            <Label>Description</Label>
-                            <Textarea value={serviceEditForm.description} onChange={(e) => setServiceEditForm(prev => ({ ...prev, description: e.target.value }))} placeholder="Describe the service" />
-                          </div>
-                          <div className="md:col-span-2 space-y-2">
-                            <Label>Benefits</Label>
-                            {(serviceEditForm.benefits || []).map((b, idx) => (
-                              <div key={idx} className="flex gap-2">
-                                <Input value={b} onChange={(e) => setServiceEditForm(prev => ({ ...prev, benefits: (prev.benefits || []).map((x, i) => i === idx ? e.target.value : x) }))} placeholder={`Benefit ${idx+1}`} />
-                                <Button variant="outline" onClick={() => setServiceEditForm(prev => ({ ...prev, benefits: (prev.benefits || []).filter((_, i) => i !== idx) }))}>Remove</Button>
-                              </div>
-                            ))}
-                            <Button variant="secondary" onClick={() => setServiceEditForm(prev => ({ ...prev, benefits: [ ...(prev.benefits || []), '' ] }))}>Add Benefit</Button>
-                          </div>
-                          <div className="md:col-span-2 space-y-2">
-                            <Label>FAQs</Label>
-                            {(serviceEditForm.faqs || []).map((f, idx) => (
-                              <div key={idx} className="grid md:grid-cols-2 gap-2">
-                                <Input value={f?.q || ''} onChange={(e) => setServiceEditForm(prev => ({ ...prev, faqs: (prev.faqs || []).map((x, i) => i === idx ? { ...x, q: e.target.value } : x) }))} placeholder={`Question ${idx+1}`} />
-                                <Textarea value={f?.a || ''} onChange={(e) => setServiceEditForm(prev => ({ ...prev, faqs: (prev.faqs || []).map((x, i) => i === idx ? { ...x, a: e.target.value } : x) }))} placeholder="Answer" />
-                                <div className="md:col-span-2 flex justify-end">
-                                  <Button variant="outline" onClick={() => setServiceEditForm(prev => ({ ...prev, faqs: (prev.faqs || []).filter((_, i) => i !== idx) }))}>Remove FAQ</Button>
-                                </div>
-                              </div>
-                            ))}
-                            <Button variant="secondary" onClick={() => setServiceEditForm(prev => ({ ...prev, faqs: [ ...(prev.faqs || []), { q: '', a: '' } ] }))}>Add FAQ</Button>
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-end gap-2 mt-4">
-                          <Button variant="outline" onClick={() => { setIsServiceEditOpen(false); setServiceEditTarget(null) }}>Cancel</Button>
-                          <Button
-                            variant="brand"
-                            onClick={async () => {
-                              if (!serviceEditTarget) return
-                              try {
-                                const res = await fetch('/api/services', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'updateService', categoryId: contentSelectedCategory, originalName: serviceEditTarget.name, service: serviceEditForm }) })
-                                const j = await res.json()
-                                if (j?.ok) {
-                                  const r = await fetch('/api/services')
-                                  const jr = await r.json()
-                                  if (jr?.ok) setContentServices(jr.data.map((c: any) => ({ id: c.id, category: c.category, services: c.services })))
-                                  showNotification('success', 'Service updated')
-                                  setIsServiceEditOpen(false)
-                                  setServiceEditTarget(null)
-                                } else {
-                                  showNotification('error', 'Failed to update service')
-                                }
-                              } catch {
-                                showNotification('error', 'Failed to update service')
-                              }
-                            }}
-                          >
-                            Save Changes
-                          </Button>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
+                    <ServiceEditDialog open={isServiceEditOpen} onOpenChange={(v) => { setIsServiceEditOpen(v); if (!v) setServiceEditTarget(null) }} target={serviceEditTarget} selectedCategory={contentSelectedCategory} onSaved={async () => { try { const r = await fetch('/api/services'); const jr = await r.json(); if (jr?.ok) setContentServices(jr.data.map((c: any) => ({ id: c.id, category: c.category, services: c.services }))); showNotification('success', 'Service updated') } catch {} }} />
                     <div className="rounded-2xl border bg-white/70 p-4">
                       <Table>
                         <TableHeader>
@@ -4350,20 +4380,14 @@ export default function AdminDashboard() {
                       id={`mr_t_date_${idx}`}
                       type="date"
                       value={t?.date || ''}
-                      onChange={(e) => setMedicalRecordForm(prev => ({
-                        ...prev,
-                        treatments: (prev.treatments || []).map((x, i) => i === idx ? { ...x, date: e.target.value } : x)
-                      }))}
+                      onChange={(e) => updateMedicalTreatment(idx, 'date', e.target.value)}
                     />
                   </div>
                   <div className="col-span-4">
                     <Label htmlFor={`mr_t_procedure_${idx}`}>Procedure</Label>
                     <Select
                       value={t?.procedure || ''}
-                      onValueChange={(value) => setMedicalRecordForm(prev => ({
-                        ...prev,
-                        treatments: (prev.treatments || []).map((x, i) => i === idx ? { ...x, procedure: value } : x)
-                      }))}
+                      onValueChange={(value) => updateMedicalTreatment(idx, 'procedure', value)}
                     >
                       <SelectTrigger id={`mr_t_procedure_${idx}`}>
                         <SelectValue placeholder="Select procedure" />
@@ -4379,15 +4403,12 @@ export default function AdminDashboard() {
                     <Label htmlFor={`mr_t_staff_${idx}`}>Staff</Label>
                     <Select
                       value={t?.aestheticianId || ''}
-                      onValueChange={(value) => setMedicalRecordForm(prev => ({
-                        ...prev,
-                        treatments: (prev.treatments || []).map((x, i) => {
-                          if (i !== idx) return x
-                          const person = staff.find(s => s.id === value)
-                          const staffName = person ? `${person.firstName} ${person.lastName}`.trim() : ''
-                          return { ...x, aestheticianId: value, staffName }
-                        })
-                      }))}
+                      onValueChange={(value) => {
+                        const person = staff.find(s => s.id === value)
+                        const staffName = person ? `${person.firstName} ${person.lastName}`.trim() : ''
+                        updateMedicalTreatment(idx, 'aestheticianId', value)
+                        updateMedicalTreatment(idx, 'staffName', staffName)
+                      }}
                     >
                       <SelectTrigger id={`mr_t_staff_${idx}`}>
                         <SelectValue placeholder="Select staff" />
@@ -4405,10 +4426,7 @@ export default function AdminDashboard() {
                       id={`mr_t_total_${idx}`}
                       type="number"
                       value={typeof t?.total === 'number' ? t.total : 0}
-                      onChange={(e) => setMedicalRecordForm(prev => ({
-                        ...prev,
-                        treatments: (prev.treatments || []).map((x, i) => i === idx ? { ...x, total: Number(e.target.value || 0) } : x)
-                      }))}
+                      onChange={(e) => updateMedicalTreatment(idx, 'total', Number(e.target.value || 0))}
                     />
                   </div>
                   <div className="col-span-12 flex justify-end">
@@ -4839,7 +4857,7 @@ export default function AdminDashboard() {
                   <div key={idx} className="grid grid-cols-12 gap-2 items-end">
                     <div className="col-span-5">
                       <Label htmlFor={`t_procedure_${idx}`}>Procedure</Label>
-                      <Select value={t?.procedure || ''} onValueChange={(value) => setStaffForm(prev => ({ ...prev, treatments: (prev.treatments || []).map((x, i) => i === idx ? { ...x, procedure: value } : x) }))}>
+                      <Select value={t?.procedure || ''} onValueChange={(value) => updateStaffTreatment(idx, { procedure: value })}>
                         <SelectTrigger id={`t_procedure_${idx}`}>
                           <SelectValue placeholder="Select procedure" />
                         </SelectTrigger>
@@ -4852,7 +4870,7 @@ export default function AdminDashboard() {
                     </div>
                     <div className="col-span-4">
                       <Label htmlFor={`t_client_${idx}`}>Client</Label>
-                      <Select value={t?.clientName || ''} onValueChange={(value) => setStaffForm(prev => ({ ...prev, treatments: (prev.treatments || []).map((x, i) => i === idx ? { ...x, clientName: value } : x) }))}>
+                      <Select value={t?.clientName || ''} onValueChange={(value) => updateStaffTreatment(idx, { clientName: value })}>
                         <SelectTrigger id={`t_client_${idx}`}>
                           <SelectValue placeholder="Select client" />
                         </SelectTrigger>
@@ -4865,7 +4883,7 @@ export default function AdminDashboard() {
                     </div>
                     <div className="col-span-3">
                       <Label htmlFor={`t_total_${idx}`}>Total</Label>
-                      <Input id={`t_total_${idx}`} type="number" value={typeof t?.total === 'number' ? t.total : 0} onChange={(e) => setStaffForm(prev => ({ ...prev, treatments: (prev.treatments || []).map((x, i) => i === idx ? { ...x, total: Number(e.target.value || 0) } : x) }))} />
+                      <Input id={`t_total_${idx}`} type="number" value={typeof t?.total === 'number' ? t.total : 0} onChange={(e) => updateStaffTreatment(idx, { total: Number(e.target.value || 0) })} />
                     </div>
                     <div className="col-span-12 flex justify-end">
                       <Button type="button" variant="outline" onClick={() => setStaffForm(prev => ({ ...prev, treatments: (prev.treatments || []).filter((_, i) => i !== idx) }))}>
@@ -4976,3 +4994,4 @@ const maskAddress = (a: string) => {
   if (!s) return ''
   return '•'.repeat(Math.min(s.length, 12))
 }
+  

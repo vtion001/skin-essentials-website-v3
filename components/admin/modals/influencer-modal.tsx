@@ -30,17 +30,17 @@ export const InfluencerModal = memo(({
 }: InfluencerModalProps) => {
   const [form, setForm] = useState<Partial<Influencer>>({})
   const [reveal, setReveal] = useState<{ referralCode: boolean; email: boolean; phone: boolean }>({ referralCode: true, email: true, phone: true })
-  
-  useEffect(() => {
-    if (open) {
-      if (selectedInfluencer) setForm(selectedInfluencer)
-      else setForm({ name: '', handle: '', platform: 'instagram', email: '', phone: '', referralCode: '', commissionRate: 0.10, status: 'active', notes: '' })
+
+  const handleOpenChange = (v: boolean) => {
+    if (v) {
+      setForm(selectedInfluencer || { name: '', handle: '', platform: 'instagram', email: '', phone: '', referralCode: '', commissionRate: 0.10, status: 'active', notes: '' })
       setReveal({ referralCode: true, email: true, phone: true })
     }
-  }, [open, selectedInfluencer])
+    onOpenChange(v)
+  }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl will-change-transform [backface-visibility:hidden] [transform:translateZ(0)] [contain:layout_paint]">
         <DialogHeader>
           <DialogTitle>{selectedInfluencer ? 'Edit Influencer' : 'Add New Influencer'}</DialogTitle>

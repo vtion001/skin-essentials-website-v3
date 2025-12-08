@@ -373,7 +373,7 @@ export function AppointmentsTab({
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={() => setPage(p => Math.max(1, p - 1))}
+                onClick={() => setPage(Math.max(1, page - 1))}
                 disabled={page === 1}
               >
                 Previous
@@ -382,7 +382,7 @@ export function AppointmentsTab({
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                onClick={() => setPage(Math.min(totalPages, page + 1))}
                 disabled={page === totalPages}
               >
                 Next

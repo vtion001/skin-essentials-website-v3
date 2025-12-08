@@ -33,11 +33,41 @@ import { BookingModal } from "@/components/booking-modal"
 
 export default function HomePage() {
   const [isBookingOpen, setIsBookingOpen] = useState(false)
-  const [visibleCards, setVisibleCards] = useState<boolean[]>([false, false, false, false])
   const heroVideoUrl = "https://res.cloudinary.com/dbviya1rj/video/upload/v1763293241/qdrmjvsqv6hspdrhzrdf.mp4"
   const [heroVideoError, setHeroVideoError] = useState(false)
 
-  
+  const mainServices = [
+    {
+      name: "Thread Lifts",
+      description: "Non-surgical face and nose lifting using PDO/PCL threads",
+      image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1758859267/bbecd5de-3bea-4490-8fef-144ca997ed41.png?height=300&width=400&text=Thread+Lift",
+      treatments: ["Hiko Nose Lift", "Face Thread Lift", "Neck Thread Lift"],
+      href: "/hiko-nose-lift",
+    },
+    {
+      name: "Dermal Fillers",
+      description: "Hyaluronic acid fillers for face, lips, and body enhancement",
+      image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1758859335/f380e512-53bd-4501-81e3-685818b51001.png?height=300&width=400&text=Dermal+Fillers",
+      treatments: ["Lip Fillers", "Cheek Fillers", "Butt Fillers"],
+      href: "/services#dermal-fillers",
+    },
+    {
+      name: "Laser Treatments",
+      description: "Advanced laser technology for hair removal and skin rejuvenation",
+      image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1758859399/31549a56-c2be-4517-81e3-9b866a9a1a23.png?height=300&width=400&text=Laser+Treatment",
+      treatments: ["Hair Removal", "Pico Laser", "Tattoo Removal"],
+      href: "/services#laser-treatments",
+    },
+    {
+      name: "Skin Rejuvenation",
+      description: "Medical-grade treatments for youthful, glowing skin",
+      image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1758859466/3ae3dd78-09b7-474a-86af-6ff7df610626.png?height=300&width=400&text=Skin+Treatment",
+      treatments: ["Vampire Facial", "Thermage", "Stem Cell Boosters"],
+      href: "/services#skin-treatments",
+    },
+  ]
+
+  const [visibleCards, setVisibleCards] = useState<boolean[]>(Array(mainServices.length).fill(false))
 
   // Intersection Observer for card animations
   useEffect(() => {
@@ -70,37 +100,6 @@ export default function HomePage() {
       observers.forEach(observer => observer.disconnect())
     }
   }, [])
-
-  const mainServices = [
-    {
-      name: "Thread Lifts",
-      description: "Non-surgical face and nose lifting using PDO/PCL threads",
-      image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1758859267/bbecd5de-3bea-4490-8fef-144ca997ed41.png?height=300&width=400&text=Thread+Lift",
-      treatments: ["Hiko Nose Lift", "Face Thread Lift", "Neck Thread Lift"],
-      href: "/hiko-nose-lift",
-    },
-    {
-      name: "Dermal Fillers",
-      description: "Hyaluronic acid fillers for face, lips, and body enhancement",
-      image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1758859335/f380e512-53bd-4501-81e3-685818b51001.png?height=300&width=400&text=Dermal+Fillers",
-      treatments: ["Lip Fillers", "Cheek Fillers", "Butt Fillers"],
-      href: "/services#dermal-fillers",
-    },
-    {
-      name: "Laser Treatments",
-      description: "Advanced laser technology for hair removal and skin rejuvenation",
-      image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1758859399/31549a56-c2be-4517-81e3-9b866a9a1a23.png?height=300&width=400&text=Laser+Treatment",
-      treatments: ["Hair Removal", "Pico Laser", "Tattoo Removal"],
-      href: "/services#laser-treatments",
-    },
-    {
-      name: "Skin Rejuvenation",
-      description: "Medical-grade treatments for youthful, glowing skin",
-      image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1758859466/3ae3dd78-09b7-474a-86af-6ff7df610626.png?height=300&width=400&text=Skin+Treatment",
-      treatments: ["Vampire Facial", "Thermage", "Stem Cell Boosters"],
-      href: "/services#skin-treatments",
-    },
-  ]
 
   const testimonials = [
     {

@@ -1,4 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { jsonOk, jsonError } from '@/lib/api-response'
+import { ServiceSchema } from '@/lib/validation'
 
 interface ServiceFAQ { q: string; a: string }
 interface Service {
@@ -47,20 +49,24 @@ let servicesData: ServiceCategory[] = [
 ]
 
 export async function GET() {
-  return NextResponse.json({ ok: true, data: servicesData })
+  return jsonOk(servicesData)
 }
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const action = String(body.action || '').trim()
-    if (!action) return NextResponse.json({ ok: false, error: 'Missing action' }, { status: 400 })
+    if (!action) return jsonError('Missing action', 400)
 
     if (action === 'addService') {
       const categoryId = String(body.categoryId || '')
       const service = body.service as Service
       const cat = servicesData.find(c => c.id === categoryId)
-      if (!cat) return NextResponse.json({ ok: false, error: 'Category not found' }, { status: 404 })
+      if (!cat) return jsonError('Category not found', 404)
+      const parsed = ServiceSchema.safeParse(service)
+      if (!parsed.success) {
+        return jsonError('Invalid service payload', 422, { issues: parsed.error.issues })
+      }
       cat.services.push({
         name: String(service.name || ''),
         price: String(service.price || ''),
@@ -75,16 +81,16 @@ export async function POST(req: NextRequest) {
         benefits: Array.isArray(service.benefits) ? service.benefits.map(String) : undefined,
         faqs: Array.isArray(service.faqs) ? service.faqs.map((f: any) => ({ q: String(f.q || ''), a: String(f.a || '') })) : undefined,
       })
-      return NextResponse.json({ ok: true })
+      return jsonOk(true)
     }
 
     if (action === 'deleteService') {
       const categoryId = String(body.categoryId || '')
       const name = String(body.name || '')
       const cat = servicesData.find(c => c.id === categoryId)
-      if (!cat) return NextResponse.json({ ok: false, error: 'Category not found' }, { status: 404 })
+      if (!cat) return jsonError('Category not found', 404)
       cat.services = cat.services.filter(s => s.name !== name)
-      return NextResponse.json({ ok: true })
+      return jsonOk(true)
     }
 
     if (action === 'updateService') {
@@ -92,9 +98,9 @@ export async function POST(req: NextRequest) {
       const originalName = String(body.originalName || '')
       const service = body.service as Service
       const cat = servicesData.find(c => c.id === categoryId)
-      if (!cat) return NextResponse.json({ ok: false, error: 'Category not found' }, { status: 404 })
+      if (!cat) return jsonError('Category not found', 404)
       const idx = cat.services.findIndex(s => s.name === originalName)
-      if (idx === -1) return NextResponse.json({ ok: false, error: 'Service not found' }, { status: 404 })
+      if (idx === -1) return jsonError('Service not found', 404)
       cat.services[idx] = {
         name: String(service.name || originalName),
         price: String(service.price ?? cat.services[idx].price),
@@ -109,11 +115,11 @@ export async function POST(req: NextRequest) {
         benefits: Array.isArray(service.benefits) ? service.benefits.map(String) : cat.services[idx].benefits,
         faqs: Array.isArray(service.faqs) ? service.faqs.map((f: any) => ({ q: String(f.q || ''), a: String(f.a || '') })) : cat.services[idx].faqs,
       }
-      return NextResponse.json({ ok: true })
+      return jsonOk(true)
     }
 
-    return NextResponse.json({ ok: false, error: 'Unsupported action' }, { status: 400 })
-  } catch {
-    return NextResponse.json({ ok: false, error: 'Invalid request' }, { status: 400 })
+    return jsonError('Unsupported action', 400)
+  } catch (err) {
+    return jsonError('Invalid request', 400)
   }
 }
