@@ -23,6 +23,7 @@ import {
   Trash2,
   Upload,
   Eye,
+  EyeOff,
   Save,
   X,
   Calendar as CalendarIcon,
@@ -55,6 +56,7 @@ import {
   Camera,
   CalendarDays,
 } from "lucide-react"
+import { OptimizedImage } from "@/components/optimized-image"
 import Image from "next/image"
 import { supabaseAvailable } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
@@ -242,6 +244,10 @@ const CategoryEditDialog = memo(function CategoryEditDialog({ open, onOpenChange
 
 const PortfolioEditDialog = memo(function PortfolioEditDialog({ open, onOpenChange, target, onSaved }: { open: boolean; onOpenChange: (v: boolean) => void; target: PortfolioItem | null; onSaved: () => void }) {
   const [draft, setDraft] = useState<Partial<PortfolioItem>>({})
+  const [inlineAdd, setInlineAdd] = useState<{ beforeImage: string; afterImage: string }>({ beforeImage: '', afterImage: '' })
+  const inlineBeforeRef = React.useRef<HTMLInputElement | null>(null)
+  const inlineAfterRef = React.useRef<HTMLInputElement | null>(null)
+  const { uploadToApi } = useFileUpload()
   useEffect(() => {
     if (open) {
       setDraft(target || {})
@@ -267,6 +273,47 @@ const PortfolioEditDialog = memo(function PortfolioEditDialog({ open, onOpenChan
               <AnimatedInput id="epf-after" label="After Image URL" value={draft.afterImage || ''} onChange={(e) => setDraft(prev => ({ ...prev, afterImage: e.target.value }))} required />
               <AnimatedInput id="epf-duration" label="Duration" value={draft.duration || ''} onChange={(e) => setDraft(prev => ({ ...prev, duration: e.target.value }))} />
               <AnimatedInput id="epf-results" label="Results" value={draft.results || ''} onChange={(e) => setDraft(prev => ({ ...prev, results: e.target.value }))} />
+            </div>
+            <div className="grid gap-4">
+              <div className="grid md:grid-cols-2 gap-4">
+                <AnimatedInput id="inline-before" label="Add Result • Before Image URL" value={inlineAdd.beforeImage} onChange={(e) => setInlineAdd(prev => ({ ...prev, beforeImage: e.target.value }))} required />
+                <AnimatedInput id="inline-after" label="Add Result • After Image URL" value={inlineAdd.afterImage} onChange={(e) => setInlineAdd(prev => ({ ...prev, afterImage: e.target.value }))} required />
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => inlineBeforeRef.current?.click()}>Upload Before</Button>
+                  <input ref={inlineBeforeRef} type="file" accept="image/*" className="hidden" onChange={async (e) => { const input = e.currentTarget; const f = input.files?.[0]; input.value = ''; if (f) { const url = await uploadToApi(f, 'before'); setInlineAdd(prev => ({ ...prev, beforeImage: url })) } }} />
+                  <Button variant="outline" onClick={() => inlineAfterRef.current?.click()}>Upload After</Button>
+                  <input ref={inlineAfterRef} type="file" accept="image/*" className="hidden" onChange={async (e) => { const input = e.currentTarget; const f = input.files?.[0]; input.value = ''; if (f) { const url = await uploadToApi(f, 'after'); setInlineAdd(prev => ({ ...prev, afterImage: url })) } }} />
+                </div>
+                <div className="md:col-span-2 flex justify-end">
+                  <Button
+                    variant="secondary"
+                    onClick={async () => {
+                      if (!target) return
+                      const b = String(inlineAdd.beforeImage || '')
+                      const a = String(inlineAdd.afterImage || '')
+                      if (!b || !a) return
+                      const payload = {
+                        title: target.title,
+                        category: target.category,
+                        beforeImage: b,
+                        afterImage: a,
+                        description: target.description,
+                        treatment: target.treatment,
+                        duration: target.duration,
+                        results: target.results,
+                        extraResults: []
+                      }
+                      const res = await fetch('/api/portfolio', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+                      if (res.ok) {
+                        setInlineAdd({ beforeImage: '', afterImage: '' })
+                        onSaved()
+                      }
+                    }}
+                  >
+                    Add Result
+                  </Button>
+                </div>
+              </div>
             </div>
             <div className="flex justify-end gap-3">
               <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
@@ -345,6 +392,7 @@ const categoryOptions = Array.from(new Set(serviceCategories.map(c => c.category
 export default function AdminDashboard() {
   // Authentication and navigation
   const router = useRouter()
+  const toId = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
   
   // State management
   const [activeTab, setActiveTab] = useState("dashboard")
@@ -462,6 +510,14 @@ export default function AdminDashboard() {
   const [addResultForm, setAddResultForm] = useState<{ beforeImage: string; afterImage: string }>({ beforeImage: "", afterImage: "" })
   const addResultBeforeRef = React.useRef<HTMLInputElement | null>(null)
   const addResultAfterRef = React.useRef<HTMLInputElement | null>(null)
+  const [previewPortfolioItem, setPreviewPortfolioItem] = useState<PortfolioItem | null>(null)
+  const [previewShowSimilar, setPreviewShowSimilar] = useState(false)
+  const [previewRevealedMap, setPreviewRevealedMap] = useState<Record<string, boolean>>({})
+  const previewSimilarRef = React.useRef<HTMLDivElement | null>(null)
+  const isSensitivePreview = (item: PortfolioItem) => {
+    const title = String(item.title || '').toLowerCase()
+    return title.includes('feminine') || title.includes('intimate') || title.includes('butt') || title.includes('breast')
+  }
  const uploadPortfolioFile = async (file: File, kind: 'before' | 'after', target: 'create' | 'edit' | 'addResult' = 'create') => {
   try {
     const url = await uploadToApi(file, kind)
@@ -2648,23 +2704,23 @@ export default function AdminDashboard() {
                                 <TableCell>{p.treatment}</TableCell>
                                 <TableCell className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
                                   <div className="flex items-center justify-end gap-2">
-                                    <Button
-                                      variant="outline"
-                                      onClick={() => { setEditPortfolioItem(p); setEditPortfolioForm({ ...p }) }}
-                                    >
-                                      Edit
-                                    </Button>
-                                    <Button
-                                      variant="outline"
-                                      onClick={() => { setAddResultTarget(p); setAddResultForm({ beforeImage: '', afterImage: '' }) }}
-                                    >
-                                      Add Result
-                                    </Button>
-                                    <Button
-                                      variant="outline"
-                                      onClick={() => {
-                                        ;(async () => {
-                                          try {
+                                <Button
+                                  variant="outline"
+                                  onClick={() => { setEditPortfolioItem(p); setEditPortfolioForm({ ...p }) }}
+                                >
+                                  Edit
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  onClick={() => { setPreviewPortfolioItem(p); setPreviewShowSimilar(false) }}
+                                >
+                                  Preview
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  onClick={() => {
+                                    ;(async () => {
+                                      try {
                                             const res = await fetch(`/api/portfolio/${p.id}`, { method: 'DELETE' })
                                             const j = await res.json()
                                             if (j?.ok) {
@@ -2780,8 +2836,79 @@ export default function AdminDashboard() {
                             </div>
                           </div>
                         )}
-                      </DialogContent>
-                    </Dialog>
+                    </DialogContent>
+                  </Dialog>
+                  <Dialog open={!!previewPortfolioItem} onOpenChange={(v) => { if (!v) setPreviewPortfolioItem(null) }}>
+                    <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto bg-white/95 backdrop-blur-md border border-white/20 shadow-2xl">
+                      {previewPortfolioItem && (
+                        <div className="space-y-8">
+                          <DialogHeader className="pb-2">
+                            <DialogTitle className="text-2xl font-bold text-gray-900 leading-tight">{previewPortfolioItem.title}</DialogTitle>
+                          </DialogHeader>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="relative h-64">
+                              <OptimizedImage src={previewPortfolioItem.beforeImage || '/placeholder.svg'} alt={`Before ${previewPortfolioItem.title}`} fill className="object-cover rounded-xl" />
+                              <div className="absolute top-2 left-2"><Badge className="bg-red-500/90 text-white text-[10px] font-semibold px-2 py-0.5">Before</Badge></div>
+                            </div>
+                            <div className="relative h-64">
+                              <OptimizedImage src={previewPortfolioItem.afterImage || '/placeholder.svg'} alt={`After ${previewPortfolioItem.title}`} fill className="object-cover rounded-xl" />
+                              <div className="absolute top-2 right-2"><Badge className="bg-green-500/90 text-white text-[10px] font-semibold px-2 py-0.5">After</Badge></div>
+                            </div>
+                          </div>
+                          <div className="rounded-xl border bg-white/80 p-4">
+                            <div className="grid grid-cols-3 gap-4 text-sm">
+                              <div className="text-center"><div className="font-semibold text-gray-900">Duration</div><div className="text-gray-600">{previewPortfolioItem.duration || ''}</div></div>
+                              <div className="text-center"><div className="font-semibold text-gray-900">Results Last</div><div className="text-gray-600">{previewPortfolioItem.results || ''}</div></div>
+                              <div className="text-center"><div className="font-semibold text-gray-900">Treatment</div><div className="text-gray-600">{previewPortfolioItem.treatment || ''}</div></div>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div className="text-gray-700 text-sm">{previewPortfolioItem.description || ''}</div>
+                            <Button variant="outline" size="sm" className="border-gray-300 bg-white/80 backdrop-blur-sm hover:bg-rose-50 hover:border-rose-300" onClick={() => { const next = !previewShowSimilar; setPreviewShowSimilar(next); if (next) setTimeout(() => previewSimilarRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0) }}>
+                              {previewShowSimilar ? 'Hide More Results' : 'View More Results'}
+                            </Button>
+                          </div>
+                          {previewShowSimilar && (
+                            <div className="space-y-6" ref={previewSimilarRef}>
+                              <h4 className="font-bold text-gray-900 text-xl">More Results: {previewPortfolioItem.treatment}</h4>
+                              {contentPortfolioItems.filter(i => i.treatment === previewPortfolioItem.treatment && i.id !== previewPortfolioItem.id).length === 0 ? (
+                                <div className="text-center py-10 bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200">
+                                  <p className="text-gray-600">No additional results available for this treatment yet.</p>
+                                </div>
+                              ) : (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                  {contentPortfolioItems
+                                    .filter(i => i.treatment === previewPortfolioItem.treatment && i.id !== previewPortfolioItem.id)
+                                    .map((i) => (
+                                      <div key={i.id} className="group rounded-2xl overflow-hidden border border-gray-200 bg-white/90 backdrop-blur-sm shadow-sm">
+                                        <div className="grid grid-cols-2 h-52">
+                                          <div className="relative">
+                                            <OptimizedImage src={i.beforeImage || '/placeholder.svg'} alt={`Before ${i.title}`} fill className={`object-cover ${isSensitivePreview(i) && !previewRevealedMap[i.id] ? 'filter blur-xl' : ''}`} />
+                                            <div className="absolute top-2 left-2"><Badge className="bg-red-500/90 text-white text-[10px] font-semibold px-2 py-0.5">Before</Badge></div>
+                                          </div>
+                                          <div className="relative">
+                                            <OptimizedImage src={i.afterImage || '/placeholder.svg'} alt={`After ${i.title}`} fill className={`object-cover ${isSensitivePreview(i) && !previewRevealedMap[i.id] ? 'filter blur-xl' : ''}`} />
+                                            <div className="absolute top-2 right-2"><Badge className="bg-green-500/90 text-white text-[10px] font-semibold px-2 py-0.5">After</Badge></div>
+                                          </div>
+                                        </div>
+                                        <div className="p-4 flex items-center justify-between">
+                                          <p className="text-sm font-medium text-gray-800 line-clamp-1">{i.title}</p>
+                                          {isSensitivePreview(i) && (
+                                            <Button variant="secondary" size="sm" className="bg-white/80 text-gray-900 hover:bg-white" onClick={() => setPreviewRevealedMap((prev) => ({ ...prev, [i.id]: !prev[i.id] }))} aria-label={previewRevealedMap[i.id] ? 'Hide sensitive content' : 'Reveal sensitive content'}>
+                                              {previewRevealedMap[i.id] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                            </Button>
+                                          )}
+                                        </div>
+                                      </div>
+                                    ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </DialogContent>
+                  </Dialog>
                     <PortfolioEditDialog
                       open={!!editPortfolioItem}
                       onOpenChange={(v) => { setEditPortfolioItem(v ? editPortfolioItem : null) }}

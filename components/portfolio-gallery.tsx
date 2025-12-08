@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
+import { useSearchParams } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -21,6 +22,8 @@ export function PortfolioGallery() {
   const [showSimilar, setShowSimilar] = useState<boolean>(false)
   const [isBookingOpen, setIsBookingOpen] = useState(false)
   const [selectedServiceId, setSelectedServiceId] = useState<string>("")
+  const searchParams = useSearchParams()
+  const similarSectionRef = useRef<HTMLDivElement | null>(null)
 
   const isSensitive = (item: PortfolioItem) => {
     const title = item.title.toLowerCase()
@@ -56,6 +59,30 @@ export function PortfolioGallery() {
       } catch {}
     })()
   }, [])
+
+  useEffect(() => {
+    const svc = searchParams?.get('service') || searchParams?.get('treatment') || ''
+    const similar = (searchParams?.get('similar') || '').toLowerCase() === 'true'
+    if (!svc || !similar || portfolioItems.length === 0) return
+    const match = portfolioItems.find((i) => toId(i.treatment) === svc || toId(i.title) === svc)
+    if (match) {
+      setSelectedItem(match)
+      setShowSimilar(true)
+    }
+  }, [portfolioItems, searchParams])
+
+  useEffect(() => {
+    const id = searchParams?.get('id') || ''
+    if (!id || portfolioItems.length === 0) return
+    const match = portfolioItems.find((i) => i.id === id)
+    if (match) setSelectedItem(match)
+  }, [portfolioItems, searchParams])
+
+  useEffect(() => {
+    if (showSimilar) {
+      setTimeout(() => { similarSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }, 0)
+    }
+  }, [showSimilar])
 
   const categories = ["all", ...Array.from(new Set(portfolioItems.map((item) => item.category)))]
 
@@ -335,7 +362,7 @@ export function PortfolioGallery() {
                       variant="outline"
                       size="sm"
                       className="border-gray-300 bg-white/80 backdrop-blur-sm hover:bg-rose-50 hover:border-rose-300"
-                      onClick={() => setShowSimilar((v) => !v)}
+                      onClick={() => setShowSimilar((v) => { const next = !v; if (next) { setTimeout(() => { similarSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }, 0) } return next })}
                     >
                       {showSimilar ? "Hide More Results" : "View More Results"}
                     </Button>
@@ -407,45 +434,11 @@ export function PortfolioGallery() {
                   </div>
                 </div>
 
-                {Array.isArray(selectedItem.extraResults) && selectedItem.extraResults.length > 0 && (
-                  <div className="space-y-6">
-                    <h4 className="font-bold text-gray-900 text-xl">More Results From This Case</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {selectedItem.extraResults.map((pair, idx) => (
-                        <div key={idx} className="group rounded-2xl overflow-hidden border border-gray-200 bg-white/90 backdrop-blur-sm shadow-sm">
-                          <div className="grid grid-cols-2 h-52">
-                            <div className="relative">
-                              <OptimizedImage
-                                src={pair.beforeImage || "/placeholder.svg"}
-                                alt={`Before ${selectedItem.title} ${idx+1}`}
-                                fill
-                                className="object-cover"
-                              />
-                              <div className="absolute top-2 left-2">
-                                <Badge className="bg-red-500/90 text-white text-[10px] font-semibold px-2 py-0.5">Before</Badge>
-                              </div>
-                            </div>
-                            <div className="relative">
-                              <OptimizedImage
-                                src={pair.afterImage || "/placeholder.svg"}
-                                alt={`After ${selectedItem.title} ${idx+1}`}
-                                fill
-                                className="object-cover"
-                              />
-                              <div className="absolute top-2 right-2">
-                                <Badge className="bg-green-500/90 text-white text-[10px] font-semibold px-2 py-0.5">After</Badge>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                
 
                 {/* Similar Results Gallery */}
                 {showSimilar && (
-                  <div className="space-y-6">
+                  <div className="space-y-6" ref={similarSectionRef}>
                     <h4 className="font-bold text-gray-900 text-xl">More Results: {selectedItem.treatment}</h4>
                     {portfolioItems.filter(i => i.treatment === selectedItem.treatment && i.id !== selectedItem.id).length === 0 ? (
                       <div className="text-center py-10 bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200">

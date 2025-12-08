@@ -68,6 +68,7 @@ function ServicesContent() {
   const [preview, setPreview] = useState<{ service: Service; category: ServiceCategory } | null>(null)
   const reduceMotion = useReducedMotion()
   const [categories, setCategories] = useState<ServiceCategory[]>([])
+  const searchParams = useSearchParams()
 
   useEffect(() => {
     const load = async () => {
@@ -542,6 +543,19 @@ function ServicesContent() {
     return () => observers.forEach((o) => o.disconnect())
   }, [categories])
 
+  useEffect(() => {
+    const slug = searchParams?.get('preview') || ''
+    if (!slug) return
+    const list = categories.length ? categories : serviceCategories
+    for (const category of list) {
+      const svc = category.services.find((s) => toId(s.name) === slug)
+      if (svc) {
+        setTimeout(() => { setPreview({ service: svc, category }); setIsPreviewOpen(true) }, 0)
+        break
+      }
+    }
+  }, [categories, searchParams])
+
   const matchesQuery = (s: Service) => {
     if (!query.trim()) return true
     const q = query.toLowerCase()
@@ -830,6 +844,12 @@ function ServicesContent() {
                   </div>
                 )}
                 <div className="flex justify-end gap-3 pt-2">
+                  <Link href={`/portfolio?service=${toId(preview.service.name)}&similar=true`}>
+                    <Button variant="outline" className="rounded-xl">
+                      View More Results
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </Link>
                   {preview.service.name === 'Hiko Nose Thread Lift' ? (
                     <Link href="/hiko-nose-lift">
                       <Button variant="brand" className="rounded-xl">
