@@ -9,10 +9,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { BookingModal } from "@/components/booking-modal"
 import { Clock, Star, RefreshCw, Filter, Grid, List, Eye, EyeOff, Calendar } from "lucide-react"
 import { OptimizedImage } from "@/components/optimized-image"
-import { portfolioService, type PortfolioItem } from "@/lib/portfolio-data"
+import type { PortfolioItem } from "@/lib/portfolio-data"
 
 export function PortfolioGallery() {
-  const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>(() => portfolioService.getAllItems())
+  const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([])
   const [selectedItem, setSelectedItem] = useState<PortfolioItem | null>(null)
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
@@ -48,35 +48,13 @@ export function PortfolioGallery() {
   }
 
   useEffect(() => {
-    // Subscribe to updates
-    const unsubscribe = portfolioService.subscribe((updatedItems) => {
-      console.log("Portfolio gallery received update:", updatedItems.length, "items")
-      setPortfolioItems(updatedItems)
-    })
-
-    // Listen for storage events (cross-tab updates)
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === "portfolio_data") {
-        console.log("Portfolio gallery detected storage change")
-        const items = portfolioService.getAllItems()
-        setPortfolioItems(items)
-      }
-    }
-
-    // Listen for custom events (same-tab updates)
-    const handleCustomUpdate = (e: CustomEvent) => {
-      console.log("Portfolio gallery received custom update event")
-      setPortfolioItems(e.detail.items)
-    }
-
-    window.addEventListener("storage", handleStorageChange)
-    window.addEventListener("portfolio_data_updated", handleCustomUpdate as EventListener)
-
-    return () => {
-      unsubscribe()
-      window.removeEventListener("storage", handleStorageChange)
-      window.removeEventListener("portfolio_data_updated", handleCustomUpdate as EventListener)
-    }
+    ;(async () => {
+      try {
+        const res = await fetch('/api/portfolio', { cache: 'no-store' })
+        const j = await res.json()
+        if (j?.ok && Array.isArray(j.data)) setPortfolioItems(j.data)
+      } catch {}
+    })()
   }, [])
 
   const categories = ["all", ...Array.from(new Set(portfolioItems.map((item) => item.category)))]
@@ -90,12 +68,15 @@ export function PortfolioGallery() {
     (i) => i.treatment !== "Non-Surgical Breast Lift" || i.id === primaryBreastItemId
   )
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setIsLoading(true)
-    const items = portfolioService.getAllItems()
-    setPortfolioItems(items)
-    setIsLoading(false)
-    console.log("Portfolio gallery manually refreshed:", items.length, "items")
+    try {
+      const res = await fetch('/api/portfolio', { cache: 'no-store' })
+      const j = await res.json()
+      if (j?.ok && Array.isArray(j.data)) setPortfolioItems(j.data)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   if (isLoading) {

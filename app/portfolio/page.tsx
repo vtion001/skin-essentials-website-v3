@@ -6,7 +6,7 @@ import { MobileNav } from '@/components/mobile-nav'
 import { PullToRefresh } from '@/components/pull-to-refresh'
 import { PortfolioGallery } from '@/components/portfolio-gallery'
 import { SharedHeader } from '@/components/shared-header'
-import { portfolioService, PortfolioItem } from '@/lib/portfolio-data'
+import type { PortfolioItem } from '@/lib/portfolio-data'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Shield } from 'lucide-react'
@@ -18,20 +18,16 @@ export default function PortfolioPage() {
   const [ageGateOpen, setAgeGateOpen] = useState<boolean>(() => {
     try { return localStorage.getItem('age_gate_18_portfolio') !== 'true' } catch { return true }
   })
-  const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>(() => {
-    try { portfolioService.resetToDefaults() } catch {}
-    try { return portfolioService.getAllItems() } catch { return [] }
-  })
+  const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([])
 
   useEffect(() => {
-    portfolioService.resetToDefaults()
-    
-    // Subscribe to updates
-    const unsubscribe = portfolioService.subscribe((updatedItems) => {
-      setPortfolioItems(updatedItems)
-    })
-
-    return unsubscribe
+    ;(async () => {
+      try {
+        const res = await fetch('/api/portfolio', { cache: 'no-store' })
+        const j = await res.json()
+        if (j?.ok && Array.isArray(j.data)) setPortfolioItems(j.data)
+      } catch {}
+    })()
   }, [])
 
   return (

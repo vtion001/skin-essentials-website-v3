@@ -344,3 +344,55 @@ drop trigger if exists trg_treatments_sync_changes on treatments;
 create trigger trg_treatments_sync_changes
 after insert or update or delete on treatments
 for each row execute function trg_treatments_sync();
+-- Service catalog for Services Manager and public Services page
+create table if not exists service_categories (
+  id text primary key,
+  category text unique,
+  description text,
+  image text,
+  color text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+create table if not exists services (
+  id text primary key,
+  category_id text references service_categories(id) on delete cascade,
+  name text,
+  price text,
+  description text,
+  duration text,
+  results text,
+  sessions text,
+  includes text,
+  benefits jsonb default '[]'::jsonb,
+  faqs jsonb default '[]'::jsonb,
+  original_price text,
+  badge text,
+  pricing text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+create index if not exists idx_service_categories_category on service_categories(category);
+create index if not exists idx_services_category on services(category_id);
+create index if not exists idx_services_name on services(name);
+
+-- Public portfolio items used by Portfolio Manager and portfolio page
+create table if not exists portfolio_items (
+  id text primary key,
+  title text,
+  category text,
+  before_image text,
+  after_image text,
+  description text,
+  treatment text,
+  duration text,
+  results text,
+  extra_results jsonb default '[]'::jsonb,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+create index if not exists idx_portfolio_category on portfolio_items(category);
+create index if not exists idx_portfolio_treatment on portfolio_items(treatment);

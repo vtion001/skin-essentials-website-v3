@@ -186,6 +186,121 @@ const ServiceEditDialog = memo(function ServiceEditDialog({ open, onOpenChange, 
     </Dialog>
   )
 })
+
+const CategoryEditDialog = memo(function CategoryEditDialog({ open, onOpenChange, target, onSaved }: { open: boolean; onOpenChange: (v: boolean) => void; target: { id: string; category: string; description?: string; image?: string; color?: string } | null; onSaved: () => void }) {
+  const [draft, setDraft] = useState<{ category?: string; description?: string; image?: string; color?: string }>({})
+  useEffect(() => {
+    if (open) {
+      setDraft(target ? { category: target.category, description: target.description || '', image: target.image || '', color: target.color || '' } : {})
+    }
+  }, [open, target])
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-xl">
+        <DialogHeader>
+          <DialogTitle>Edit Category</DialogTitle>
+        </DialogHeader>
+        <div className="grid md:grid-cols-2 gap-4">
+          <div>
+            <Label>Category Name</Label>
+            <Input value={draft.category || ''} onChange={(e) => setDraft(prev => ({ ...prev, category: e.target.value }))} placeholder="Category name" />
+          </div>
+          <div>
+            <Label>Color</Label>
+            <Input value={draft.color || ''} onChange={(e) => setDraft(prev => ({ ...prev, color: e.target.value }))} placeholder="#hex or theme color" />
+          </div>
+          <div className="md:col-span-2">
+            <Label>Description</Label>
+            <Textarea value={draft.description || ''} onChange={(e) => setDraft(prev => ({ ...prev, description: e.target.value }))} placeholder="Describe the category" />
+          </div>
+          <div className="md:col-span-2">
+            <Label>Image URL</Label>
+            <Input value={draft.image || ''} onChange={(e) => setDraft(prev => ({ ...prev, image: e.target.value }))} placeholder="https://..." />
+          </div>
+        </div>
+        <div className="flex items-center justify-end gap-2 mt-4">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button
+            variant="brand"
+            onClick={async () => {
+              if (!target) return
+              try {
+                const res = await fetch('/api/services', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'updateCategory', id: target.id, ...draft }) })
+                if (!res.ok) throw new Error('Failed')
+                onOpenChange(false)
+                onSaved()
+              } catch {}
+            }}
+          >
+            Save Changes
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+})
+
+const PortfolioEditDialog = memo(function PortfolioEditDialog({ open, onOpenChange, target, onSaved }: { open: boolean; onOpenChange: (v: boolean) => void; target: PortfolioItem | null; onSaved: () => void }) {
+  const [draft, setDraft] = useState<Partial<PortfolioItem>>({})
+  useEffect(() => {
+    if (open) {
+      setDraft(target || {})
+    }
+  }, [open, target])
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Edit Portfolio Item</DialogTitle>
+        </DialogHeader>
+        {target && (
+          <div className="space-y-4">
+            <div className="grid md:grid-cols-2 gap-4">
+              <AnimatedInput id="epf-title" label="Title" value={draft.title || ''} onChange={(e) => setDraft(prev => ({ ...prev, title: e.target.value }))} required />
+              <AnimatedSelect value={draft.category || ''} onValueChange={(v) => setDraft(prev => ({ ...prev, category: v }))} placeholder="Select category" options={categoryOptions.map(c => ({ value: c, label: c }))} label="Category" />
+              <AnimatedSelect value={draft.treatment || ''} onValueChange={(v) => setDraft(prev => ({ ...prev, treatment: v }))} placeholder="Select treatment" options={procedureOptions.map(p => ({ value: p, label: p }))} label="Treatment" />
+              <div className="space-y-2 md:col-span-2">
+                <Label className="text-sm font-medium text-gray-700">Description</Label>
+                <Textarea value={draft.description || ''} onChange={(e) => setDraft(prev => ({ ...prev, description: e.target.value }))} rows={3} />
+              </div>
+              <AnimatedInput id="epf-before" label="Before Image URL" value={draft.beforeImage || ''} onChange={(e) => setDraft(prev => ({ ...prev, beforeImage: e.target.value }))} required />
+              <AnimatedInput id="epf-after" label="After Image URL" value={draft.afterImage || ''} onChange={(e) => setDraft(prev => ({ ...prev, afterImage: e.target.value }))} required />
+              <AnimatedInput id="epf-duration" label="Duration" value={draft.duration || ''} onChange={(e) => setDraft(prev => ({ ...prev, duration: e.target.value }))} />
+              <AnimatedInput id="epf-results" label="Results" value={draft.results || ''} onChange={(e) => setDraft(prev => ({ ...prev, results: e.target.value }))} />
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+              <Button
+                variant="brand"
+                onClick={async () => {
+                  if (!target) return
+                  try {
+                    const payload = {
+                      title: String(draft.title || target.title),
+                      category: String(draft.category || target.category),
+                      treatment: String(draft.treatment || target.treatment),
+                      description: String(draft.description || target.description),
+                      beforeImage: String(draft.beforeImage || target.beforeImage),
+                      afterImage: String(draft.afterImage || target.afterImage),
+                      duration: String(draft.duration || target.duration),
+                      results: String(draft.results || target.results),
+                    }
+                    const res = await fetch(`/api/portfolio/${target.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+                    if (!res.ok) throw new Error('Failed')
+                    onOpenChange(false)
+                    onSaved()
+                  } catch {}
+                }}
+              >
+                Save Changes
+              </Button>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  )
+})
 import { DashboardTab } from "@/components/admin/tabs/dashboard-tab"
 import { AppointmentsTab } from "@/components/admin/tabs/appointments-tab"
 import { ClientsTab } from "@/components/admin/tabs/clients-tab"
@@ -324,13 +439,17 @@ export default function AdminDashboard() {
   useEffect(() => { if (activeTab === 'sms') refreshSmsStatus() }, [activeTab, refreshSmsStatus])
 
 
-  const [contentServices, setContentServices] = useState<{ id: string; category: string; services: any[] }[]>([])
+  const [contentServices, setContentServices] = useState<{ id: string; category: string; description?: string; image?: string; color?: string; services: any[] }[]>([])
   const [contentSelectedCategory, setContentSelectedCategory] = useState("")
   const [contentSubTab, setContentSubTab] = useState<string>("services")
+  const [newCategoryForm, setNewCategoryForm] = useState<{ category: string; description?: string; image?: string; color?: string }>({ category: "" })
   const [newServiceForm, setNewServiceForm] = useState<{ name: string; price: string; description: string; duration?: string; results?: string }>({ name: "", price: "", description: "" })
   const [isServiceEditOpen, setIsServiceEditOpen] = useState(false)
   const [serviceEditTarget, setServiceEditTarget] = useState<{ name: string; price: string; description: string; duration?: string; results?: string; sessions?: string; includes?: string; originalPrice?: string; badge?: string; pricing?: string; benefits?: string[]; faqs?: { q: string; a: string }[] } | null>(null)
   const [serviceEditForm, setServiceEditForm] = useState<{ name: string; price: string; description: string; duration?: string; results?: string; sessions?: string; includes?: string; originalPrice?: string; badge?: string; pricing?: string; benefits?: string[]; faqs?: { q: string; a: string }[] }>({ name: "", price: "", description: "", benefits: [], faqs: [] })
+  const [isCategoryEditOpen, setIsCategoryEditOpen] = useState(false)
+  const [categoryEditTarget, setCategoryEditTarget] = useState<{ id: string; category: string; description?: string; image?: string; color?: string } | null>(null)
+  const [categoryEditForm, setCategoryEditForm] = useState<{ category?: string; description?: string; image?: string; color?: string }>({})
   const [contentPortfolioItems, setContentPortfolioItems] = useState<PortfolioItem[]>([])
   const [portfolioForm, setPortfolioForm] = useState<Partial<PortfolioItem>>({})
   const [editPortfolioItem, setEditPortfolioItem] = useState<PortfolioItem | null>(null)
@@ -676,18 +795,19 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     const subs: (() => void)[] = []
-    try {
-      const items = portfolioService.getAllItems()
-      setContentPortfolioItems(items)
-      const unsub = portfolioService.subscribe((updated: PortfolioItem[]) => setContentPortfolioItems(updated))
-      subs.push(unsub)
-    } catch {}
+    ;(async () => {
+      try {
+        const res = await fetch('/api/portfolio')
+        const j = await res.json()
+        if (j?.ok && Array.isArray(j.data)) setContentPortfolioItems(j.data)
+      } catch {}
+    })()
     ;(async () => {
       try {
         const res = await fetch('/api/services')
         const j = await res.json()
         if (j?.ok && Array.isArray(j?.data)) {
-          const cats = j.data.map((c: any) => ({ id: c.id, category: c.category, services: c.services }))
+          const cats = j.data.map((c: any) => ({ id: c.id, category: c.category, description: c.description, image: c.image, color: c.color, services: c.services }))
           setContentServices(cats)
           if (!contentSelectedCategory && cats.length) setContentSelectedCategory(cats[0].id)
         }
@@ -1967,6 +2087,101 @@ export default function AdminDashboard() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-6">
+                    <CategoryEditDialog open={isCategoryEditOpen} onOpenChange={(v) => { setIsCategoryEditOpen(v); if (!v) setCategoryEditTarget(null) }} target={categoryEditTarget} onSaved={async () => { try { const r = await fetch('/api/services'); const jr = await r.json(); if (jr?.ok) { const cats = jr.data.map((c: any) => ({ id: c.id, category: c.category, description: c.description, image: c.image, color: c.color, services: c.services })); setContentServices(cats); if (!contentSelectedCategory && cats.length) setContentSelectedCategory(cats[0].id) } showNotification('success', 'Category updated') } catch {} }} />
+                    <div className="rounded-2xl border bg-white/70 p-4 space-y-4">
+                      <div className="grid md:grid-cols-4 gap-3 items-end">
+                        <div>
+                          <Label>New Category</Label>
+                          <Input value={newCategoryForm.category} onChange={(e) => setNewCategoryForm(prev => ({ ...prev, category: e.target.value }))} placeholder="Category name" />
+                        </div>
+                        <div>
+                          <Label>Color</Label>
+                          <Input value={newCategoryForm.color || ''} onChange={(e) => setNewCategoryForm(prev => ({ ...prev, color: e.target.value }))} placeholder="#hex or theme color" />
+                        </div>
+                        <div>
+                          <Label>Image URL</Label>
+                          <Input value={newCategoryForm.image || ''} onChange={(e) => setNewCategoryForm(prev => ({ ...prev, image: e.target.value }))} placeholder="https://..." />
+                        </div>
+                        <div className="md:col-span-4">
+                          <Label>Description</Label>
+                          <Textarea value={newCategoryForm.description || ''} onChange={(e) => setNewCategoryForm(prev => ({ ...prev, description: e.target.value }))} placeholder="Describe the category" />
+                        </div>
+                        <div className="md:col-span-4 flex items-center justify-end">
+                          <Button
+                            onClick={async () => {
+                              try {
+                                if (!newCategoryForm.category) { showNotification('error', 'Category name required'); return }
+                                const res = await fetch('/api/services', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'addCategory', ...newCategoryForm }) })
+                                const j = await res.json()
+                                if (j?.ok) {
+                                  const r = await fetch('/api/services')
+                                  const jr = await r.json()
+                                  if (jr?.ok) {
+                                    const cats = jr.data.map((c: any) => ({ id: c.id, category: c.category, description: c.description, image: c.image, color: c.color, services: c.services }))
+                                    setContentServices(cats)
+                                    const createdId = newCategoryForm.category.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+                                    setContentSelectedCategory(createdId)
+                                  }
+                                  setNewCategoryForm({ category: '' })
+                                  showNotification('success', 'Category added')
+                                } else showNotification('error', 'Failed to add category')
+                              } catch { showNotification('error', 'Failed to add category') }
+                            }}
+                            variant="brand"
+                          >
+                            Add Category
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="rounded-2xl border bg-white/70 p-4">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Category</TableHead>
+                              <TableHead></TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {contentServices.map((c) => (
+                              <TableRow key={c.id}>
+                                <TableCell className="font-medium">{c.category}</TableCell>
+                                <TableCell className="text-right">
+                                  <Button
+                                    variant="outline"
+                                    className="mr-2"
+                                    onClick={() => { setCategoryEditTarget({ id: c.id, category: c.category, description: c.description, image: c.image, color: c.color }); setCategoryEditForm({ category: c.category, description: c.description, image: c.image, color: c.color }); setIsCategoryEditOpen(true) }}
+                                  >
+                                    Edit
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    onClick={async () => {
+                                      try {
+                                        if (!confirmTwice(`category "${c.category}"`)) return
+                                        const res = await fetch('/api/services', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'deleteCategory', id: c.id }) })
+                                        const j = await res.json()
+                                        if (j?.ok) {
+                                          const r = await fetch('/api/services')
+                                          const jr = await r.json()
+                                          if (jr?.ok) {
+                                            const cats = jr.data.map((x: any) => ({ id: x.id, category: x.category, description: x.description, image: x.image, color: x.color, services: x.services }))
+                                            setContentServices(cats)
+                                            if (contentSelectedCategory === c.id) setContentSelectedCategory(cats[0]?.id || '')
+                                          }
+                                          showNotification('success', 'Category removed')
+                                        } else showNotification('error', 'Failed')
+                                      } catch { showNotification('error', 'Failed') }
+                                    }}
+                                  >
+                                    Remove
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </div>
                     
                     <div className="grid md:grid-cols-2 gap-6">
                       <div>
@@ -2384,20 +2599,28 @@ export default function AdminDashboard() {
                             onClick={() => {
                               const f = portfolioForm
                               if (!f.title || !f.category || !f.beforeImage || !f.afterImage) { showNotification('error', 'Please fill required fields'); return }
-                              try {
-                                portfolioService.addItem({
-                                  title: String(f.title),
-                                  category: String(f.category),
-                                  beforeImage: String(f.beforeImage),
-                                  afterImage: String(f.afterImage),
-                                  description: String(f.description || ''),
-                                  treatment: String(f.treatment || ''),
-                                  duration: String(f.duration || ''),
-                                  results: String(f.results || ''),
-                                })
-                                setPortfolioForm({})
-                                showNotification('success', 'Portfolio item added')
-                              } catch { showNotification('error', 'Failed to add item') }
+                              ;(async () => {
+                                try {
+                                  const res = await fetch('/api/portfolio', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+                                    title: String(f.title),
+                                    category: String(f.category),
+                                    beforeImage: String(f.beforeImage),
+                                    afterImage: String(f.afterImage),
+                                    description: String(f.description || ''),
+                                    treatment: String(f.treatment || ''),
+                                    duration: String(f.duration || ''),
+                                    results: String(f.results || ''),
+                                  }) })
+                                  const j = await res.json()
+                                  if (j?.ok) {
+                                    const r = await fetch('/api/portfolio')
+                                    const jr = await r.json()
+                                    if (jr?.ok && Array.isArray(jr.data)) setContentPortfolioItems(jr.data)
+                                    setPortfolioForm({})
+                                    showNotification('success', 'Portfolio item added')
+                                  } else showNotification('error', 'Failed to add item')
+                                } catch { showNotification('error', 'Failed to add item') }
+                              })()
                             }}
                             variant="brand"
                           >
@@ -2438,10 +2661,18 @@ export default function AdminDashboard() {
                                     <Button
                                       variant="outline"
                                       onClick={() => {
-                                        try {
-                                          portfolioService.deleteItem(p.id)
-                                          showNotification('success', 'Removed')
-                                        } catch { showNotification('error', 'Failed') }
+                                        ;(async () => {
+                                          try {
+                                            const res = await fetch(`/api/portfolio/${p.id}`, { method: 'DELETE' })
+                                            const j = await res.json()
+                                            if (j?.ok) {
+                                              const r = await fetch('/api/portfolio')
+                                              const jr = await r.json()
+                                              if (jr?.ok && Array.isArray(jr.data)) setContentPortfolioItems(jr.data)
+                                              showNotification('success', 'Removed')
+                                            } else showNotification('error', 'Failed')
+                                          } catch { showNotification('error', 'Failed') }
+                                        })()
                                       }}
                                     >
                                       Remove
@@ -2514,14 +2745,24 @@ export default function AdminDashboard() {
                                   const b = String(addResultForm.beforeImage || '')
                                   const a = String(addResultForm.afterImage || '')
                                   if (!b || !a) { showNotification('error', 'Please provide both images'); return }
-                                  try {
-                                    const curr = portfolioService.getItemById(addResultTarget.id)
-                                    const list = Array.isArray(curr?.extraResults) ? curr!.extraResults! : []
-                                    portfolioService.updateItem(addResultTarget.id, { extraResults: [...list, { beforeImage: b, afterImage: a }] })
-                                    setAddResultTarget(null)
-                                    setAddResultForm({ beforeImage: '', afterImage: '' })
-                                    showNotification('success', 'Result added')
-                                  } catch { showNotification('error', 'Failed to add result') }
+                                  ;(async () => {
+                                    try {
+                                      const currRes = await fetch(`/api/portfolio/${addResultTarget.id}`)
+                                      const currJson = await currRes.json()
+                                      const curr = currJson?.data || currJson
+                                      const list = Array.isArray(curr?.extraResults) ? curr.extraResults : []
+                                      const put = await fetch(`/api/portfolio/${addResultTarget.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ extraResults: [...list, { beforeImage: b, afterImage: a }] }) })
+                                      const ok = put.ok
+                                      if (ok) {
+                                        const r = await fetch('/api/portfolio')
+                                        const jr = await r.json()
+                                        if (jr?.ok && Array.isArray(jr.data)) setContentPortfolioItems(jr.data)
+                                        setAddResultTarget(null)
+                                        setAddResultForm({ beforeImage: '', afterImage: '' })
+                                        showNotification('success', 'Result added')
+                                      } else showNotification('error', 'Failed to add result')
+                                    } catch { showNotification('error', 'Failed to add result') }
+                                  })()
                                 }}
                               >
                                 Add
@@ -2531,128 +2772,12 @@ export default function AdminDashboard() {
                         )}
                       </DialogContent>
                     </Dialog>
-                    <Dialog open={!!editPortfolioItem} onOpenChange={(v) => { if (!v) setEditPortfolioItem(null) }}>
-                      <DialogContent className="sm:max-w-lg">
-                        <DialogHeader>
-                          <DialogTitle>Edit Portfolio Item</DialogTitle>
-                        </DialogHeader>
-                        {editPortfolioItem && (
-                          <div className="space-y-4">
-                            <div className="grid md:grid-cols-2 gap-4">
-                              <AnimatedInput
-                                id="epf-title"
-                                label="Title"
-                                value={editPortfolioForm.title || ''}
-                                onChange={(e) => setEditPortfolioForm(prev => ({ ...prev, title: e.target.value }))}
-                                required
-                              />
-                              <AnimatedSelect
-                                value={editPortfolioForm.category || ''}
-                                onValueChange={(v) => setEditPortfolioForm(prev => ({ ...prev, category: v }))}
-                                placeholder="Select category"
-                                options={categoryOptions.map(c => ({ value: c, label: c }))}
-                                label="Category"
-                              />
-                              <AnimatedSelect
-                                value={editPortfolioForm.treatment || ''}
-                                onValueChange={(v) => setEditPortfolioForm(prev => ({ ...prev, treatment: v }))}
-                                placeholder="Select treatment"
-                                options={procedureOptions.map(p => ({ value: p, label: p }))}
-                                label="Treatment"
-                              />
-                              <div className="space-y-2 md:col-span-2">
-                                <Label className="text-sm font-medium text-gray-700">Description</Label>
-                                <Textarea
-                                  value={editPortfolioForm.description || ''}
-                                  onChange={(e) => setEditPortfolioForm(prev => ({ ...prev, description: e.target.value }))}
-                                  rows={3}
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <AnimatedInput
-                                  id="epf-before"
-                                  label="Before Image URL"
-                                  value={editPortfolioForm.beforeImage || ''}
-                                  onChange={(e) => setEditPortfolioForm(prev => ({ ...prev, beforeImage: e.target.value }))}
-                                  required
-                                />
-                                <div className="flex gap-2">
-                                  <Button variant="outline" onClick={() => editPortfolioBeforeFileInputRef.current?.click()}>
-                                    <Upload className="w-4 h-4 mr-2" /> Upload Before
-                                  </Button>
-                                  <input
-                                    ref={editPortfolioBeforeFileInputRef}
-                                    type="file"
-                                    accept="image/*"
-                                    className="hidden"
-                                    onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadPortfolioFile(f, 'before', 'edit'); e.currentTarget.value = '' }}
-                                  />
-                                </div>
-                              </div>
-                              <div className="space-y-2">
-                                <AnimatedInput
-                                  id="epf-after"
-                                  label="After Image URL"
-                                  value={editPortfolioForm.afterImage || ''}
-                                  onChange={(e) => setEditPortfolioForm(prev => ({ ...prev, afterImage: e.target.value }))}
-                                  required
-                                />
-                                <div className="flex gap-2">
-                                  <Button variant="outline" onClick={() => editPortfolioAfterFileInputRef.current?.click()}>
-                                    <Upload className="w-4 h-4 mr-2" /> Upload After
-                                  </Button>
-                                  <input
-                                    ref={editPortfolioAfterFileInputRef}
-                                    type="file"
-                                    accept="image/*"
-                                    className="hidden"
-                                    onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadPortfolioFile(f, 'after', 'edit'); e.currentTarget.value = '' }}
-                                  />
-                                </div>
-                              </div>
-                              <AnimatedInput
-                                id="epf-duration"
-                                label="Duration"
-                                value={editPortfolioForm.duration || ''}
-                                onChange={(e) => setEditPortfolioForm(prev => ({ ...prev, duration: e.target.value }))}
-                              />
-                              <AnimatedInput
-                                id="epf-results"
-                                label="Results"
-                                value={editPortfolioForm.results || ''}
-                                onChange={(e) => setEditPortfolioForm(prev => ({ ...prev, results: e.target.value }))}
-                              />
-                            </div>
-                            <div className="flex justify-end gap-3">
-                              <Button variant="outline" onClick={() => setEditPortfolioItem(null)}>Cancel</Button>
-                              <Button
-                                variant="brand"
-                                onClick={() => {
-                                  if (!editPortfolioItem) return
-                                  try {
-                                    portfolioService.updateItem(editPortfolioItem.id, {
-                                      title: String(editPortfolioForm.title || editPortfolioItem.title),
-                                      category: String(editPortfolioForm.category || editPortfolioItem.category),
-                                      treatment: String(editPortfolioForm.treatment || editPortfolioItem.treatment),
-                                      description: String(editPortfolioForm.description || editPortfolioItem.description),
-                                      beforeImage: String(editPortfolioForm.beforeImage || editPortfolioItem.beforeImage),
-                                      afterImage: String(editPortfolioForm.afterImage || editPortfolioItem.afterImage),
-                                      duration: String(editPortfolioForm.duration || editPortfolioItem.duration),
-                                      results: String(editPortfolioForm.results || editPortfolioItem.results),
-                                    })
-                                    setEditPortfolioItem(null)
-                                    setEditPortfolioForm({})
-                                    showNotification('success', 'Changes saved')
-                                  } catch { showNotification('error', 'Failed to save changes') }
-                                }}
-                              >
-                                Save Changes
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                      </DialogContent>
-                    </Dialog>
+                    <PortfolioEditDialog
+                      open={!!editPortfolioItem}
+                      onOpenChange={(v) => { setEditPortfolioItem(v ? editPortfolioItem : null) }}
+                      target={editPortfolioItem}
+                      onSaved={async () => { try { const r = await fetch('/api/portfolio'); const jr = await r.json(); if (jr?.ok && Array.isArray(jr.data)) setContentPortfolioItems(jr.data); showNotification('success', 'Changes saved') } catch {} }}
+                    />
                   </CardContent>
                 </Card>
                   </TabsContent>
