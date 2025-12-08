@@ -1674,6 +1674,10 @@ class InfluencerService {
   }
 
   private loadFromStorage() {
+    if (typeof window === 'undefined') {
+      this.initialized = true
+      return
+    }
     try {
       const inf = localStorage.getItem('influencers_data')
       const ref = localStorage.getItem('influencer_referrals_data')
@@ -1690,6 +1694,7 @@ class InfluencerService {
   }
 
   private saveToStorage() {
+    if (typeof window === 'undefined') return
     try {
       localStorage.setItem('influencers_data', JSON.stringify(this.influencers))
       localStorage.setItem('influencer_referrals_data', JSON.stringify(this.referrals))

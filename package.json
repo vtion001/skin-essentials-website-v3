@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "next build",
-    "dev": "next dev",
+    "dev": "npx -y -p node@20 node ./node_modules/next/dist/bin/next dev",
     "lint": "next lint",
     "start": "next start"
   },
@@ -55,9 +55,9 @@
     "next": "15.2.4",
     "next-themes": "latest",
     "path": "latest",
-    "react": "^19",
+    "react": "18.3.1",
     "react-day-picker": "latest",
-    "react-dom": "^19",
+    "react-dom": "18.3.1",
     "react-hook-form": "latest",
     "react-resizable-panels": "latest",
     "recharts": "latest",
@@ -70,8 +70,8 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.9",
     "@types/node": "^22",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
     "eslint": "^9.39.1",
     "eslint-config-next": "16.0.3",
     "postcss": "^8.5",

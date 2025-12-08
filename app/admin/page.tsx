@@ -214,6 +214,9 @@ export default function AdminDashboard() {
   const [contentSelectedCategory, setContentSelectedCategory] = useState("")
   const [contentSubTab, setContentSubTab] = useState<string>("services")
   const [newServiceForm, setNewServiceForm] = useState<{ name: string; price: string; description: string; duration?: string; results?: string }>({ name: "", price: "", description: "" })
+  const [isServiceEditOpen, setIsServiceEditOpen] = useState(false)
+  const [serviceEditTarget, setServiceEditTarget] = useState<{ name: string; price: string; description: string; duration?: string; results?: string; sessions?: string; includes?: string; originalPrice?: string; badge?: string; pricing?: string; benefits?: string[]; faqs?: { q: string; a: string }[] } | null>(null)
+  const [serviceEditForm, setServiceEditForm] = useState<{ name: string; price: string; description: string; duration?: string; results?: string; sessions?: string; includes?: string; originalPrice?: string; badge?: string; pricing?: string; benefits?: string[]; faqs?: { q: string; a: string }[] }>({ name: "", price: "", description: "", benefits: [], faqs: [] })
   const [contentPortfolioItems, setContentPortfolioItems] = useState<PortfolioItem[]>([])
   const [portfolioForm, setPortfolioForm] = useState<Partial<PortfolioItem>>({})
   const [editPortfolioItem, setEditPortfolioItem] = useState<PortfolioItem | null>(null)
@@ -1836,6 +1839,7 @@ export default function AdminDashboard() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-6">
+                    
                     <div className="grid md:grid-cols-2 gap-6">
                       <div>
                         <Label>Sender Email (Google)</Label>
@@ -2076,6 +2080,105 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                     </div>
+                    <Dialog open={isServiceEditOpen} onOpenChange={setIsServiceEditOpen}>
+                      <DialogContent className="max-w-2xl">
+                        <DialogHeader>
+                          <DialogTitle>Edit Service</DialogTitle>
+                        </DialogHeader>
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div>
+                            <Label>Name</Label>
+                            <Input value={serviceEditForm.name} onChange={(e) => setServiceEditForm(prev => ({ ...prev, name: e.target.value }))} placeholder="Service name" />
+                          </div>
+                          <div>
+                            <Label>Price</Label>
+                            <Input value={serviceEditForm.price} onChange={(e) => setServiceEditForm(prev => ({ ...prev, price: e.target.value }))} placeholder="₱0" />
+                          </div>
+                          <div>
+                            <Label>Duration</Label>
+                            <Input value={serviceEditForm.duration || ''} onChange={(e) => setServiceEditForm(prev => ({ ...prev, duration: e.target.value }))} placeholder="e.g. 45 minutes" />
+                          </div>
+                          <div>
+                            <Label>Results</Label>
+                            <Input value={serviceEditForm.results || ''} onChange={(e) => setServiceEditForm(prev => ({ ...prev, results: e.target.value }))} placeholder="e.g. 6-12 months" />
+                          </div>
+                          <div>
+                            <Label>Sessions</Label>
+                            <Input value={serviceEditForm.sessions || ''} onChange={(e) => setServiceEditForm(prev => ({ ...prev, sessions: e.target.value }))} placeholder="e.g. 6-8 sessions" />
+                          </div>
+                          <div>
+                            <Label>Includes</Label>
+                            <Input value={serviceEditForm.includes || ''} onChange={(e) => setServiceEditForm(prev => ({ ...prev, includes: e.target.value }))} placeholder="e.g. Post-care kit" />
+                          </div>
+                          <div>
+                            <Label>Original Price</Label>
+                            <Input value={serviceEditForm.originalPrice || ''} onChange={(e) => setServiceEditForm(prev => ({ ...prev, originalPrice: e.target.value }))} placeholder="₱0" />
+                          </div>
+                          <div>
+                            <Label>Badge</Label>
+                            <Input value={serviceEditForm.badge || ''} onChange={(e) => setServiceEditForm(prev => ({ ...prev, badge: e.target.value }))} placeholder="e.g. PROMO" />
+                          </div>
+                          <div className="md:col-span-2">
+                            <Label>Pricing Notes</Label>
+                            <Input value={serviceEditForm.pricing || ''} onChange={(e) => setServiceEditForm(prev => ({ ...prev, pricing: e.target.value }))} placeholder="e.g. per thread/cc" />
+                          </div>
+                          <div className="md:col-span-2">
+                            <Label>Description</Label>
+                            <Textarea value={serviceEditForm.description} onChange={(e) => setServiceEditForm(prev => ({ ...prev, description: e.target.value }))} placeholder="Describe the service" />
+                          </div>
+                          <div className="md:col-span-2 space-y-2">
+                            <Label>Benefits</Label>
+                            {(serviceEditForm.benefits || []).map((b, idx) => (
+                              <div key={idx} className="flex gap-2">
+                                <Input value={b} onChange={(e) => setServiceEditForm(prev => ({ ...prev, benefits: (prev.benefits || []).map((x, i) => i === idx ? e.target.value : x) }))} placeholder={`Benefit ${idx+1}`} />
+                                <Button variant="outline" onClick={() => setServiceEditForm(prev => ({ ...prev, benefits: (prev.benefits || []).filter((_, i) => i !== idx) }))}>Remove</Button>
+                              </div>
+                            ))}
+                            <Button variant="secondary" onClick={() => setServiceEditForm(prev => ({ ...prev, benefits: [ ...(prev.benefits || []), '' ] }))}>Add Benefit</Button>
+                          </div>
+                          <div className="md:col-span-2 space-y-2">
+                            <Label>FAQs</Label>
+                            {(serviceEditForm.faqs || []).map((f, idx) => (
+                              <div key={idx} className="grid md:grid-cols-2 gap-2">
+                                <Input value={f?.q || ''} onChange={(e) => setServiceEditForm(prev => ({ ...prev, faqs: (prev.faqs || []).map((x, i) => i === idx ? { ...x, q: e.target.value } : x) }))} placeholder={`Question ${idx+1}`} />
+                                <Textarea value={f?.a || ''} onChange={(e) => setServiceEditForm(prev => ({ ...prev, faqs: (prev.faqs || []).map((x, i) => i === idx ? { ...x, a: e.target.value } : x) }))} placeholder="Answer" />
+                                <div className="md:col-span-2 flex justify-end">
+                                  <Button variant="outline" onClick={() => setServiceEditForm(prev => ({ ...prev, faqs: (prev.faqs || []).filter((_, i) => i !== idx) }))}>Remove FAQ</Button>
+                                </div>
+                              </div>
+                            ))}
+                            <Button variant="secondary" onClick={() => setServiceEditForm(prev => ({ ...prev, faqs: [ ...(prev.faqs || []), { q: '', a: '' } ] }))}>Add FAQ</Button>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-end gap-2 mt-4">
+                          <Button variant="outline" onClick={() => { setIsServiceEditOpen(false); setServiceEditTarget(null) }}>Cancel</Button>
+                          <Button
+                            variant="brand"
+                            onClick={async () => {
+                              if (!serviceEditTarget) return
+                              try {
+                                const res = await fetch('/api/services', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'updateService', categoryId: contentSelectedCategory, originalName: serviceEditTarget.name, service: serviceEditForm }) })
+                                const j = await res.json()
+                                if (j?.ok) {
+                                  const r = await fetch('/api/services')
+                                  const jr = await r.json()
+                                  if (jr?.ok) setContentServices(jr.data.map((c: any) => ({ id: c.id, category: c.category, services: c.services })))
+                                  showNotification('success', 'Service updated')
+                                  setIsServiceEditOpen(false)
+                                  setServiceEditTarget(null)
+                                } else {
+                                  showNotification('error', 'Failed to update service')
+                                }
+                              } catch {
+                                showNotification('error', 'Failed to update service')
+                              }
+                            }}
+                          >
+                            Save Changes
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
                     <div className="rounded-2xl border bg-white/70 p-4">
                       <Table>
                         <TableHeader>
@@ -2093,6 +2196,30 @@ export default function AdminDashboard() {
                               <TableCell>{s.price}</TableCell>
                               <TableCell>{s.duration || ''}</TableCell>
                               <TableCell className="text-right">
+                                <Button
+                                  variant="outline"
+                                  className="mr-2"
+                                  onClick={() => {
+                                    setServiceEditTarget(s)
+                                    setServiceEditForm({
+                                      name: s.name,
+                                      price: s.price,
+                                      description: s.description || '',
+                                      duration: s.duration || '',
+                                      results: s.results || '',
+                                      sessions: s.sessions || '',
+                                      includes: s.includes || '',
+                                      originalPrice: s.originalPrice || '',
+                                      badge: s.badge || '',
+                                      pricing: s.pricing || '',
+                                      benefits: Array.isArray(s.benefits) ? s.benefits : [],
+                                      faqs: Array.isArray(s.faqs) ? s.faqs : []
+                                    })
+                                    setIsServiceEditOpen(true)
+                                  }}
+                                >
+                                  Edit
+                                </Button>
                                 <Button
                                   variant="outline"
                                   onClick={async () => {
