@@ -34,13 +34,16 @@ export default function AdminLoginPage() {
       setMfaRequired(true)
       setMessage('Enter your MFA code')
       setInitialized(true)
+    } else if (err === 'no_session') {
+      setError('Your session has expired or is invalid. Please log in again.')
+      setInitialized(true)
     } else if (initialError) {
       setError(initialError)
       setInitialized(true)
     }
   }
 
-  useEffect(() => {}, [])
+  useEffect(() => { }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -73,7 +76,7 @@ export default function AdminLoginPage() {
             } else {
               localStorage.removeItem('admin_login_email')
             }
-          } catch {}
+          } catch { }
           setTimeout(() => router.replace("/admin"), 100)
         } else {
           setError(data.error || "Invalid email or password")
@@ -182,20 +185,20 @@ export default function AdminLoginPage() {
             )}
 
             {!mfaRequired && (
-            <Button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] hover:from-[#d09d80] hover:to-[#fbc6c5] text-white font-medium py-3"
-            >
-              {isLoading ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Signing in...
-                </div>
-              ) : (
-                "Sign In"
-              )}
-            </Button>)}
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="w-full bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] hover:from-[#d09d80] hover:to-[#fbc6c5] text-white font-medium py-3"
+              >
+                {isLoading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Signing in...
+                  </div>
+                ) : (
+                  "Sign In"
+                )}
+              </Button>)}
             {mfaRequired && (
               <div className="space-y-4">
                 <div className="space-y-2">

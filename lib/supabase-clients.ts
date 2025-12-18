@@ -2,16 +2,23 @@ import { createBrowserClient, createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
 export function supabaseBrowserClient() {
-  const url = String(process.env.NEXT_PUBLIC_SUPABASE_URL)
-  const key = String(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!url || !key || url === 'undefined') {
+    return null
+  }
   return createBrowserClient(url, key)
 }
 
 export async function supabaseServerClient() {
   const cookieStore = await cookies()
-  const url = String(process.env.NEXT_PUBLIC_SUPABASE_URL)
-  const key = String(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
-  
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  if (!url || !key || url === 'undefined') {
+    return null
+  }
+
   return createServerClient(url, key, {
     cookies: {
       getAll() {
