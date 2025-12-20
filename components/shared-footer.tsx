@@ -27,7 +27,11 @@ export default function SharedFooter() {
             <div className="hidden md:block h-[1px] flex-1 bg-gray-100"></div>
           </div>
           <div className="flex justify-center mb-8">
-            <Image src="/images/skinessentials-logo.png" alt="Skin Essentials by HER" width={200} height={100} className="h-12 w-auto object-contain" />
+            <img
+              src="https://res.cloudinary.com/dbviya1rj/image/upload/v1753674655/skinessentials_logo_350_x_180_px_fpp26r.png"
+              alt="Skin Essentials by HER"
+              className="h-12 w-auto object-contain"
+            />
           </div>
           <div className="flex flex-wrap justify-center gap-x-12 gap-y-4 text-[10px] tracking-[0.25em] uppercase text-gray-500 font-bold">
             <div className="flex items-center gap-2">

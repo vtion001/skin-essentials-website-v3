@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     url: "https://www.skinessentialsbyher.com/about",
     images: [
       {
-        url: "https://www.skinessentialsbyher.com/images/skinessentials-logo.png",
+        url: "https://res.cloudinary.com/dbviya1rj/image/upload/v1753674655/skinessentials_logo_350_x_180_px_fpp26r.png",
         width: 1200,
         height: 630,
         alt: "About Skin Essentials by HER - Licensed Aesthetic Clinic Quezon City",
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "About Us | Licensed Aesthetic Clinic in Quezon City",
     description: "Meet our licensed medical professionals. Board-certified dermatologist, FDA-certified injectors, 15+ years experience in Quezon City.",
-    images: ["https://www.skinessentialsbyher.com/images/skinessentials-logo.png"],
+    images: ["https://res.cloudinary.com/dbviya1rj/image/upload/v1753674655/skinessentials_logo_350_x_180_px_fpp26r.png"],
   },
   alternates: {
     canonical: "https://www.skinessentialsbyher.com/about",

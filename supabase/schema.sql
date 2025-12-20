@@ -291,7 +291,8 @@ begin
             'clientName', coalesce(c.first_name,'') || case when coalesce(c.last_name,'') <> '' then ' ' || c.last_name else '' end,
             'total', coalesce(t.total,0),
             'date', t.date::text,
-            'aestheticianId', t.staff_id
+            'aestheticianId', t.staff_id,
+            'clientId', t.client_id
           )
         )
         from treatments t
@@ -314,7 +315,8 @@ begin
           jsonb_build_object(
             'date', t.date::text,
             'procedure', t.procedure,
-            'aestheticianId', t.staff_id
+            'aestheticianId', t.staff_id,
+            'clientId', t.client_id
           )
         )
         from treatments t

@@ -64,11 +64,9 @@ export const SharedHeader = ({ showBackButton, backHref }: SharedHeaderProps) =>
           <div className="flex items-center justify-between">
             {/* Logo */}
             <Link href="/" className="flex-shrink-0 transition-transform hover:scale-[1.02]">
-              <Image
-                src="/images/skinessentials-logo.png"
+              <img
+                src="https://res.cloudinary.com/dbviya1rj/image/upload/v1753674655/skinessentials_logo_350_x_180_px_fpp26r.png"
                 alt="Skin Essentials by HER"
-                width={180}
-                height={70}
                 className="h-11 w-auto object-contain"
               />
             </Link>

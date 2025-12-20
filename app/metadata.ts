@@ -10,7 +10,7 @@ export const homePageMetadata: Metadata = {
     url: "https://www.skinessentialsbyher.com",
     images: [
       {
-        url: "https://www.skinessentialsbyher.com/images/skinessentials-logo.png",
+        url: "https://res.cloudinary.com/dbviya1rj/image/upload/v1753674655/skinessentials_logo_350_x_180_px_fpp26r.png",
         width: 1200,
         height: 630,
         alt: "Skin Essentials by HER - Best Aesthetic Clinic Quezon City",

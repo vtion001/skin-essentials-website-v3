@@ -176,51 +176,69 @@ export function PaymentsTab({
         <CardContent className="p-4 sm:p-6">
           <div className="space-y-3">
             <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Client</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Method</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Actions</TableHead>
+              <TableHeader className="bg-[#FDFCFB]">
+                <TableRow className="border-b border-[#E2D1C3]/20 hover:bg-transparent">
+                  <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#8B735B] py-5">Client</TableHead>
+                  <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#8B735B]">Amount</TableHead>
+                  <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#8B735B]">Method</TableHead>
+                  <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#8B735B]">Status</TableHead>
+                  <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#8B735B]">Date</TableHead>
+                  <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#8B735B] text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {pageItems.map((payment) => {
                   const client = clients.find(c => c.id === payment.clientId)
                   return (
-                    <TableRow key={payment.id}>
-                      <TableCell>{client ? `${client.firstName} ${client.lastName}` : 'Unknown Client'}</TableCell>
-                      <TableCell>₱{payment.amount.toLocaleString()}</TableCell>
-                      <TableCell className="capitalize">{payment.method.replace('_', ' ')}</TableCell>
+                    <TableRow key={payment.id} className="group border-b border-[#E2D1C3]/10 hover:bg-[#FDFCFB] transition-colors cursor-default">
+                      <TableCell className="py-4">
+                        <div className="font-bold text-[#1A1A1A] tracking-tight">{client ? `${client.firstName} ${client.lastName}` : 'Unknown Client'}</div>
+                        <div className="text-[10px] text-[#8B735B] font-medium tracking-tight uppercase mt-0.5">{client?.email || ''}</div>
+                      </TableCell>
                       <TableCell>
-                        <Badge className={
-                          payment.status === 'completed' ? 'bg-green-100 text-green-800' :
-                          payment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                          payment.status === 'failed' ? 'bg-red-100 text-red-800' :
-                          'bg-gray-100 text-gray-800'
-                        }>
+                        <div className="font-bold text-[#1A1A1A]">₱{payment.amount.toLocaleString()}</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-[11px] font-bold text-[#1A1A1A] uppercase tracking-tight">{payment.method.replace('_', ' ')}</div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={`text-[10px] font-bold uppercase tracking-widest py-0.5 px-3 rounded-full border shadow-none ${payment.status === 'completed' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                            payment.status === 'pending' ? 'bg-yellow-50 text-yellow-600 border-yellow-100' :
+                              payment.status === 'failed' ? 'bg-rose-50 text-rose-600 border-rose-100' :
+                                'bg-gray-50 text-gray-600 border-gray-100'
+                          }`}>
                           {payment.status}
                         </Badge>
                       </TableCell>
-                      <TableCell>{new Date(payment.createdAt).toLocaleDateString()}</TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Button size="sm" variant="outline" onClick={() => openPaymentModal(payment)}>
-                            <Edit className="w-4 h-4" />
+                        <div className="text-[11px] font-bold text-[#1A1A1A]">{new Date(payment.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1 justify-end">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 rounded-lg text-[#8B735B] hover:bg-[#E2D1C3]/20"
+                            onClick={() => openPaymentModal(payment)}
+                          >
+                            <Edit className="w-3.5 h-3.5" />
                           </Button>
                           {payment.receiptUrl && (
-                            <Button size="sm" variant="outline">
-                              <Download className="w-4 h-4" />
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 rounded-lg text-[#8B735B] hover:bg-[#E2D1C3]/20"
+                            >
+                              <Download className="w-3.5 h-3.5" />
                             </Button>
                           )}
                           <Button
-                            size="sm"
-                            variant="outline"
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 rounded-lg text-rose-400 hover:bg-rose-50 hover:text-rose-600"
                             onClick={() => handleDeletePayment(payment)}
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-3.5 h-3.5" />
                           </Button>
                         </div>
                       </TableCell>
@@ -229,24 +247,42 @@ export function PaymentsTab({
                 })}
                 {pageItems.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-gray-500">No payments</TableCell>
+                    <TableCell colSpan={6} className="text-center py-10 text-[10px] font-bold uppercase tracking-[0.2em] text-[#8B735B]/40">No payments found</TableCell>
                   </TableRow>
                 )}
               </TableBody>
             </Table>
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-600">Page {currentPage} of {totalPages}</div>
-              <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between pt-4">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-[#8B735B]/60">Page {currentPage} of {totalPages}</div>
+              <div className="flex items-center gap-3">
                 <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(parseInt(v)); setPage(1) }}>
-                  <SelectTrigger className="w-24 h-9"><SelectValue placeholder="Rows" /></SelectTrigger>
+                  <SelectTrigger className="w-24 h-8 text-[10px] font-bold uppercase tracking-widest text-[#8B735B] border-[#E2D1C3]/20 bg-white/50"><SelectValue placeholder="Rows" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="10">10</SelectItem>
-                    <SelectItem value="25">25</SelectItem>
-                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="10">10 Rows</SelectItem>
+                    <SelectItem value="25">25 Rows</SelectItem>
+                    <SelectItem value="50">50 Rows</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button variant="outline" onClick={() => setPage(Math.max(1, currentPage - 1))}>Prev</Button>
-                <Button variant="outline" onClick={() => setPage(Math.min(totalPages, currentPage + 1))}>Next</Button>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-[10px] font-bold uppercase tracking-widest text-[#8B735B] border-[#E2D1C3]/20 hover:bg-[#FDFCFB]"
+                    onClick={() => setPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    Prev
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-[10px] font-bold uppercase tracking-widest text-[#8B735B] border-[#E2D1C3]/20 hover:bg-[#FDFCFB]"
+                    onClick={() => setPage(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                  </Button>
+                </div>
               </div>
             </div>
           </div>

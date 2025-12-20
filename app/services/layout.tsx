@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     url: "https://www.skinessentialsbyher.com/services",
     images: [
       {
-        url: "https://www.skinessentialsbyher.com/images/skinessentials-logo.png",
+        url: "https://res.cloudinary.com/dbviya1rj/image/upload/v1753674655/skinessentials_logo_350_x_180_px_fpp26r.png",
         width: 1200,
         height: 630,
         alt: "Aesthetic Services Quezon City - Skin Essentials by HER",
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Aesthetic Services in Quezon City | Skin Essentials by HER",
     description: "Comprehensive aesthetic services: Hiko nose lifts ₱9,999, thread lifts, dermal fillers, laser treatments in Quezon City.",
-    images: ["https://www.skinessentialsbyher.com/images/skinessentials-logo.png"],
+    images: ["https://res.cloudinary.com/dbviya1rj/image/upload/v1753674655/skinessentials_logo_350_x_180_px_fpp26r.png"],
   },
   alternates: {
     canonical: "https://www.skinessentialsbyher.com/services",

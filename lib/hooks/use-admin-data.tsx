@@ -73,34 +73,8 @@ export function useAdminData() {
 
   const refreshMedicalRecords = useCallback(async () => {
     try {
-      const recRes = await fetch('/api/admin/medical-records', { cache: 'no-store' })
-      if (!recRes.ok) { setMedicalRecords([]); return }
-      const ctype = recRes.headers.get('content-type') || ''
-      if (!ctype.includes('application/json')) { setMedicalRecords([]); return }
-      const recJson = await recRes.json()
-      const arr = Array.isArray(recJson?.records) ? recJson.records : []
-      const localMap = new Map<string, { date: string; procedure: string; aestheticianId?: string }[]>(
-        medicalRecordService.getAllRecords().map(r => [r.id, Array.isArray(r.treatments) ? r.treatments! : []])
-      )
-      const normalized = arr.map((r: any) => ({
-        id: String(r.id),
-        clientId: String(r.client_id ?? r.clientId ?? ''),
-        appointmentId: r.appointment_id ?? r.appointmentId ?? undefined,
-        date: String(r.date ?? ''),
-        chiefComplaint: String(r.chief_complaint ?? r.chiefComplaint ?? ''),
-        medicalHistory: Array.isArray(r.medical_history) ? r.medical_history : [],
-        allergies: Array.isArray(r.allergies) ? r.allergies : [],
-        currentMedications: Array.isArray(r.current_medications) ? r.current_medications : [],
-        treatmentPlan: String(r.treatment_plan ?? r.treatmentPlan ?? ''),
-        notes: String(r.notes ?? ''),
-        attachments: Array.isArray(r.attachments) ? r.attachments : [],
-        createdBy: String(r.created_by ?? r.createdBy ?? ''),
-        createdAt: String(r.created_at ?? new Date().toISOString()),
-        updatedAt: String(r.updated_at ?? new Date().toISOString()),
-        isConfidential: Boolean(r.is_confidential ?? r.isConfidential ?? false),
-        treatments: localMap.get(String(r.id)) || []
-      })) as MedicalRecord[]
-      setMedicalRecords(normalized)
+      await medicalRecordService.fetchFromSupabase?.()
+      setMedicalRecords(medicalRecordService.getAllRecords())
     } catch (e) {
       console.error("Failed to refresh medical records", e)
     }

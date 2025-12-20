@@ -6,6 +6,7 @@ import { headers } from "next/headers"
 
 export async function GET(req: Request) {
   const admin = supabaseAdminClient()
+  if (!admin) return jsonMaybeMasked(req, { error: 'Supabase admin client not available' }, { status: 500 })
   const { data, error } = await admin.from('medical_records').select('*').order('created_at', { ascending: false })
   if (error) return jsonMaybeMasked(req, { error: error.message }, { status: 500 })
   const records = (data || []).map((r: any) => {
@@ -51,6 +52,7 @@ export async function POST(req: Request) {
     treatments: Array.isArray(raw.treatments) ? raw.treatments : [],
   }
   const admin = supabaseAdminClient()
+  if (!admin) return jsonMaybeMasked(req, { error: 'Supabase admin client not available' }, { status: 500 })
   const { data, error } = await admin.from('medical_records').insert(payload).select('*').single()
   if (error) return jsonMaybeMasked(req, { error: error.message }, { status: 500 })
   const record = {
@@ -94,6 +96,7 @@ export async function PATCH(req: Request) {
     updated_at: new Date().toISOString(),
   }
   const admin = supabaseAdminClient()
+  if (!admin) return jsonMaybeMasked(req, { error: 'Supabase admin client not available' }, { status: 500 })
   const { data, error } = await admin.from('medical_records').update(updates).eq('id', id).select('*').single()
   if (error) return jsonMaybeMasked(req, { error: error.message }, { status: 500 })
   const record = {
@@ -122,6 +125,7 @@ export async function DELETE(req: Request) {
   const { id } = body || {}
   if (!id) return jsonMaybeMasked(req, { error: 'Missing id' }, { status: 400 })
   const admin = supabaseAdminClient()
+  if (!admin) return jsonMaybeMasked(req, { error: 'Supabase admin client not available' }, { status: 500 })
   const { error } = await admin.from('medical_records').delete().eq('id', id)
   if (error) return jsonMaybeMasked(req, { error: error.message }, { status: 500 })
   return jsonMaybeMasked(req, { success: true })

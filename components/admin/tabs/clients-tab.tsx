@@ -72,8 +72,8 @@ export function ClientsTab({
   }
 
   const filteredClients = clients
-    .filter(client => 
-      searchQuery === '' || 
+    .filter(client =>
+      searchQuery === '' ||
       client.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       client.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (client.email || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -150,46 +150,75 @@ export function ClientsTab({
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table className="min-w-[700px]">
-              <TableHeader>
-                <TableRow>
-                  <TableHead scope="col">Name</TableHead>
-                  <TableHead scope="col">Email</TableHead>
-                  <TableHead scope="col">Phone</TableHead>
-                  <TableHead scope="col">Status</TableHead>
-                  <TableHead scope="col">Total Spent</TableHead>
-                  <TableHead scope="col">Last Visit</TableHead>
-                  <TableHead scope="col">Source</TableHead>
-                  <TableHead scope="col" className="text-right">Actions</TableHead>
+              <TableHeader className="bg-[#FDFCFB]">
+                <TableRow className="border-b border-[#E2D1C3]/20 hover:bg-transparent">
+                  <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#8B735B] py-5">Name</TableHead>
+                  <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#8B735B]">Email</TableHead>
+                  <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#8B735B]">Phone</TableHead>
+                  <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#8B735B]">Status</TableHead>
+                  <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#8B735B]">Total Spent</TableHead>
+                  <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#8B735B]">Last Visit</TableHead>
+                  <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#8B735B]">Source</TableHead>
+                  <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#8B735B] text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredClients.map((client) => (
-                  <TableRow key={client.id}>
-                    <TableCell className="font-medium">{privacyMode ? maskName(`${client.firstName} ${client.lastName}`) : `${client.firstName} ${client.lastName}`}</TableCell>
-                    <TableCell className="truncate max-w-[220px]">{privacyMode ? maskEmail(client.email) : client.email}</TableCell>
-                    <TableCell className="truncate max-w-[160px]">{privacyMode ? maskPhone(client.phone) : client.phone}</TableCell>
+                  <TableRow key={client.id} className="group border-b border-[#E2D1C3]/10 hover:bg-[#FDFCFB] transition-colors cursor-default">
+                    <TableCell className="py-4">
+                      <div className="font-bold text-[#1A1A1A] tracking-tight">{privacyMode ? maskName(`${client.firstName} ${client.lastName}`) : `${client.firstName} ${client.lastName}`}</div>
+                    </TableCell>
+                    <TableCell className="max-w-[220px]">
+                      <div className="text-[11px] font-bold text-[#1A1A1A] truncate">{privacyMode ? maskEmail(client.email) : client.email}</div>
+                    </TableCell>
+                    <TableCell className="max-w-[160px]">
+                      <div className="text-[11px] font-bold text-[#1A1A1A] truncate">{privacyMode ? maskPhone(client.phone) : client.phone}</div>
+                    </TableCell>
                     <TableCell>
-                      <Badge className={
-                        client.status === 'active' ? 'bg-green-100 text-green-800' :
-                        client.status === 'inactive' ? 'bg-gray-100 text-gray-800' :
-                        'bg-red-100 text-red-800'
-                      }>
+                      <Badge className={`text-[10px] font-bold uppercase tracking-widest py-0.5 px-3 rounded-full border shadow-none ${client.status === 'active' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                          client.status === 'inactive' ? 'bg-gray-50 text-gray-600 border-gray-100' :
+                            'bg-rose-50 text-rose-600 border-rose-100'
+                        }`}>
                         {client.status}
                       </Badge>
                     </TableCell>
-                    <TableCell>₱{client.totalSpent.toLocaleString()}</TableCell>
-                    <TableCell>{client.lastVisit ? new Date(client.lastVisit).toLocaleDateString() : '-'}</TableCell>
-                    <TableCell>{client.source.replace('_', ' ')}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button size="sm" variant="outline" onClick={() => openClientModal(client)} aria-label="Edit client">
-                          <Edit className="w-4 h-4" />
+                    <TableCell>
+                      <div className="font-bold text-[#1A1A1A]">₱{client.totalSpent.toLocaleString()}</div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-[11px] font-bold text-[#1A1A1A]">{client.lastVisit ? new Date(client.lastVisit).toLocaleDateString() : '-'}</div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-[10px] text-[#8B735B] font-bold uppercase tracking-widest">{client.source.replace('_', ' ')}</div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1 justify-end">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 rounded-lg text-[#8B735B] hover:bg-[#E2D1C3]/20"
+                          onClick={() => openClientModal(client)}
+                          aria-label="Edit client"
+                        >
+                          <Edit className="w-3.5 h-3.5" />
                         </Button>
-                        <Button size="sm" variant="outline" onClick={() => openMedicalRecordModal(undefined, client.id)} aria-label="Open medical records">
-                          <FileText className="w-4 h-4" />
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 rounded-lg text-[#8B735B] hover:bg-[#E2D1C3]/20"
+                          onClick={() => openMedicalRecordModal(undefined, client.id)}
+                          aria-label="Open medical records"
+                        >
+                          <FileText className="w-3.5 h-3.5" />
                         </Button>
-                        <Button size="sm" variant="outline" onClick={() => setConfirmClient(client)} aria-label="Delete client">
-                          <Trash2 className="w-4 h-4" />
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 rounded-lg text-rose-400 hover:bg-rose-50 hover:text-rose-600"
+                          onClick={() => setConfirmClient(client)}
+                          aria-label="Delete client"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
                         </Button>
                       </div>
                     </TableCell>

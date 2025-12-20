@@ -179,7 +179,7 @@ class AppointmentService {
       this.initialized = true
     }
     // Try to hydrate from Supabase asynchronously
-    this.fetchFromSupabase().catch(() => {})
+    this.fetchFromSupabase().catch(() => { })
   }
 
   private saveToStorage() {
@@ -308,7 +308,7 @@ class AppointmentService {
       created_at: newAppointment.createdAt,
       updated_at: newAppointment.updatedAt,
     }
-    supabaseInsertAppointment(row).catch(() => {})
+    supabaseInsertAppointment(row).catch(() => { })
     return newAppointment
   }
 
@@ -325,7 +325,7 @@ class AppointmentService {
     {
       const { clientId, clientName, clientEmail, clientPhone, service, date, time, status, notes, duration, price, updatedAt } = this.appointments[index]
       const row = { client_id: clientId, client_name: clientName, client_email: clientEmail, client_phone: clientPhone, service, date, time, status, notes, duration, price, updated_at: updatedAt }
-      supabaseUpdateAppointment(id, row).catch(() => {})
+      supabaseUpdateAppointment(id, row).catch(() => { })
     }
     return true
   }
@@ -336,7 +336,7 @@ class AppointmentService {
 
     this.appointments.splice(index, 1)
     this.saveToStorage()
-    supabaseDeleteAppointment(id).catch(() => {})
+    supabaseDeleteAppointment(id).catch(() => { })
     return true
   }
 
@@ -444,6 +444,40 @@ class MedicalRecordService {
     }
   }
 
+  async fetchFromSupabase() {
+    if (!supabaseAvailable()) return
+    const rows = await supabaseFetchMedicalRecords()
+    this.initialized = true
+    if (!rows) return
+    const normalized: MedicalRecord[] = rows.map((r: any) => ({
+      id: String(r.id || ''),
+      clientId: String(r.client_id || r.clientId || ''),
+      appointmentId: r.appointment_id || r.appointmentId || undefined,
+      date: String(r.date || ''),
+      chiefComplaint: String(r.chief_complaint || r.chiefComplaint || ''),
+      medicalHistory: Array.isArray(r.medical_history || r.medicalHistory) ? (r.medical_history || r.medicalHistory) : [],
+      allergies: Array.isArray(r.allergies) ? r.allergies : [],
+      currentMedications: Array.isArray(r.current_medications || r.currentMedications) ? (r.current_medications || r.currentMedications) : [],
+      treatmentPlan: String(r.treatment_plan || r.treatmentPlan || ''),
+      notes: String(r.notes || ''),
+      attachments: Array.isArray(r.attachments) ? r.attachments : [],
+      createdBy: String(r.created_by || r.createdBy || ''),
+      createdAt: String(r.created_at || r.createdAt || new Date().toISOString()),
+      updatedAt: String(r.updated_at || r.updatedAt || new Date().toISOString()),
+      isConfidential: Boolean(r.is_confidential ?? r.isConfidential ?? false),
+      treatments: Array.isArray(r.treatments) ? r.treatments : []
+    }))
+    this.records = normalized
+    this.saveToStorage()
+  }
+
+  async syncLocalToSupabaseIfEmpty() {
+    if (!supabaseAvailable()) return
+    const rows = await supabaseFetchMedicalRecords()
+    if (!rows || rows.length > 0) return
+    await this.fetchFromSupabase()
+  }
+
   private loadFromStorage() {
     try {
       const stored = localStorage.getItem("medical_records_data")
@@ -459,6 +493,8 @@ class MedicalRecordService {
       this.records = []
       this.initialized = true
     }
+    // Try to hydrate from Supabase asynchronously
+    this.fetchFromSupabase().catch(() => { })
   }
 
   private saveToStorage() {
@@ -544,7 +580,7 @@ class ClientService {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ clients: this.clients })
-      }).catch(() => {})
+      }).catch(() => { })
     } catch (error) {
       console.error("Error saving clients:", error)
     }
@@ -747,7 +783,7 @@ class StaffService {
       department: r.department ?? undefined,
       licenseNumber: r.license_number ?? undefined,
       specialties: Array.isArray(r.specialties) ? r.specialties : [],
-      hireDate: String(r.hire_date ?? new Date().toISOString().slice(0,10)),
+      hireDate: String(r.hire_date ?? new Date().toISOString().slice(0, 10)),
       status: String(r.status ?? 'active'),
       avatarUrl: r.avatar_url ?? undefined,
       notes: r.notes ?? undefined,
@@ -784,7 +820,7 @@ class StaffService {
           await fetch('/api/admin/staff', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
         }
       }
-    } catch {}
+    } catch { }
   }
 
   private getDefaultStaff(): Staff[] {
@@ -891,7 +927,7 @@ class SocialMediaService {
       const storedMessages = localStorage.getItem("social_messages_data")
       const storedConversations = localStorage.getItem("social_conversations_data")
       const storedConnections = localStorage.getItem("social_connections_data")
-      
+
       if (storedMessages) {
         this.messages = JSON.parse(storedMessages)
       } else {
@@ -951,7 +987,7 @@ class SocialMediaService {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: this.messages, conversations: this.conversations, connections: sanitizedConnections })
-      }).catch(() => {})
+      }).catch(() => { })
     } catch (error) {
       console.error("Error saving social media data:", error)
     }
@@ -1055,7 +1091,7 @@ class SocialMediaService {
   // Conversation Management Methods
   getAllConversations(): SocialConversation[] {
     if (!this.initialized) this.loadFromStorage()
-    return this.conversations.sort((a, b) => 
+    return this.conversations.sort((a, b) =>
       new Date(b.lastMessageTimestamp).getTime() - new Date(a.lastMessageTimestamp).getTime()
     )
   }
@@ -1078,7 +1114,7 @@ class SocialMediaService {
 
   sendMessageToConversation(conversationId: string, message: string): boolean {
     if (!this.initialized) this.loadFromStorage()
-    
+
     const conversation = this.conversations.find(conv => conv.id === conversationId)
     if (!conversation) return false
 
@@ -1099,27 +1135,27 @@ class SocialMediaService {
     }
 
     this.messages.push(newMessage)
-    
+
     // Update conversation last message
     conversation.lastMessage = message
     conversation.lastMessageTimestamp = newMessage.timestamp
-    
+
     this.saveToStorage()
     return true
   }
 
   markConversationAsRead(conversationId: string): boolean {
     if (!this.initialized) this.loadFromStorage()
-    
+
     const conversation = this.conversations.find(conv => conv.id === conversationId)
     if (conversation) {
       conversation.unreadCount = 0
-      
+
       // Mark all messages in conversation as read
       this.messages
         .filter(msg => msg.conversationId === conversationId && !msg.isFromPage)
         .forEach(msg => msg.isRead = true)
-      
+
       this.saveToStorage()
       return true
     }
@@ -1134,12 +1170,12 @@ class SocialMediaService {
 
   addPlatformConnection(connection: Omit<SocialPlatformConnection, 'id'>): boolean {
     if (!this.initialized) this.loadFromStorage()
-    
+
     const newConnection: SocialPlatformConnection = {
       ...connection,
       id: `conn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     }
-    
+
     this.platformConnections.push(newConnection)
     this.saveToStorage()
     return true
@@ -1160,7 +1196,7 @@ class SocialMediaService {
 
   removePlatformConnection(connectionId: string): boolean {
     if (!this.initialized) this.loadFromStorage()
-    
+
     const index = this.platformConnections.findIndex(conn => conn.id === connectionId)
     if (index !== -1) {
       this.platformConnections.splice(index, 1)
@@ -1172,7 +1208,7 @@ class SocialMediaService {
 
   updateConnectionStatus(connectionId: string, isConnected: boolean): boolean {
     if (!this.initialized) this.loadFromStorage()
-    
+
     const connection = this.platformConnections.find(conn => conn.id === connectionId)
     if (connection) {
       connection.isConnected = isConnected
@@ -1186,8 +1222,8 @@ class SocialMediaService {
   async syncMessagesFromPlatform(platform: "facebook" | "instagram"): Promise<boolean> {
     try {
       if (!this.initialized) this.loadFromStorage()
-      
-      const connections = this.platformConnections.filter(conn => 
+
+      const connections = this.platformConnections.filter(conn =>
         conn.platform === platform && conn.isConnected
       )
 
@@ -1247,7 +1283,7 @@ class SocialMediaService {
   private async syncFacebookMessages(connection: SocialPlatformConnection): Promise<void> {
     try {
       console.log(`Starting Facebook message sync for page: ${connection.pageName} (${connection.pageId})`);
-      
+
       // Validate and refresh token if needed
       const tokenIsValid = await this.refreshFacebookTokenIfNeeded(connection);
       if (!tokenIsValid) {
@@ -1255,13 +1291,13 @@ class SocialMediaService {
       }
 
       console.log(`Token validation successful for page: ${connection.pageName}`);
-      
+
       const conversations = await facebookAPI.getPageConversations(connection.accessToken, connection.pageId)
       console.log(`Retrieved ${conversations.length} conversations for page: ${connection.pageName}`);
-      
+
       for (const fbConversation of conversations) {
         // Convert Facebook conversation to our format
-        const existingConversation = this.conversations.find(c => 
+        const existingConversation = this.conversations.find(c =>
           c.id === fbConversation.id && c.platform === 'facebook'
         )
 
@@ -1294,10 +1330,10 @@ class SocialMediaService {
           // Fetch messages for this conversation
           const fbMessages = await facebookAPI.getConversationMessages(connection.accessToken, fbConversation.id)
           console.log(`Retrieved ${fbMessages.length} messages for conversation: ${fbConversation.id}`);
-          
+
           for (const fbMessage of fbMessages) {
             const existingMessage = this.messages.find(m => m.id === fbMessage.id)
-            
+
             if (!existingMessage) {
               const newMessage: SocialMessage = {
                 id: fbMessage.id,
@@ -1354,17 +1390,17 @@ class SocialMediaService {
     try {
       // Get Instagram Business Account ID
       const igAccount = await instagramAPI.getInstagramBusinessAccount(connection.accessToken, connection.pageId)
-      
+
       if (!igAccount) {
         console.log('No Instagram Business Account found for this page')
         return
       }
 
       const conversations = await instagramAPI.getConversations(connection.accessToken, igAccount.id)
-      
+
       for (const igConversation of conversations) {
         // Convert Instagram conversation to our format
-        const existingConversation = this.conversations.find(c => 
+        const existingConversation = this.conversations.find(c =>
           c.id === igConversation.id && c.platform === 'instagram'
         )
 
@@ -1388,10 +1424,10 @@ class SocialMediaService {
 
         // Fetch messages for this conversation
         const igMessages = await instagramAPI.getConversationMessages(connection.accessToken, igConversation.id)
-        
+
         for (const igMessage of igMessages) {
           const existingMessage = this.messages.find(m => m.id === igMessage.id)
-          
+
           if (!existingMessage) {
             const newMessage: SocialMessage = {
               id: igMessage.id,
@@ -1464,17 +1500,17 @@ class SocialMediaService {
   async sendMessageViaPlatform(conversationId: string, message: string, platform: "facebook" | "instagram"): Promise<boolean> {
     try {
       if (!this.initialized) this.loadFromStorage()
-      
+
       const conversation = this.conversations.find(c => c.id === conversationId)
       if (!conversation) {
         console.error('Conversation not found')
         return false
       }
 
-      const connection = this.platformConnections.find(c => 
+      const connection = this.platformConnections.find(c =>
         c.platform === platform && c.pageId === conversation.pageId && c.isConnected
       )
-      
+
       if (!connection) {
         console.error(`No connected ${platform} account found for this conversation`)
         return false
@@ -1505,9 +1541,9 @@ class SocialMediaService {
           messageType: 'text',
           isFromPage: true
         }
-        
+
         this.messages.push(sentMessage)
-        
+
         // Update conversation
         const conv = this.conversations.find(c => c.id === conversationId)
         if (conv) {
@@ -1515,7 +1551,7 @@ class SocialMediaService {
           conv.lastMessageTimestamp = sentMessage.timestamp
           conv.messages.push(sentMessage)
         }
-        
+
         this.saveToStorage()
         return true
       }
@@ -1537,10 +1573,10 @@ class SocialMediaService {
         return false
       }
 
-      const connection = this.platformConnections.find(c => 
+      const connection = this.platformConnections.find(c =>
         c.platform === platform && c.pageId === conversation.pageId && c.isConnected
       )
-      
+
       if (!connection) {
         console.error(`No connected ${platform} account found for this conversation`)
         return false
@@ -1622,7 +1658,7 @@ class SocialMediaService {
     try {
       localStorage.setItem('potential_client_draft', JSON.stringify(draft))
       localStorage.setItem('potential_conversation_id', conversationId)
-    } catch {}
+    } catch { }
   }
 }
 
@@ -1780,7 +1816,7 @@ class InfluencerService {
           await fetch('/api/admin/influencer-referrals', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
         }
       }
-    } catch {}
+    } catch { }
   }
 
   private getDefaultInfluencers(): Influencer[] {

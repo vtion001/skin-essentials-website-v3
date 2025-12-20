@@ -10,13 +10,13 @@ import crypto from 'crypto'
 export function getEncryptionKey() {
   const raw = process.env.DATA_ENCRYPTION_KEY || ''
   if (!raw || raw.length < 32) {
-    return crypto.createHash('sha256').update('fallback_key').digest()
+    return null
   }
   if (/^[A-Za-z0-9+/=]+$/.test(raw)) {
     try {
       const buf = Buffer.from(raw, 'base64')
       if (buf.length === 32) return buf
-    } catch {}
+    } catch { }
   }
   return crypto.createHash('sha256').update(raw).digest()
 }
@@ -38,19 +38,32 @@ export function aesEncrypt(payload: any) {
 
 export function aesDecrypt(blob: { iv: string; tag: string; data: string } | null) {
   if (!blob || !blob.iv || !blob.tag || !blob.data) return null
-  const keyBuf = getEncryptionKey()
-  const secret = crypto.createSecretKey(keyBuf as any)
-  const ivArr = new Uint8Array(Buffer.from(blob.iv, 'base64'))
-  const tagBuf = Buffer.from(blob.tag, 'base64')
-  const dataArr = new Uint8Array(Buffer.from(blob.data, 'base64'))
-  const decipher = crypto.createDecipheriv('aes-256-gcm', secret, ivArr)
-  decipher.setAuthTag(tagBuf as any)
-  const dec = Buffer.concat([decipher.update(dataArr as any), decipher.final() as any])
-  try {
-    return JSON.parse(dec.toString('utf-8'))
-  } catch {
-    return null
+
+  const decryptWithKey = (keyBuf: Buffer) => {
+    try {
+      const secret = crypto.createSecretKey(keyBuf as any)
+      const ivArr = new Uint8Array(Buffer.from(blob.iv, 'base64'))
+      const tagBuf = Buffer.from(blob.tag, 'base64')
+      const dataArr = new Uint8Array(Buffer.from(blob.data, 'base64'))
+      const decipher = crypto.createDecipheriv('aes-256-gcm', secret, ivArr)
+      decipher.setAuthTag(tagBuf as any)
+      const dec = Buffer.concat([decipher.update(dataArr as any), decipher.final() as any])
+      return JSON.parse(dec.toString('utf-8'))
+    } catch {
+      return null
+    }
   }
+
+  // 1. Try with configured key
+  const primaryKey = getEncryptionKey()
+  if (primaryKey) {
+    const result = decryptWithKey(primaryKey)
+    if (result) return result
+  }
+
+  // 2. Try with fallback key (legacy/dev support)
+  const fallbackKey = crypto.createHash('sha256').update('fallback_key').digest()
+  return decryptWithKey(fallbackKey)
 }
 
 export function aesEncryptToString(payload: any) {
@@ -58,10 +71,10 @@ export function aesEncryptToString(payload: any) {
   return JSON.stringify(blob)
 }
 
-export function aesDecryptFromString(str: string | null) {
+export function aesDecryptFromString(str: any) {
   if (!str) return null
   try {
-    const obj = JSON.parse(str)
+    const obj = typeof str === 'string' ? JSON.parse(str) : str
     return aesDecrypt(obj)
   } catch {
     return null

@@ -4,10 +4,13 @@ export function supabaseAvailable() {
 
 export async function supabaseFetchAppointments() {
   try {
-    const res = await fetch('/api/admin/appointments', { cache: 'no-store' })
+    const res = await fetch('/api/admin/appointments', {
+      cache: 'no-store',
+      headers: { 'x-reveal': '1' }
+    })
     if (!res.ok) return null
     const json = await res.json()
-    const arr = json?.appointments
+    const arr = json?.appointments || json?.data || json?.items
     return Array.isArray(arr) ? arr : []
   } catch {
     return null
@@ -53,10 +56,13 @@ export async function supabaseDeleteAppointment(id: string) {
 
 export async function supabaseFetchClients() {
   try {
-    const res = await fetch('/api/admin/clients', { cache: 'no-store' })
+    const res = await fetch('/api/admin/clients', {
+      cache: 'no-store',
+      headers: { 'x-reveal': '1' }
+    })
     if (!res.ok) return null
     const json = await res.json()
-    const arr = json?.clients
+    const arr = json?.clients || json?.data || json?.items
     return Array.isArray(arr) ? arr : []
   } catch {
     return null
@@ -65,45 +71,65 @@ export async function supabaseFetchClients() {
 
 export async function supabaseFetchStaff() {
   try {
-    const res = await fetch('/api/admin/staff', { cache: 'no-store' })
+    const res = await fetch('/api/admin/staff', {
+      cache: 'no-store',
+      headers: { 'x-reveal': '1' }
+    })
     if (!res.ok) return null
     const json = await res.json()
-    return Array.isArray(json?.staff) ? json.staff : []
+    const arr = json?.staff || json?.data || json?.items
+    return Array.isArray(arr) ? arr : []
   } catch { return null }
 }
 
 export async function supabaseFetchPayments() {
   try {
-    const res = await fetch('/api/admin/payments', { cache: 'no-store' })
+    const res = await fetch('/api/admin/payments', {
+      cache: 'no-store',
+      headers: { 'x-reveal': '1' }
+    })
     if (!res.ok) return null
     const json = await res.json()
-    return Array.isArray(json?.payments) ? json.payments : []
+    const arr = json?.payments || json?.data || json?.items
+    return Array.isArray(arr) ? arr : []
   } catch { return null }
 }
 
 export async function supabaseFetchMedicalRecords() {
   try {
-    const res = await fetch('/api/admin/medical-records', { cache: 'no-store' })
+    const res = await fetch('/api/admin/medical-records', {
+      cache: 'no-store',
+      headers: { 'x-reveal': '1' }
+    })
     if (!res.ok) return null
     const json = await res.json()
-    return Array.isArray(json?.records) ? json.records : []
+    const arr = json?.records || json?.data || json?.items
+    return Array.isArray(arr) ? arr : []
   } catch { return null }
 }
 
 export async function supabaseFetchInfluencers() {
   try {
-    const res = await fetch('/api/admin/influencers', { cache: 'no-store' })
+    const res = await fetch('/api/admin/influencers', {
+      cache: 'no-store',
+      headers: { 'x-reveal': '1' }
+    })
     if (!res.ok) return null
     const json = await res.json()
-    return Array.isArray(json?.influencers) ? json.influencers : []
+    const arr = json?.influencers || json?.data || json?.items
+    return Array.isArray(arr) ? arr : []
   } catch { return null }
 }
 
 export async function supabaseFetchReferrals() {
   try {
-    const res = await fetch('/api/admin/influencer-referrals', { cache: 'no-store' })
+    const res = await fetch('/api/admin/influencer-referrals', {
+      cache: 'no-store',
+      headers: { 'x-reveal': '1' }
+    })
     if (!res.ok) return null
     const json = await res.json()
-    return Array.isArray(json?.referrals) ? json.referrals : []
+    const arr = json?.referrals || json?.data || json?.items
+    return Array.isArray(arr) ? arr : []
   } catch { return null }
 }
