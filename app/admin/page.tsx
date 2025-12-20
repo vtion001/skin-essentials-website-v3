@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Calendar } from "@/components/ui/calendar"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
@@ -109,6 +110,7 @@ import { AnimatedSelect } from "@/components/ui/animated-select"
 import { EnhancedButton } from "@/components/ui/enhanced-button"
 import { LazyTabContent } from "@/components/ui/lazy-tab-content"
 import { InfluencerModal } from "@/components/admin/modals/influencer-modal"
+import { AdminProfileButton } from "@/components/admin/admin-profile-button"
 
 const ServiceEditDialog = memo(function ServiceEditDialog({ open, onOpenChange, target, selectedCategory, onSaved }: { open: boolean; onOpenChange: (v: boolean) => void; target: { name: string; price: string; description: string; duration?: string; results?: string; sessions?: string; includes?: string; originalPrice?: string; badge?: string; pricing?: string; image?: string; benefits?: string[]; faqs?: { q: string; a: string }[] } | null; selectedCategory: string; onSaved: () => void }) {
   const [draft, setDraft] = useState<{ name: string; price: string; description: string; duration?: string; results?: string; sessions?: string; includes?: string; originalPrice?: string; badge?: string; pricing?: string; image?: string; benefits?: string[]; faqs?: { q: string; a: string }[] }>({ name: "", price: "", description: "", benefits: [], faqs: [] })
@@ -1677,16 +1679,32 @@ export default function AdminDashboard() {
 
             {/* Sidebar Footer: Profile Section */}
             <div className="p-6 border-t border-[#0F2922]/10">
-              <div className="flex items-center gap-4 p-4 bg-[#0F2922]/5 rounded-2xl hover:bg-[#0F2922]/10 transition-colors cursor-pointer group" onClick={handleLogout}>
-                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#0F2922] to-[#0F2922]/40 flex items-center justify-center font-bold text-white text-sm overflow-hidden border-2 border-transparent group-hover:border-[#0F2922] transition-all">
-                  A
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold text-[#0F2922] truncate uppercase tracking-tight">Administrator</p>
-                  <p className="text-[10px] text-[#0F2922]/60 truncate mt-0.5">admin@skin-essentials.com</p>
-                </div>
-                <MoreHorizontal className="w-4 h-4 text-[#0F2922]/40 group-hover:text-[#0F2922]" />
-              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <div>
+                    <AdminProfileButton />
+                  </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 rounded-xl border border-[#0F2922]/10 shadow-xl bg-white/95 backdrop-blur-md">
+                  <DropdownMenuLabel className="text-[#0F2922]">My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-[#0F2922]/10" />
+                  <DropdownMenuItem
+                    className="focus:bg-[#0F2922]/5 focus:text-[#0F2922] cursor-pointer rounded-lg"
+                    onClick={() => showNotification("info", "Profile settings coming soon")}
+                  >
+                    <Settings className="w-4 h-4 mr-2" />
+                    Profile Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="focus:bg-red-50 focus:text-red-900 text-red-700 cursor-pointer rounded-lg"
+                    onClick={handleLogout}
+                  >
+                    <div className="flex items-center w-full">
+                      <span className="flex-1">Log out</span>
+                    </div>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </aside>
 
@@ -2005,7 +2023,7 @@ export default function AdminDashboard() {
                       <h2 className="text-2xl font-bold text-gray-900">Booking Management</h2>
                       <Button
                         onClick={() => openAppointmentModal()}
-                        className="bg-gradient-to-r from-purple-500 via-pink-500 to-rose-500 hover:from-purple-600 hover:via-pink-600 hover:to-rose-600 text-white shadow-2xl shadow-purple-500/30 hover:shadow-purple-500/40 transition-all duration-300 hover:scale-105 font-bold px-6 py-3 rounded-2xl"
+                        className="bg-[#0F2922] hover:bg-[#0F2922]/90 text-white shadow-2xl shadow-[#0F2922]/30 hover:shadow-[#0F2922]/40 transition-all duration-300 hover:scale-105 font-bold px-6 py-3 rounded-2xl"
                       >
                         <Plus className="w-4 h-4 mr-2" />
                         New Appointment
@@ -2403,15 +2421,20 @@ export default function AdminDashboard() {
                         <div className="grid md:grid-cols-2 gap-6">
                           <div>
                             <Label>Sender ID</Label>
-                            <Input value={smsStatus?.sender || 'iprogtech'} disabled />
-                            <p className="text-xs text-gray-500 mt-2">Uses IPROG SMS provider</p>
+                            <Input value={smsStatus?.sender || 'SEMAPHORE'} disabled />
+                            <p className="text-xs text-gray-500 mt-2">Uses {smsStatus?.provider || 'Semaphore'} SMS provider</p>
                           </div>
                           <div>
                             <Label>Status</Label>
                             <div className="flex items-center gap-3">
                               <Badge className={smsStatus?.configured ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}>
-                                {smsStatus?.configured ? 'Configured' : 'Not Configured'}
+                                {smsStatus?.status || (smsStatus?.configured ? 'Active' : 'Not Configured')}
                               </Badge>
+                              {smsStatus?.balance && (
+                                <Badge variant="outline" className="text-gray-600">
+                                  Credits: {smsStatus.balance}
+                                </Badge>
+                              )}
                               <Button variant="secondary" onClick={refreshSmsStatus}>Refresh</Button>
                             </div>
                           </div>
@@ -2438,7 +2461,7 @@ export default function AdminDashboard() {
                                 showNotification(j?.ok ? 'success' : 'error', j?.ok ? 'SMS sent' : (j?.error || 'Failed to send'))
                               } catch { showNotification('error', 'Failed to send') }
                             }}
-                            variant="brand"
+                            className="bg-[#0F2922] hover:bg-[#0F2922]/90 text-white shadow-2xl shadow-[#0F2922]/30 hover:shadow-[#0F2922]/40 transition-all duration-300 hover:scale-105 font-bold px-6 py-3 rounded-2xl"
                           >
                             Send SMS
                           </Button>
@@ -2463,9 +2486,9 @@ export default function AdminDashboard() {
                   <TabsContent value="content" className="space-y-8">
                     <Tabs value={contentSubTab} onValueChange={setContentSubTab} className="w-full">
                       <TabsList className="bg-white/30 backdrop-blur-xl border border-white/60 shadow h-12 items-center justify-center rounded-2xl p-2 grid w-full grid-cols-3 mb-6">
-                        <TabsTrigger value="services" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white text-gray-700 h-9 justify-center rounded-xl border border-transparent px-3 py-2 text-sm font-bold transition-all duration-300 data-[state=active]:border-white/80">Services Manager</TabsTrigger>
-                        <TabsTrigger value="portfolio" className="data-[state=active]:bg-rose-600 data-[state=active]:text-white text-gray-700 h-9 justify-center rounded-xl border border-transparent px-3 py-2 text-sm font-bold transition-all duration-300 data-[state=active]:border-white/80">Portfolio Manager</TabsTrigger>
-                        <TabsTrigger value="categories" className="data-[state=active]:bg-brand-gradient data-[state=active]:text-white text-gray-700 h-9 justify-center rounded-xl border border-transparent px-3 py-2 text-sm font-bold transition-all duration-300 data-[state=active]:border-white/80">Category Manager</TabsTrigger>
+                        <TabsTrigger value="services" className="data-[state=active]:bg-[#0F2922] data-[state=active]:text-white text-gray-700 h-9 justify-center rounded-xl border border-transparent px-3 py-2 text-sm font-bold transition-all duration-300 data-[state=active]:border-white/80">Services Manager</TabsTrigger>
+                        <TabsTrigger value="portfolio" className="data-[state=active]:bg-[#0F2922] data-[state=active]:text-white text-gray-700 h-9 justify-center rounded-xl border border-transparent px-3 py-2 text-sm font-bold transition-all duration-300 data-[state=active]:border-white/80">Portfolio Manager</TabsTrigger>
+                        <TabsTrigger value="categories" className="data-[state=active]:bg-[#0F2922] data-[state=active]:text-white text-gray-700 h-9 justify-center rounded-xl border border-transparent px-3 py-2 text-sm font-bold transition-all duration-300 data-[state=active]:border-white/80">Category Manager</TabsTrigger>
                       </TabsList>
                       <TabsContent value="services" className="space-y-8">
                         <Card className="border-white/60 bg-white/70 backdrop-blur-xl shadow-xl rounded-3xl">
@@ -3135,7 +3158,7 @@ export default function AdminDashboard() {
                       <h2 className="text-2xl font-bold text-gray-900">Electronic Medical Records</h2>
                       <Button
                         onClick={() => openMedicalRecordModal()}
-                        className="bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-500 hover:from-orange-600 hover:via-amber-600 hover:to-yellow-600 text-white shadow-2xl shadow-orange-500/30 hover:shadow-orange-500/40 transition-all duration-300 hover:scale-105 font-bold px-6 py-3 rounded-2xl"
+                        className="bg-[#0F2922] hover:bg-[#0F2922]/90 text-white shadow-2xl shadow-[#0F2922]/30 hover:shadow-[#0F2922]/40 transition-all duration-300 hover:scale-105 font-bold px-6 py-3 rounded-2xl"
                       >
                         <Plus className="w-4 h-4 mr-2" />
                         New Record
@@ -3324,7 +3347,7 @@ export default function AdminDashboard() {
                         </Button>
                         <Button
                           onClick={() => openStaffModal()}
-                          className="bg-gradient-to-r from-slate-600 via-gray-700 to-slate-800 hover:from-slate-700 hover:via-gray-800 hover:to-slate-900 text-white shadow-2xl shadow-slate-500/30 hover:shadow-slate-500/40 transition-all duration-300 hover:scale-105 font-bold px-6 py-3 rounded-2xl whitespace-nowrap"
+                          className="bg-[#0F2922] hover:bg-[#0F2922]/90 text-white shadow-2xl shadow-[#0F2922]/30 hover:shadow-[#0F2922]/40 transition-all duration-300 hover:scale-105 font-bold px-6 py-3 rounded-2xl whitespace-nowrap"
                         >
                           <UserPlus className="w-4 h-4 mr-2" />
                           Add Staff
@@ -3831,8 +3854,8 @@ export default function AdminDashboard() {
                             isInfluencerModalOpen ||
                             isReferralModalOpen ||
                             isStaffTreatmentQuickOpen
-                          const base = "bg-gradient-to-r from-fuchsia-500 via-violet-600 to-indigo-600 text-white font-bold px-6 py-3 rounded-2xl"
-                          const fx = "hover:from-fuchsia-600 hover:via-violet-700 hover:to-indigo-700 shadow-2xl shadow-fuchsia-500/30 hover:shadow-fuchsia-500/40 transition-all duration-300 hover:scale-105"
+                          const base = "bg-[#0F2922] hover:bg-[#0F2922]/90 text-white font-bold px-6 py-3 rounded-2xl"
+                          const fx = "shadow-2xl shadow-[#0F2922]/30 hover:shadow-[#0F2922]/40 transition-all duration-300 hover:scale-105"
                           return (
                             <Button onClick={() => openInfluencerModal()} className={`${base} ${reduceMotion ? "" : fx}`}>
                               <UserPlus className="w-4 h-4 mr-2" />
@@ -5499,7 +5522,7 @@ export default function AdminDashboard() {
                   <Button
                     onClick={handleSocialReply}
                     disabled={isLoading || !replyMessage.trim()}
-                    className="bg-gradient-to-r from-rose-500 via-pink-500 to-purple-500 hover:from-rose-600 hover:via-pink-600 hover:to-purple-600 text-white shadow-2xl shadow-rose-500/30 hover:shadow-rose-500/40 transition-all duration-300 hover:scale-105 font-bold px-6 py-3 rounded-2xl"
+                    className="bg-[#0F2922] hover:bg-[#0F2922]/90 text-white shadow-2xl shadow-[#0F2922]/30 hover:shadow-[#0F2922]/40 transition-all duration-300 hover:scale-105 font-bold px-6 py-3 rounded-2xl"
                   >
                     {isLoading ? 'Sending...' : 'Send Reply'}
                   </Button>

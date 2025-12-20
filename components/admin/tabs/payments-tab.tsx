@@ -122,7 +122,7 @@ export function PaymentsTab({
         <h2 className="text-2xl font-bold text-gray-900">Payment Management</h2>
         <Button
           onClick={() => openPaymentModal()}
-          className="bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 hover:from-green-600 hover:via-emerald-600 hover:to-teal-600 text-white shadow-2xl shadow-green-500/30 hover:shadow-green-500/40 transition-all duration-300 hover:scale-105 font-bold px-6 py-3 rounded-2xl"
+          className="bg-[#0F2922] hover:bg-[#0F2922]/90 text-white shadow-2xl shadow-[#0F2922]/30 hover:shadow-[#0F2922]/40 transition-all duration-300 hover:scale-105 font-bold px-6 py-3 rounded-2xl"
         >
           <Plus className="w-4 h-4 mr-2" />
           Record Payment
@@ -203,9 +203,9 @@ export function PaymentsTab({
                       </TableCell>
                       <TableCell>
                         <Badge className={`text-[10px] font-bold uppercase tracking-widest py-0.5 px-3 rounded-full border shadow-none ${payment.status === 'completed' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                            payment.status === 'pending' ? 'bg-yellow-50 text-yellow-600 border-yellow-100' :
-                              payment.status === 'failed' ? 'bg-rose-50 text-rose-600 border-rose-100' :
-                                'bg-gray-50 text-gray-600 border-gray-100'
+                          payment.status === 'pending' ? 'bg-yellow-50 text-yellow-600 border-yellow-100' :
+                            payment.status === 'failed' ? 'bg-rose-50 text-rose-600 border-rose-100' :
+                              'bg-gray-50 text-gray-600 border-gray-100'
                           }`}>
                           {payment.status}
                         </Badge>

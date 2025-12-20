@@ -1,52 +1,112 @@
 import { NextResponse } from "next/server"
 
 function normPhone(p: string) {
-  const digits = p.replace(/[^0-9+]/g, "")
-  if (digits.startsWith("0")) return "+63" + digits.slice(1)
-  if (!digits.startsWith("+")) return "+" + digits
+  // Semaphore expects numbers like 09xxxxxxxxx or 639xxxxxxxxx.
+  // Best to keep standard +63 format or just 09 locally.
+  // Docs example: 09998887777.
+  // Let's ensure it maps cleanly.
+  const digits = p.replace(/[^0-9]/g, "")
+  // If it starts with 63, keep it.
+  if (digits.startsWith("63")) return digits
+  // If it starts with 0, replace with 63 ??? Or just keep 09?
+  // Docs say: "Your recipient’s mobile number". Example shows 09998887777.
+  // Let's assume standard local format 09... is fine, but international format 639... is safer.
+  if (digits.startsWith("0")) return "63" + digits.slice(1)
   return digits
 }
 
 export async function GET() {
-  const base = process.env.IPROG_SMS_BASE_URL || process.env.IPROG_SMS_SEND_URL || ""
-  const sender = process.env.IPROG_SMS_SENDER || "iprogtech"
-  const fallback = process.env.IPROG_SMS_FALLBACK === "true"
-  const keySet = Boolean(process.env.IPROG_SMS_API_KEY)
-  return NextResponse.json({ configured: Boolean(base) && keySet, base, sender, fallback })
+  const accountBase = "https://api.semaphore.co/api/v4"
+  const sender = process.env.SEMAPHORE_SENDER_NAME || "SEMAPHORE"
+  const keySet = Boolean(process.env.SEMAPHORE_API_KEY)
+
+  // Optional: Fetch account balance/status if key is set
+  let status = "Not Configured"
+  let balance = "0"
+
+  if (keySet) {
+    try {
+      const res = await fetch(`${accountBase}/account?apikey=${process.env.SEMAPHORE_API_KEY}`)
+      const data = await res.json()
+      if (data.status) {
+        status = data.status
+        balance = data.credit_balance
+      } else {
+        status = "Invalid Key"
+      }
+    } catch (e) {
+      status = "Error"
+    }
+  }
+
+  return NextResponse.json({
+    configured: keySet && status !== "Invalid Key",
+    provider: "Semaphore",
+    sender,
+    status,
+    balance
+  })
 }
 
 export async function POST(req: Request) {
   try {
     const body = await req.json()
+    console.log("[SMS] Incoming request:", body)
+
     let { to, message, sender } = body || {}
-    if (!to || !message) return NextResponse.json({ error: "Missing 'to' or 'message'" }, { status: 400 })
-    sender = sender || process.env.IPROG_SMS_SENDER || "iprogtech"
-    const apiKey = process.env.IPROG_SMS_API_KEY || ""
-    const sendUrl = process.env.IPROG_SMS_SEND_URL || (process.env.IPROG_SMS_BASE_URL ? `${process.env.IPROG_SMS_BASE_URL.replace(/\/$/, '')}/api/v1/send` : "")
-    if (!apiKey || !sendUrl) return NextResponse.json({ error: "SMS provider not configured" }, { status: 500 })
 
-    const payload = { sender, to: normPhone(String(to)), message: String(message) }
-
-    // Try JSON POST with Bearer token, fallback to query params if provider requires
-    let res = await fetch(sendUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify(payload)
-    })
-
-    if (!res.ok) {
-      const url = new URL(sendUrl)
-      url.searchParams.set("sender", payload.sender)
-      url.searchParams.set("to", payload.to)
-      url.searchParams.set("message", payload.message)
-      url.searchParams.set("api_key", apiKey)
-      res = await fetch(url.toString(), { method: "POST" })
+    if (!to || !message) {
+      console.log("[SMS] Missing 'to' or 'message'")
+      return NextResponse.json({ error: "Missing 'to' or 'message'" }, { status: 400 })
     }
 
-    const data = await res.json().catch(() => ({ ok: res.ok }))
-    if (!res.ok) return NextResponse.json({ error: data?.error || "Failed to send" }, { status: 502 })
-    return NextResponse.json({ ok: true, provider: data })
+    const apiKey = process.env.SEMAPHORE_API_KEY
+    if (!apiKey) {
+      console.log("[SMS] API key missing")
+      return NextResponse.json({ error: "Semaphore API key not configured" }, { status: 500 })
+    }
+
+    const senderName = sender || process.env.SEMAPHORE_SENDER_NAME || "SEMAPHORE"
+    const number = normPhone(String(to))
+
+    console.log(`[SMS] Sending to: ${number} (${to}), Sender: ${senderName}`)
+
+    // Validations
+    if (!number) {
+      console.log("[SMS] Invalid phone number normalization")
+      return NextResponse.json({ error: "Invalid phone number" }, { status: 400 })
+    }
+
+    // Semaphore API endpoint
+    const url = "https://api.semaphore.co/api/v4/messages"
+
+    const params = new URLSearchParams()
+    params.append("apikey", apiKey)
+    params.append("number", number)
+    params.append("message", String(message))
+    params.append("sendername", senderName)
+
+    const res = await fetch(url, {
+      method: "POST",
+      body: params,
+    })
+
+    const data = await res.json().catch((err) => {
+      console.error("[SMS] Failed to parse response JSON", err)
+      return null
+    })
+
+    console.log("[SMS] Semaphore Response:", res.status, JSON.stringify(data))
+
+    if (!res.ok || (Array.isArray(data) && data.length === 0)) {
+      console.error("[SMS] Semaphore API Error")
+      return NextResponse.json({ error: "Failed to send message via Semaphore", details: data }, { status: 502 })
+    }
+
+    return NextResponse.json({ ok: true, data })
+
   } catch (e) {
-    return NextResponse.json({ error: "Invalid request" }, { status: 400 })
+    console.error("SMS Send Error:", e)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

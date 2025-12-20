@@ -11,6 +11,9 @@ export interface EmailPreview {
 export interface SmsStatus {
   configured: boolean
   sender?: string
+  provider?: string
+  status?: string
+  balance?: string
 }
 
 export function useAdminCommunication() {
@@ -21,10 +24,10 @@ export function useAdminCommunication() {
   const refreshEmailPreview = useCallback(async () => {
     try {
       setEmailLoading(true)
-      const resp = await fetch('/api/email', { 
-        method: 'POST', 
-        headers: { 'Content-Type': 'application/json' }, 
-        body: JSON.stringify({ action: 'list' }) 
+      const resp = await fetch('/api/email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'list' })
       })
       const j = await resp.json()
       if (j?.ok && Array.isArray(j.messages)) {
