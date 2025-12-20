@@ -118,6 +118,14 @@ export const serviceCategories: ServiceCategory[] = [
     ],
   },
   {
+    id: "thread-lifts-body",
+    category: "Thread Lifts & Body Contouring",
+    description: "Non-surgical lifting and firming for body contours",
+    image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1766220390/zz9r5gruont1taftq7xq.jpg",
+    color: "from-[#fbc6c5] to-[#d09d80]",
+    services: [],
+  },
+  {
     id: "dermal-fillers",
     category: "Dermal Fillers & Volume Enhancement",
     description: "Premium hyaluronic acid fillers for natural volume enhancement",

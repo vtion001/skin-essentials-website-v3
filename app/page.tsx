@@ -40,7 +40,7 @@ import { BookingModal } from "@/components/booking-modal"
 
 export default function HomePage() {
   const [isBookingOpen, setIsBookingOpen] = useState(false)
-  const heroVideoUrl = "https://res.cloudinary.com/dbviya1rj/video/upload/v1766186797/Aesthetic_Clinic_Flow_Aug_04_wdtquo.mov"
+  const heroVideoUrl = "https://res.cloudinary.com/dbviya1rj/video/upload/v1766248228/unwlsssujq5rtd0wsbz6.mov"
   const [heroVideoError, setHeroVideoError] = useState(false)
 
   const mainServices = [

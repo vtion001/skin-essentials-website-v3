@@ -13,13 +13,24 @@ import { Shield, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 
 export default function PortfolioPage() {
-  const [ageConfirmed, setAgeConfirmed] = useState<boolean>(() => {
-    try { return localStorage.getItem('age_gate_18_portfolio') === 'true' } catch { return false }
-  })
-  const [ageGateOpen, setAgeGateOpen] = useState<boolean>(() => {
-    try { return localStorage.getItem('age_gate_18_portfolio') !== 'true' } catch { return true }
-  })
+  const [ageConfirmed, setAgeConfirmed] = useState<boolean>(false)
+  const [ageGateOpen, setAgeGateOpen] = useState<boolean>(false)
   const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([])
+  const [hasMounted, setHasMounted] = useState(false)
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setHasMounted(true)
+    try {
+      const confirmed = localStorage.getItem('age_gate_18_portfolio') === 'true'
+      setAgeConfirmed(confirmed)
+      if (!confirmed) {
+        setAgeGateOpen(true)
+      }
+    } catch {
+      setAgeGateOpen(true)
+    }
+  }, [])
 
   useEffect(() => {
     ; (async () => {
@@ -30,6 +41,10 @@ export default function PortfolioPage() {
       } catch { }
     })()
   }, [])
+
+  if (!hasMounted) {
+    return null
+  }
 
   return (
     <PullToRefresh>

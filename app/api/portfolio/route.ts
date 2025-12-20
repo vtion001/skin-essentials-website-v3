@@ -16,7 +16,7 @@ interface PortfolioItem {
   extraResults?: { beforeImage: string; afterImage: string }[]
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const admin = supabaseAdminClient()
     if (!admin) {
@@ -32,7 +32,8 @@ export async function GET() {
       return jsonError(error.message, 500)
     }
 
-    if (!error && Array.isArray(data) && data.length === 0 && Array.isArray(defaultPortfolioItems) && defaultPortfolioItems.length > 0) {
+    // Sync defaults (id-based, idempotent) - ensuring database reflects local code updates
+    if (Array.isArray(defaultPortfolioItems) && defaultPortfolioItems.length > 0) {
       const payloads = defaultPortfolioItems.map((p) => ({
         id: String(p.id),
         title: String(p.title || ''),
@@ -45,52 +46,23 @@ export async function GET() {
         results: String(p.results || ''),
         extra_results: Array.isArray(p.extraResults) ? p.extraResults : [],
       }))
-      const ins = await admin.from('portfolio_items').insert(payloads)
-      if (ins.error) return jsonError(ins.error.message, 500)
-      const seeded = await admin
+
+      const { error: upsertError } = await admin
         .from('portfolio_items')
-        .select('id, title, category, before_image, after_image, description, treatment, duration, results, extra_results')
-        .order('created_at', { ascending: false })
-      if (seeded.error) return jsonError(seeded.error.message, 500)
-      const seededItems: PortfolioItem[] = (seeded.data || []).map((r: any) => ({
-        id: String(r.id),
-        title: String(r.title || ''),
-        category: String(r.category || ''),
-        beforeImage: String(r.before_image || ''),
-        afterImage: String(r.after_image || ''),
-        description: String(r.description || ''),
-        treatment: String(r.treatment || ''),
-        duration: String(r.duration || ''),
-        results: String(r.results || ''),
-        extraResults: Array.isArray(r.extra_results) ? r.extra_results : [],
-      }))
-      return jsonOk(seededItems, { headers: { 'Cache-Control': 'no-store' } })
-    }
-    // Backfill defaults if some items are missing (id-based, idempotent)
-    if (Array.isArray(data) && Array.isArray(defaultPortfolioItems) && defaultPortfolioItems.length > 0) {
-      const existingIds = new Set<string>(data.map((r: any) => String(r.id)))
-      const missing = defaultPortfolioItems.filter((p) => !existingIds.has(String(p.id)))
-      if (missing.length > 0) {
-        const payloads = missing.map((p) => ({
-          id: String(p.id),
-          title: String(p.title || ''),
-          category: String(p.category || ''),
-          before_image: String(p.beforeImage || ''),
-          after_image: String(p.afterImage || ''),
-          description: String(p.description || ''),
-          treatment: String(p.treatment || ''),
-          duration: String(p.duration || ''),
-          results: String(p.results || ''),
-          extra_results: Array.isArray(p.extraResults) ? p.extraResults : [],
-        }))
-        const ins = await admin.from('portfolio_items').insert(payloads)
-        if (ins.error) return jsonError(ins.error.message, 500)
-        const re = await admin
+        .upsert(payloads, { onConflict: 'id' })
+
+      if (upsertError) {
+        console.error("[API Portfolio] Upsert error:", upsertError.message)
+      } else {
+        // Refetch after upsert to get the latest
+        const final = await admin
           .from('portfolio_items')
           .select('id, title, category, before_image, after_image, description, treatment, duration, results, extra_results')
           .order('created_at', { ascending: false })
-        if (re.error) return jsonError(re.error.message, 500)
-        data.splice(0, data.length, ...(re.data || []))
+
+        if (!final.error && final.data) {
+          data.splice(0, data.length, ...final.data)
+        }
       }
     }
 

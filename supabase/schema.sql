@@ -397,3 +397,29 @@ create table if not exists portfolio_items (
 
 create index if not exists idx_portfolio_category on portfolio_items(category);
 create index if not exists idx_portfolio_treatment on portfolio_items(treatment);
+
+-- Enable RLS on public tables
+alter table service_categories enable row level security;
+alter table services enable row level security;
+alter table portfolio_items enable row level security;
+
+-- Public Read Policies
+drop policy if exists "Allow public read" on service_categories;
+create policy "Allow public read" on service_categories for select using (true);
+
+drop policy if exists "Allow public read" on services;
+create policy "Allow public read" on services for select using (true);
+
+drop policy if exists "Allow public read" on portfolio_items;
+create policy "Allow public read" on portfolio_items for select using (true);
+
+-- Ensure image columns exist for existing tables
+do $$ 
+begin
+  if not exists (select 1 from information_schema.columns where table_name='services' and column_name='image') then
+    alter table services add column image text;
+  end if;
+  if not exists (select 1 from information_schema.columns where table_name='service_categories' and column_name='image') then
+    alter table service_categories add column image text;
+  end if;
+end $$;

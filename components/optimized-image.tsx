@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import { useState, useRef } from 'react'
 import { useIntersectionObserver } from '@/lib/use-performance'
+import { cn } from '@/lib/utils'
 
 interface OptimizedImageProps {
   src: string
@@ -56,7 +57,8 @@ export function OptimizedImage({
     setIsLoaded(true) // Stop showing pulse
   }
 
-  const placeholderImg = `https://res.cloudinary.com/dbviya1rj/image/upload/v1765213459/placeholder_v3.png`
+  // Use a data URI for the fallback to avoid broken upstream dependencies and 404s
+  const placeholderImg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f3f4f6'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='10' fill='%239ca3af'%3EImage Unavailable%3C/text%3E%3C/svg%3E"
 
   const imageProps = {
     src: hasError ? placeholderImg : src,
@@ -64,8 +66,11 @@ export function OptimizedImage({
     quality,
     onLoad: handleLoad,
     onError: handleError,
-    className: `transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'
-      } ${className}`,
+    className: cn(
+      "transition-opacity duration-300",
+      isLoaded ? "opacity-100" : "opacity-0",
+      hasError ? className.replace(/blur-[a-z0-9]+/g, "") : className
+    ),
     sizes,
     ...props,
   }

@@ -151,7 +151,9 @@ export function PortfolioGallery() {
               <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
                 {categories.map((catName) => {
                   const metadata = serviceCategories.find(c => c.category === catName)
-                  const img = metadata?.image || `/placeholder.svg?height=100&width=180&text=${encodeURIComponent(catName)}`
+                  const img = catName === 'all'
+                    ? "https://res.cloudinary.com/dbviya1rj/image/upload/v1766245996/futnzy0heyku2jrffxy4.jpg"
+                    : (metadata?.image || `/placeholder.svg?height=100&width=180&text=${encodeURIComponent(catName)}`)
                   const isActive = selectedCategory === catName
 
                   return (
@@ -373,7 +375,6 @@ export function PortfolioGallery() {
                   </div>
                 </div>
 
-                <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors"></div>
 
                 {/* Sensitive Reveal Overlay */}
                 {isSensitive(item) && (
@@ -581,7 +582,6 @@ export function PortfolioGallery() {
                                     />
                                   </div>
                                 </div>
-                                <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                               </div>
                               <h5 className="text-[10px] tracking-widest font-bold uppercase text-gray-900 truncate">
                                 {i.title}
