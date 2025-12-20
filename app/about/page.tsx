@@ -78,7 +78,7 @@ export default function AboutPage() {
     ]
 
     const achievements = [
-        { number: "5000+", label: "Happy Clients" },
+        { number: "3000+", label: "Happy Clients" },
         { number: "15+", label: "Years Experience" },
         { number: "50+", label: "Procedures Mastered" },
         { number: "98%", label: "Satisfaction Rate" },

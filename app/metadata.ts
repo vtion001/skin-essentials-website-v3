@@ -32,11 +32,11 @@ export const servicesPageMetadata: Metadata = {
 
 export const aboutPageMetadata: Metadata = {
   title: "About Us | Licensed Aesthetic Clinic in Quezon City | Skin Essentials by HER",
-  description: "Meet our licensed medical professionals at Quezon City's premier aesthetic clinic. 15+ years experience, FDA-certified injectors, 5000+ happy clients. Your trusted beauty partner.",
+  description: "Meet our licensed medical professionals at Quezon City's premier aesthetic clinic. 15+ years experience, FDA-certified injectors, 3000+ happy clients. Your trusted beauty partner.",
   keywords: "licensed aesthetic clinic Quezon City, board certified dermatologist QC, FDA certified injector Philippines, aesthetic clinic team Quezon City, medical director aesthetic clinic",
   openGraph: {
     title: "About Us | Licensed Aesthetic Clinic in Quezon City",
-    description: "Meet our licensed medical professionals at Quezon City's premier aesthetic clinic. 15+ years experience, FDA-certified injectors, 5000+ happy clients.",
+    description: "Meet our licensed medical professionals at Quezon City's premier aesthetic clinic. 15+ years experience, FDA-certified injectors, 3000+ happy clients.",
     url: "https://www.skinessentialsbyher.com/about",
   },
 }
