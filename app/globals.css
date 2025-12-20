@@ -37,7 +37,7 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
-  
+
   /* Brand Colors - Skin Essentials Logo Colors */
   --brand-rose: #fbc6c5;
   --brand-tan: #d09d80;
@@ -82,7 +82,7 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(0.269 0 0);
   --sidebar-ring: oklch(0.439 0 0);
-  
+
   /* Brand Colors - Dark Mode */
   --brand-rose: #ffd1d0;
   --brand-tan: #e6b18f;
@@ -134,22 +134,76 @@
 }
 
 @layer base {
+  :root {
+    --font-serif: var(--font-playfair), serif;
+    --font-sans: var(--font-inter), sans-serif;
+
+    /* Luxurious Color Palette */
+    --text-primary: #111827;
+    /* Gray 900 */
+    --text-secondary: #4b5563;
+    /* Gray 600 */
+    --text-accent: #d09d80;
+    /* Brand Tan */
+  }
+
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-sans);
     font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Global Luxurious Typography */
+  .luxury-theme h1,
+  .luxury-theme h2,
+  .luxury-theme h3 {
+    @apply font-bold text-gray-900;
+  }
+
+  .luxury-theme .font-serif {
+    font-family: var(--font-serif);
+  }
+
+  .luxury-theme .italic-serif {
+    font-family: var(--font-serif);
+    @apply italic;
+  }
+
+  .luxury-theme .text-lux-primary {
+    color: var(--text-primary);
+  }
+
+  .luxury-theme .text-lux-secondary {
+    color: var(--text-secondary);
+  }
+
+  .luxury-theme .text-lux-accent {
+    color: var(--text-accent);
+  }
+
+  .luxury-theme p {
+    @apply text-gray-600;
+  }
+
+  /* Luxurious Gradient Text Utility */
+  .luxury-theme .text-gradient-lux {
+    @apply bg-gradient-to-r from-gray-900 via-gray-700 to-gray-900 bg-clip-text text-transparent;
   }
 }
 
 /* Custom Animations */
 @keyframes gradient {
+
   0%,
   100% {
     background-size: 200% 200%;
     background-position: left center;
   }
+
   50% {
     background-size: 200% 200%;
     background-position: right center;
@@ -166,6 +220,7 @@
     opacity: 0;
     transform: translate3d(0, 30px, 0);
   }
+
   to {
     opacity: 1;
     transform: translate3d(0, 0, 0);
@@ -177,6 +232,7 @@
     opacity: 0;
     transform: translate3d(30px, 0, 0);
   }
+
   to {
     opacity: 1;
     transform: translate3d(0, 0, 0);
@@ -188,6 +244,7 @@
     opacity: 0;
     transform: translate3d(-30px, 0, 0);
   }
+
   to {
     opacity: 1;
     transform: translate3d(0, 0, 0);
@@ -199,6 +256,7 @@
     opacity: 0;
     transform: scale3d(0.9, 0.9, 1);
   }
+
   to {
     opacity: 1;
     transform: scale3d(1, 1, 1);
@@ -206,10 +264,12 @@
 }
 
 @keyframes float {
+
   0%,
   100% {
     transform: translate3d(0, 0, 0);
   }
+
   50% {
     transform: translate3d(0, -10px, 0);
   }
@@ -327,7 +387,8 @@
 /* Smooth scrolling with performance optimizations */
 html {
   scroll-behavior: smooth;
-  scroll-padding-top: 80px; /* Account for fixed header */
+  scroll-padding-top: 80px;
+  /* Account for fixed header */
 }
 
 /* Performance optimizations */
@@ -344,7 +405,8 @@ html {
 .animate-float,
 .hover-lift {
   will-change: transform;
-  transform: translateZ(0); /* Force hardware acceleration */
+  transform: translateZ(0);
+  /* Force hardware acceleration */
 }
 
 /* Optimize backdrop-filter performance */
@@ -355,6 +417,7 @@ html {
 
 /* Backdrop-filter cross-browser fallback */
 @supports not ((backdrop-filter: blur(4px)) or (-webkit-backdrop-filter: blur(4px))) {
+
   .backdrop-blur-sm,
   .backdrop-blur-md,
   .backdrop-blur-xl,
@@ -363,7 +426,7 @@ html {
   .glass-brand {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    background-color: rgba(255,255,255,0.95) !important;
+    background-color: rgba(255, 255, 255, 0.95) !important;
   }
 }
 
@@ -376,11 +439,13 @@ html {
 /* Optimize scroll performance */
 body {
   overflow-x: hidden;
-  -webkit-overflow-scrolling: touch; /* iOS smooth scrolling */
+  -webkit-overflow-scrolling: touch;
+  /* iOS smooth scrolling */
 }
 
 /* Mobile-first responsive design */
 @media (max-width: 768px) {
+
   /* Improve touch targets */
   button,
   a,
@@ -473,8 +538,8 @@ body {
 
 /* Optimized transitions for common elements */
 .transition-optimized {
-  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
-              opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: transform, opacity;
 }
 
@@ -503,6 +568,7 @@ body {
   0% {
     background-position: 200% 0;
   }
+
   100% {
     background-position: -200% 0;
   }

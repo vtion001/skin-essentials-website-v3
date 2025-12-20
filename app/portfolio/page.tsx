@@ -21,12 +21,12 @@ export default function PortfolioPage() {
   const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([])
 
   useEffect(() => {
-    ;(async () => {
+    ; (async () => {
       try {
         const res = await fetch('/api/portfolio', { cache: 'no-store' })
         const j = await res.json()
         if (j?.ok && Array.isArray(j.data)) setPortfolioItems(j.data)
-      } catch {}
+      } catch { }
     })()
   }, [])
 
@@ -41,7 +41,7 @@ export default function PortfolioPage() {
         </div>
 
         <SharedHeader />
-        
+
         {/* Hero Section */}
         <section className="relative z-10 pt-24 pb-12 px-4">
           <div className="max-w-6xl mx-auto text-center">
@@ -49,14 +49,13 @@ export default function PortfolioPage() {
               <span className="w-2 h-2 bg-rose-400 rounded-full mr-2 animate-pulse"></span>
               Real Results Gallery
             </div>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
+            <h3 className="italic-serif text-brand-tan text-2xl mb-4">Beyond Beautiful</h3>
+            <h1 className="text-4xl md:text-5xl lg:text-7xl font-bold text-gray-900 mb-6 leading-tight text-gradient-lux">
               Before & After
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-rose-500 to-pink-500">
-                Transformations
-              </span>
+              <span className="block mt-2">Transformations</span>
             </h1>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8 leading-relaxed">
-              Discover the remarkable results achieved by our clients through our comprehensive range of aesthetic treatments. 
+              Discover the remarkable results achieved by our clients through our comprehensive range of aesthetic treatments.
               Each transformation showcases the expertise and artistry that defines Skin Essentials By Her.
             </p>
             <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-500">
@@ -75,7 +74,7 @@ export default function PortfolioPage() {
             </div>
           </div>
         </section>
-        
+
 
 
 
@@ -100,20 +99,20 @@ export default function PortfolioPage() {
           <div className="max-w-6xl mx-auto">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
               <div className="space-y-2">
-                <div className="text-3xl md:text-4xl font-bold text-rose-500">500+</div>
-                <div className="text-gray-600 text-sm md:text-base">Happy Clients</div>
+                <div className="text-3xl md:text-4xl font-bold text-brand-tan font-serif italic">500+</div>
+                <div className="text-gray-600 text-sm md:text-base font-medium">Happy Clients</div>
               </div>
               <div className="space-y-2">
-                <div className="text-3xl md:text-4xl font-bold text-pink-500">28</div>
-                <div className="text-gray-600 text-sm md:text-base">Treatment Types</div>
+                <div className="text-3xl md:text-4xl font-bold text-brand-tan font-serif italic">28</div>
+                <div className="text-gray-600 text-sm md:text-base font-medium">Treatment Types</div>
               </div>
               <div className="space-y-2">
-                <div className="text-3xl md:text-4xl font-bold text-purple-500">98%</div>
-                <div className="text-gray-600 text-sm md:text-base">Satisfaction Rate</div>
+                <div className="text-3xl md:text-4xl font-bold text-brand-tan font-serif italic">98%</div>
+                <div className="text-gray-600 text-sm md:text-base font-medium">Satisfaction Rate</div>
               </div>
               <div className="space-y-2">
-                <div className="text-3xl md:text-4xl font-bold text-rose-500">5+</div>
-                <div className="text-gray-600 text-sm md:text-base">Years Experience</div>
+                <div className="text-3xl md:text-4xl font-bold text-brand-tan font-serif italic">15+</div>
+                <div className="text-gray-600 text-sm md:text-base font-medium">Years Experience</div>
               </div>
             </div>
           </div>
@@ -167,7 +166,7 @@ export default function PortfolioPage() {
                 onClick={() => {
                   try {
                     localStorage.setItem('age_gate_18_portfolio', 'true')
-                  } catch {}
+                  } catch { }
                   setAgeConfirmed(true)
                   setAgeGateOpen(false)
                 }}

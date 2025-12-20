@@ -79,7 +79,7 @@ function ServicesContent() {
           setCategories(j.data)
           if (!activeCategoryId && j.data.length) setActiveCategoryId(j.data[0].id)
         }
-      } catch {}
+      } catch { }
     }
     load()
   }, [])
@@ -92,7 +92,7 @@ function ServicesContent() {
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
-  
+
 
   const toId = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
 
@@ -582,15 +582,14 @@ function ServicesContent() {
             <div className="text-center max-w-4xl mx-auto">
               <Badge className="bg-[#fbc6c5]/10 text-[#d09d80] px-4 py-2 mb-6">Quezon City&rsquo;s Premier Aesthetic Clinic</Badge>
 
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-                Quezon City&rsquo;s Complete Range of
-                <span className="bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] bg-clip-text text-transparent block">
-                  Aesthetic Services
-                </span>
+              <h3 className="italic-serif text-brand-tan text-2xl mb-4">Beyond Beautiful</h3>
+              <h1 className="text-4xl md:text-5xl lg:text-7xl font-bold text-gray-900 mb-6 leading-tight text-gradient-lux">
+                Complete Range of
+                <span className="block mt-2">Aesthetic Services</span>
               </h1>
 
               <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-                Discover Quezon City&rsquo;s most comprehensive collection of medical-grade aesthetic treatments, including our signature 
+                Discover Quezon City&rsquo;s most comprehensive collection of medical-grade aesthetic treatments, including our signature
                 <span className="font-semibold text-[#d09d80]"> Hiko Nose Thread Lifts</span>, designed to enhance your
                 natural beauty with <span className="font-semibold text-[#d09d80]">FDA-approved materials</span> and expert care.
               </p>
@@ -615,11 +614,11 @@ function ServicesContent() {
                   },
                 ].map((item, index) => (
                   <div key={index} className="text-center">
-                    <div className="w-16 h-16 bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] rounded-2xl flex items-center justify-center mx-auto mb-4">
-                      <item.icon className="w-8 h-8 text-white" />
+                    <div className="w-16 h-16 bg-brand-rose/10 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-brand-gradient transition-colors duration-300">
+                      <item.icon className="w-8 h-8 text-brand-tan group-hover:text-white" />
                     </div>
-                    <h3 className="font-bold text-gray-900 mb-2">{item.title}</h3>
-                    <p className="text-gray-600">{item.description}</p>
+                    <h3 className="font-bold text-gray-900 mb-2 font-serif italic">{item.title}</h3>
+                    <p className="text-gray-600 text-sm">{item.description}</p>
                   </div>
                 ))}
               </div>
@@ -636,11 +635,10 @@ function ServicesContent() {
                     <motion.a
                       key={cat.id}
                       href={`#${cat.id}`}
-                      className={`px-4 py-3 rounded-xl transition-all duration-300 text-center border ${
-                        activeCategoryId === cat.id
+                      className={`px-4 py-3 rounded-xl transition-all duration-300 text-center border ${activeCategoryId === cat.id
                           ? "bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-lg border-transparent"
                           : "bg-white/80 backdrop-blur-sm hover:bg-gray-50 text-gray-700 border-gray-200"
-                      }`}
+                        }`}
                       whileHover={reduceMotion ? undefined : { scale: 1.02 }}
                       whileTap={reduceMotion ? undefined : { scale: 0.98 }}
                     >
@@ -654,11 +652,10 @@ function ServicesContent() {
                       <motion.a
                         key={cat.id}
                         href={`#${cat.id}`}
-                        className={`px-4 py-2 rounded-xl transition-all duration-300 text-center ${
-                          activeCategoryId === cat.id
+                        className={`px-4 py-2 rounded-xl transition-all duration-300 text-center ${activeCategoryId === cat.id
                             ? "bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-lg"
                             : "bg-white text-gray-700 hover:bg-gray-50"
-                        }`}
+                          }`}
                         whileHover={reduceMotion ? undefined : { scale: 1.02 }}
                         whileTap={reduceMotion ? undefined : { scale: 0.98 }}
                       >
@@ -680,7 +677,7 @@ function ServicesContent() {
                   }}
                   className="bg-white md:bg-white/70 md:backdrop-blur-sm rounded-xl px-3 py-2 shadow-sm border border-gray-300 text-sm text-gray-700"
                 >
-                   {categories.map((cat) => (
+                  {categories.map((cat) => (
                     <option key={cat.id} value={cat.id}>
                       {cat.category}
                     </option>
@@ -702,7 +699,7 @@ function ServicesContent() {
         </section>
 
         {/* Services by Category */}
-              {categories.map((category, categoryIndex) => (
+        {categories.map((category, categoryIndex) => (
           <section
             key={category.id}
             id={category.id}
@@ -711,9 +708,9 @@ function ServicesContent() {
             <div className="container mx-auto px-4">
               {/* Category Header */}
               <div className="text-center mb-12">
-                <Badge className="bg-brand-gradient text-white px-4 py-2 mb-4 hover-lift">Category {categoryIndex + 1}</Badge>
-                <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">{category.category}</h2>
-                <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">{category.description}</p>
+                <Badge className="bg-brand-rose/10 text-brand-tan px-4 py-2 mb-4 hover:shadow-md transition-shadow">Category {categoryIndex + 1}</Badge>
+                <h2 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6 font-serif italic text-gradient-lux">{category.category}</h2>
+                <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8 opacity-80">{category.description}</p>
                 <div className="flex items-center justify-center gap-3">
                   <Button
                     variant="brand-outline"

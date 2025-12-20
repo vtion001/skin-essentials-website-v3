@@ -3,68 +3,126 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Facebook, Instagram, Phone, MapPin, Clock } from 'lucide-react'
 
 export default function SharedFooter() {
   const pathname = usePathname()
+
+  const scrollToTop = () => {
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
+
   if (pathname.startsWith('/admin')) return null
 
   return (
-    <footer className="bg-gray-900 text-white pt-20 pb-10">
-      <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-          <div className="lg:col-span-5">
-            <div className="flex items-center gap-3 mb-6">
-              <Image src="/images/skinessentials-logo.png" alt="Skin Essentials by HER" width={140} height={70} className="h-10 w-auto object-contain brightness-0 invert" />
-            </div>
-            <p className="text-gray-300 leading-relaxed mb-6 max-w-md">
-              Non-surgical enhancements and medical-grade skin solutions delivered by licensed professionals using FDA-approved materials.
-            </p>
-            <div className="flex items-center gap-3">
-              <Link href="https://www.facebook.com" aria-label="Visit our Facebook" className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 transition-all">
-                <Facebook className="w-5 h-5" />
-              </Link>
-              <Link href="https://www.instagram.com" aria-label="Visit our Instagram" className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 transition-all">
-                <Instagram className="w-5 h-5" />
-              </Link>
-            </div>
+    <footer className="bg-white text-gray-900 border-t border-gray-100">
+      {/* Top Banner: Brand Statement */}
+      <div className="py-12 border-b border-gray-100">
+        <div className="container mx-auto px-4 text-center">
+          <div className="flex items-center justify-center gap-8 mb-4">
+            <div className="hidden md:block h-[1px] flex-1 bg-gray-100"></div>
+            <p className="text-[10px] tracking-[0.25em] uppercase text-gray-400 font-bold">Serving Quezon City & Beyond</p>
+            <div className="hidden md:block h-[1px] flex-1 bg-gray-100"></div>
           </div>
-          <div className="lg:col-span-3">
-            <h3 className="font-bold mb-6 text-lg">Explore</h3>
-            <div className="space-y-3 text-gray-300">
-              <Link href="/services#thread-lifts" prefetch={false} className="block hover:text-white transition-colors">Thread Lifts</Link>
-              <Link href="/services#dermal-fillers" prefetch={false} className="block hover:text-white transition-colors">Dermal Fillers</Link>
-              <Link href="/services#laser-treatments" prefetch={false} className="block hover:text-white transition-colors">Laser Treatments</Link>
-              <Link href="/services#skin-treatments" prefetch={false} className="block hover:text-white transition-colors">Skin Rejuvenation</Link>
-              <Link href="/portfolio" prefetch={false} className="block hover:text-white transition-colors">Portfolio</Link>
-            </div>
+          <div className="flex justify-center mb-8">
+            <Image src="/images/skinessentials-logo.png" alt="Skin Essentials by HER" width={200} height={100} className="h-12 w-auto object-contain" />
           </div>
-          <div className="lg:col-span-4">
-            <h3 className="font-bold mb-6 text-lg">Stay Updated</h3>
-            <form className="space-y-3" action="#" method="post" aria-describedby="newsletter-desc">
-              <p id="newsletter-desc" className="text-gray-300">Subscribe to clinic updates and promotions.</p>
-              <Label htmlFor="newsletter-email" className="sr-only">Email address</Label>
-              <div className="flex gap-3">
-                <Input id="newsletter-email" type="email" inputMode="email" placeholder="you@example.com" aria-label="Email address" className="bg-white/10 border-white/20 text-white placeholder:text-gray-300" />
-                <Button type="submit" className="bg-brand-gradient hover:bg-brand-gradient-reverse text-white">Subscribe</Button>
-              </div>
-            </form>
-            <div className="mt-6 space-y-3 text-gray-300">
-              <p className="flex items-center"><Phone className="w-4 h-4 mr-2 text-brand-rose" />0995-260-3451</p>
-              <p className="flex items-start"><MapPin className="w-4 h-4 mr-2 text-brand-rose mt-1" />Granda Building, Road 8<br />Project 6, Quezon City</p>
-              <p className="flex items-center"><Clock className="w-4 h-4 mr-2 text-brand-rose" />Mon-Sun: 10AM-6PM</p>
+          <div className="flex flex-wrap justify-center gap-x-12 gap-y-4 text-[10px] tracking-[0.25em] uppercase text-gray-500 font-bold">
+            <div className="flex items-center gap-2">
+              <Phone className="w-3 h-3 text-brand-rose" />
+              <span>0995-260-3451</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <MapPin className="w-3 h-3 text-brand-rose" />
+              <span>Project 6, Quezon City</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Clock className="w-3 h-3 text-brand-rose" />
+              <span>Mon-Sun: 10AM-6PM</span>
             </div>
           </div>
         </div>
-        <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
-          <p className="text-gray-400 mb-4 md:mb-0">&copy; {new Date().getFullYear()} Skin Essentials by HER. All rights reserved.</p>
-          <div className="flex flex-wrap gap-6 text-gray-400">
-            <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
-            <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
+      </div>
+
+      {/* Middle Banner: Social & Newsletter (Gray) */}
+      <div className="bg-gray-50/80 py-16">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            {/* Left: Social */}
+            <div className="flex flex-col md:flex-row items-center gap-8">
+              <h3 className="text-[10px] tracking-[0.25em] uppercase font-bold text-gray-900">Follow #SkinEssentials</h3>
+              <div className="flex items-center gap-4">
+                <Link href="https://www.facebook.com" aria-label="Facebook" className="w-10 h-10 rounded-full bg-black flex items-center justify-center hover:opacity-80 transition-opacity">
+                  <Facebook className="w-4 h-4 text-white" />
+                </Link>
+                <Link href="https://www.instagram.com" aria-label="Instagram" className="w-10 h-10 rounded-full bg-black flex items-center justify-center hover:opacity-80 transition-opacity">
+                  <Instagram className="w-4 h-4 text-white" />
+                </Link>
+              </div>
+            </div>
+
+            {/* Right: Newsletter */}
+            <div className="lg:border-l lg:border-gray-200 lg:pl-16">
+              <h3 className="text-[10px] tracking-[0.25em] uppercase font-bold text-gray-900 mb-6 font-serif italic">Newsletter</h3>
+              <form className="relative group" action="#" method="post">
+                <input
+                  type="email"
+                  placeholder="PLEASE ENTER YOUR EMAIL ADDRESS"
+                  className="w-full bg-transparent border-b border-gray-900 pb-2 text-[10px] tracking-[0.25em] focus:outline-none placeholder:text-gray-400 uppercase font-bold"
+                  required
+                />
+                <button
+                  type="submit"
+                  className="absolute right-0 bottom-2 text-[10px] font-bold tracking-[0.1em] hover:text-brand-tan transition-colors uppercase"
+                >
+                  OK
+                </button>
+              </form>
+              <Link href="/terms" className="text-[10px] uppercase tracking-[0.25em] font-bold text-gray-400 hover:text-gray-600 transition-colors mt-2 inline-block underline underline-offset-4 decoration-gray-200">
+                Read legal terms
+              </Link>
+            </div>
           </div>
+        </div>
+      </div>
+
+      {/* Bottom Section: Links & Scroll to Top */}
+      <div className="py-12 bg-white">
+        <div className="container mx-auto px-4">
+          <button
+            onClick={scrollToTop}
+            className="flex items-center gap-2 mx-auto mb-12 text-[10px] tracking-[0.25em] uppercase font-bold hover:text-brand-tan transition-colors group"
+          >
+            Back to top
+            <span className="transform group-hover:-translate-y-1 transition-transform">^</span>
+          </button>
+
+          <div className="flex flex-wrap justify-center gap-x-8 gap-y-4 border-t border-gray-100 pt-8">
+            {[
+              { label: 'Services', href: '/services' },
+              { label: 'Portfolio', href: '/portfolio' },
+              { label: 'About Us', href: '/about' },
+              { label: 'Contact', href: '/contact' },
+              { label: 'Privacy Policy', href: '/privacy' },
+              { label: 'Terms of Service', href: '/terms' },
+              { label: 'Legal Terms', href: '#' },
+              { label: 'Mobile Version', href: '#' }
+            ].map((link) => (
+              <Link
+                key={link.label}
+                href={link.href}
+                className="text-[10px] tracking-[0.25em] uppercase font-bold text-gray-400 hover:text-gray-900 transition-colors"
+                prefetch={false}
+              >
+                {link.label}
+              </Link>
+            ))}
+          </div>
+          <p className="text-center text-[10px] text-gray-300 mt-12 tracking-[0.25em] font-bold uppercase">
+            &copy; {new Date().getFullYear()} Skin Essentials by HER. All rights reserved.
+          </p>
         </div>
       </div>
     </footer>

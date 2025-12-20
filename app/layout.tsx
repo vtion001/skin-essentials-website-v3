@@ -1,15 +1,25 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
+import { Inter, Playfair_Display } from "next/font/google"
 import "./globals.css"
 import { SmoothScroll } from "@/components/smooth-scroll"
 import { PerformanceMonitor } from "@/components/performance-monitor"
 import { StructuredData } from "@/components/structured-data"
 import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "@/components/theme-provider"
+import { ThemeWrapper } from "@/components/theme-wrapper"
 import SharedFooter from "@/components/shared-footer"
 
-const inter = Inter({ subsets: ["latin"] })
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+})
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-playfair",
+  style: ["normal", "italic"],
+})
 
 export const metadata: Metadata = {
   title: "Skin Essentials by HER - Premier Aesthetic Clinic in Quezon City | Hiko Nose Lift & Thread Lifts",
@@ -88,7 +98,7 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="//fonts.googleapis.com" />
         <link rel="dns-prefetch" href="//fonts.gstatic.com" />
       </head>
-      <body className={`${inter.className} antialiased`}>
+      <body className={`${inter.variable} ${playfair.variable} ${inter.className} antialiased`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="light"
@@ -98,7 +108,9 @@ export default function RootLayout({
           <StructuredData />
           <PerformanceMonitor />
           <SmoothScroll>
-            {children}
+            <ThemeWrapper>
+              {children}
+            </ThemeWrapper>
           </SmoothScroll>
           <SharedFooter />
           {process.env.NODE_ENV === "production" && <Analytics />}

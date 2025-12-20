@@ -1,171 +1,147 @@
-"use client"
+'use client'
 
-import { Button } from "@/components/ui/button"
-import { Menu, X, Calendar, ArrowLeft } from "lucide-react"
-import Link from "next/link"
-import Image from "next/image"
-import { useState, useCallback } from "react"
-import { BookingModal } from "@/components/booking-modal"
-import { usePathname } from "next/navigation"
-import { useOptimizedScroll } from "@/lib/use-performance"
-import { ThemeToggle } from "@/components/theme-toggle"
+import React, { useState, useEffect } from 'react'
+import Link from 'next/link'
+import Image from 'next/image'
+import { usePathname } from 'next/navigation'
+import {
+  Menu,
+  X,
+  Facebook,
+  Instagram,
+  ChevronDown,
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 
-interface SharedHeaderProps {
-  showBackButton?: boolean
-  backHref?: string
-  variant?: "default" | "transparent"
-  hideNav?: boolean
-}
-
-export function SharedHeader({ showBackButton = false, backHref = "/", variant = "default", hideNav = false }: SharedHeaderProps) {
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
+export const SharedHeader = () => {
   const [isScrolled, setIsScrolled] = useState(false)
-  const [isBookingOpen, setIsBookingOpen] = useState(false)
-
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const pathname = usePathname()
 
-  const handleScroll = useCallback((scrollY: number) => {
-    setIsScrolled(scrollY > 10)
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50)
+    }
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  useOptimizedScroll(handleScroll)
+  if (pathname.startsWith('/admin')) return null
 
-
-
-  const navItems = [
-    { href: "/", label: "Home" },
-    { href: "/about", label: "About" },
-    { href: "/services", label: "Services" },
-    { href: "/portfolio", label: "Portfolio" },
-    { href: "/faq", label: "FAQ" },
-    { href: "/contact", label: "Contact" },
-    { href: "/privacy", label: "Privacy" },
+  const navLinks = [
+    { name: 'HOME', href: '/' },
+    { name: 'ABOUT', href: '/about' },
+    { name: 'SERVICES', href: '/services', hasDropdown: true },
+    { name: 'PORTFOLIO', href: '/portfolio' },
+    { name: 'FAQ', href: '/faq' },
+    { name: 'CONTACT', href: '/contact' },
   ]
 
-  const headerClasses = `fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-    variant === "transparent" && !isScrolled
-      ? "bg-white/80 backdrop-blur-md"
-      : isScrolled
-        ? "bg-white/95 backdrop-blur-xl shadow-xl border-b border-white/30"
-        : "bg-white/90 backdrop-blur-md"
-  }`
-
   return (
-    <>
-      <header className={headerClasses}>
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute -top-6 -left-10 w-24 h-24 bg-brand-rose/10 rounded-full blur-2xl"></div>
-          <div className="absolute -bottom-6 -right-10 w-28 h-28 bg-brand-tan/10 rounded-full blur-2xl"></div>
+    <header className="fixed top-0 left-0 right-0 z-50 transition-all duration-300">
+      {/* Top Utility Bar (Black) */}
+      <div className="bg-black text-white py-2.5 px-4 font-inter">
+        <div className="container mx-auto flex justify-center items-center text-[9px] tracking-[0.3em] font-medium uppercase text-center">
+          <div className="flex items-center gap-2">
+            <span className="opacity-80">✦ FREE CONSULTATION FOR FIRST-TIME CLIENTS</span>
+            <Link href="/contact" className="underline underline-offset-4 hover:text-brand-tan transition-colors decoration-white/20 hover:decoration-brand-tan">LEARN MORE</Link>
+          </div>
         </div>
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              {showBackButton && (
-                <Link href={backHref} prefetch={false} className="flex items-center">
-                  <ArrowLeft className="w-5 h-5 text-brand-tan hover:text-brand-rose transition-colors" />
-                </Link>
-              )}
-              <Link href="/" prefetch={false} className="flex items-center">
-                <div className="relative group">
-                  <div className="absolute inset-0 rounded-2xl bg-brand-gradient opacity-15 blur-xl"></div>
-                  <div className="relative rounded-2xl bg-white/70 backdrop-blur-sm shadow-md border border-white/30 px-3 py-2 group-hover:shadow-lg transition-all duration-300">
-                    <Image
-                      src="/images/skinessentials-logo.png"
-                      alt="Skin Essentials by HER - Premier Aesthetic Clinic in Quezon City specializing in Hiko Nose Thread Lifts"
-                      width={120}
-                      height={60}
-                      className="h-16 w-auto object-contain"
-                      priority
-                    />
-                  </div>
-                </div>
-              </Link>
-            </div>
+      </div>
 
-            {/* Desktop Navigation */}
-            {!hideNav && (
-            <nav className="hidden lg:flex items-center space-x-2">
-              {navItems.map((item) => (
+      {/* Main Header (White) */}
+      <div className={cn(
+        "bg-white transition-all duration-300 border-b border-gray-100",
+        isScrolled ? "py-2.5 shadow-md" : "py-6"
+      )}>
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between">
+            {/* Logo */}
+            <Link href="/" className="flex-shrink-0 transition-transform hover:scale-[1.02]">
+              <Image
+                src="/images/skinessentials-logo.png"
+                alt="Skin Essentials by HER"
+                width={180}
+                height={70}
+                className="h-11 w-auto object-contain"
+              />
+            </Link>
+
+            {/* Navigation (Desktop) */}
+            <nav className="hidden xl:flex items-center gap-10">
+              {navLinks.map((link) => (
                 <Link
-                  key={item.href}
-                  href={item.href}
-                  prefetch={false}
-                  className={`transition-all duration-300 font-medium relative group px-3 py-2 rounded-xl ${
-                    pathname === item.href
-                      ? "text-brand-tan bg-white/60 backdrop-blur-sm shadow-sm"
-                      : "text-gray-700 hover:text-brand-tan hover:bg-white/60 hover:backdrop-blur-sm"
-                  }`}
+                  key={link.name}
+                  href={link.href}
+                  className={cn(
+                    "text-[10px] tracking-[0.25em] font-bold transition-all hover:text-brand-tan relative group",
+                    pathname === link.href ? "text-brand-tan" : "text-gray-900"
+                  )}
                 >
-                  {item.label}
-                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-brand-gradient group-hover:w-full transition-all duration-300"></span>
-                  <span className={`absolute -top-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-brand-gradient transition-opacity duration-300 ${
-                    pathname === item.href ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-                  }`}></span>
+                  <span className="flex items-center gap-1.5">
+                    {link.name}
+                    {link.hasDropdown && <ChevronDown className="w-2.5 h-2.5 opacity-40 group-hover:rotate-180 transition-transform" />}
+                  </span>
+                  <span className={cn(
+                    "absolute -bottom-1.5 left-0 h-[1.5px] bg-brand-tan transition-all duration-300",
+                    pathname === link.href ? "w-full" : "w-0 group-hover:w-full"
+                  )}></span>
                 </Link>
               ))}
-
-
-
-              <ThemeToggle />
-
-              <Button
-                onClick={() => setIsBookingOpen(true)}
-                className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all cursor-pointer disabled:pointer-events-none disabled:opacity-50 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive bg-brand-gradient text-white shadow-lg hover:shadow-xl hover-lift hover:brightness-110 h-10 px-6 rounded-xl"
-              >
-                <Calendar className="w-4 h-4 mr-2" />
-                Book Now
-              </Button>
             </nav>
-            )}
 
-            {/* Mobile Menu Button */}
-            {!hideNav && (
-            <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="lg:hidden p-3 rounded-xl hover:bg-gray-100 transition-all duration-300"
-            >
-              {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
-            )}
-          </div>
+            {/* Icons & CTA */}
+            <div className="flex items-center gap-8">
+              <div className="hidden lg:flex items-center gap-5 text-gray-900">
+                <Link href="https://facebook.com" className="hover:text-brand-tan transition-all hover:scale-110"><Facebook className="w-[1.1rem] h-[1.1rem] stroke-[1.5]" /></Link>
+                <Link href="https://instagram.com" className="hover:text-brand-tan transition-all hover:scale-110"><Instagram className="w-[1.1rem] h-[1.1rem] stroke-[1.5]" /></Link>
+              </div>
 
-          {/* Mobile Menu */}
-          {!hideNav && isMenuOpen && (
-            <div className="lg:hidden absolute top-full left-0 right-0 bg-white/95 backdrop-blur-xl border-b border-gray-100 shadow-2xl">
-              <nav className="flex flex-col p-6 space-y-4">
-                {navItems.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    prefetch={false}
-                    className={`transition-all duration-300 py-3 font-medium ${
-                      pathname === item.href
-                        ? "text-brand-tan"
-                        : "text-gray-700 hover:text-brand-tan"
-                    }`}
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-                <Button
-                  onClick={() => {
-                    setIsBookingOpen(true)
-                    setIsMenuOpen(false)
-                  }}
-                  className="bg-brand-gradient hover:bg-brand-gradient-reverse text-white shadow-lg rounded-xl w-full py-3"
+              <div className="flex items-center gap-4">
+                <Link href="/contact" className="hidden md:block">
+                  <Button className="bg-brand-gradient hover:shadow-xl hover-lift text-white text-[10px] tracking-[0.1em] font-bold px-6 py-2 rounded-full">
+                    BOOK NOW
+                  </Button>
+                </Link>
+
+                {/* Mobile Menu Toggle */}
+                <button
+                  className="lg:hidden p-2 text-gray-900"
+                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 >
-                  <Calendar className="w-4 h-4 mr-2" />
-                  Book Consultation
-                </Button>
-              </nav>
+                  {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                </button>
+              </div>
             </div>
-          )}
+          </div>
         </div>
-      </header>
+      </div>
 
-      {/* Booking Modal */}
-      <BookingModal isOpen={isBookingOpen} onClose={() => setIsBookingOpen(false)} />
-    </>
+      {/* Mobile Menu */}
+      <div className={cn(
+        "lg:hidden fixed inset-0 bg-white z-40 transition-transform duration-500 pt-32 px-6",
+        isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
+      )}>
+        <nav className="flex flex-col gap-8 text-center">
+          {navLinks.map((link) => (
+            <Link
+              key={link.name}
+              href={link.href}
+              className="text-2xl font-serif italic text-gray-900"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              {link.name}
+            </Link>
+          ))}
+          <div className="h-[1px] bg-gray-100 my-4"></div>
+          <Link href="/contact" onClick={() => setIsMobileMenuOpen(false)}>
+            <Button className="bg-brand-gradient w-full py-6 text-lg font-bold">
+              BOOK AN APPOINTMENT
+            </Button>
+          </Link>
+        </nav>
+      </div>
+    </header>
   )
 }
