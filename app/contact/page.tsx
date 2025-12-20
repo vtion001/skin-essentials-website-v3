@@ -92,7 +92,7 @@ export default function ContactPage() {
         setFormData({ name: "", email: "", phone: "", service: "", message: "", date: "", time: "" })
         setTimeout(() => setIsSubmitted(false), 5000)
       }
-    } catch {}
+    } catch { }
     setIsSubmitting(false)
   }
 
@@ -118,7 +118,7 @@ export default function ContactPage() {
       action: "Book Appointment",
       href: "/services",
     },
-    
+
   ]
 
   const socialMedia = [
@@ -169,336 +169,284 @@ export default function ContactPage() {
         {/* Shared Header */}
         <SharedHeader showBackButton={true} backHref="/" />
 
-        {/* Hero Section */}
-        <section className="pt-24 pb-16 px-4 relative z-10">
-          <div className="container mx-auto text-center">
-            <Badge className="bg-brand-gradient text-white mb-6 px-6 py-2 text-sm font-semibold hover-lift">
-              Contact Us
-            </Badge>
-            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
-              Get in Touch with
-              <span className="text-brand-gradient block">
-                Our Expert Team
-              </span>
+        <main className="container mx-auto max-w-6xl px-4 pt-40 pb-32">
+          {/* Editorial Header Section */}
+          <div className="mb-24 text-center md:text-left">
+            <h1 className="text-7xl md:text-[120px] font-bold tracking-tight text-gray-900 leading-none">
+              GET IN TOUCH<span className="text-brand-tan">.</span>
             </h1>
-            <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
-              Ready to start your beauty journey? Contact us today to schedule your complimentary consultation and discover the perfect treatment for your aesthetic goals.
-            </p>
           </div>
-        </section>
 
-        {/* Contact Information Cards */}
-        <section className="py-16 px-4">
-          <div className="container mx-auto">
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16 justify-items-center">
-              {contactInfo.map((info, index) => (
-                <Card key={index} className="border-[#fbc6c5]/20 hover:shadow-lg transition-all duration-300 group dark:bg-gray-900/60 dark:border-gray-800">
-                  <CardContent className="p-6 text-center">
-                    <div className="w-16 h-16 bg-gradient-to-br from-[#fbc6c5]/20 to-[#d09d80]/20 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                      {info.icon}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-24">
+            {/* Left Column: Sidebar Labels */}
+            <div className="md:col-span-3 space-y-2">
+              <p className="text-[14px] tracking-[0.05em] font-medium text-gray-900">Communication.</p>
+              <p className="text-[14px] tracking-[0.05em] font-medium text-gray-400">Our location.</p>
+              <p className="text-[14px] tracking-[0.05em] font-medium text-gray-400">Join us.</p>
+            </div>
+
+            {/* Right Column: Hero Content + Actions */}
+            <div className="md:col-span-9 space-y-20">
+              <div className="space-y-8">
+                <p className="text-[15px] md:text-lg leading-[1.8] text-gray-500 font-light max-w-4xl">
+                  <span className="text-gray-900 font-medium italic block mb-2 text-xl italic-serif">Start Your Transformation.</span>
+                  Ready to start your beauty journey? Contact us today to schedule your complimentary consultation and discover the perfect treatment for your aesthetic goals. Our expert team is here to guide you through every step of your <span className="text-brand-tan font-semibold uppercase tracking-widest text-sm">aesthetic evolution</span>.
+                </p>
+              </div>
+
+              {/* Editorial Info Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-12 pt-12 border-t border-gray-100">
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <h3 className="text-[11px] tracking-[0.3em] uppercase font-bold text-gray-900 flex items-center gap-2">
+                      <Phone className="w-3 h-3 text-[#d09d80]" /> Phone
+                    </h3>
+                    <div className="space-y-1">
+                      <p className="text-sm leading-relaxed text-gray-500 font-light">0995-260-3451</p>
+                      <p className="text-sm leading-relaxed text-gray-500 font-light">+63 2 8123 4567</p>
                     </div>
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3">{info.title}</h3>
-                    <div className="space-y-1 mb-4">
-                      {info.details.map((detail, detailIndex) => (
-                        <p key={detailIndex} className="text-gray-600 dark:text-gray-300 text-sm">{detail}</p>
-                      ))}
+                  </div>
+                  <Link href="tel:+639952603451" className="inline-block text-[10px] font-bold tracking-[0.2em] text-[#d09d80] uppercase border-b border-[#d09d80] pb-0.5 hover:text-gray-900 hover:border-gray-900 transition-all">
+                    Call Now
+                  </Link>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <h3 className="text-[11px] tracking-[0.3em] uppercase font-bold text-gray-900 flex items-center gap-2">
+                      <MapPin className="w-3 h-3 text-[#d09d80]" /> Address
+                    </h3>
+                    <p className="text-sm leading-relaxed text-gray-500 font-light">
+                      Granda Building, Road 8 Project 6<br />Quezon City, Manila
+                    </p>
+                  </div>
+                  <Link href="https://maps.app.goo.gl/5KJSiPVRd49m7DbY8" className="inline-block text-[10px] font-bold tracking-[0.2em] text-[#d09d80] uppercase border-b border-[#d09d80] pb-0.5 hover:text-gray-900 hover:border-gray-900 transition-all">
+                    Directions
+                  </Link>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <h3 className="text-[11px] tracking-[0.3em] uppercase font-bold text-gray-900 flex items-center gap-2">
+                      <Clock className="w-3 h-3 text-[#d09d80]" /> Hours
+                    </h3>
+                    <div className="space-y-1">
+                      <p className="text-sm leading-relaxed text-gray-500 font-light">Mon-Sat: 9AM - 7PM</p>
+                      <p className="text-sm leading-relaxed text-gray-500 font-light">Sun: 10AM - 5PM</p>
                     </div>
-                    <Link href={info.href}>
-                      <Button
-                        size="sm"
-                        className="bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] hover:from-[#d09d80] hover:to-[#fbc6c5] text-white text-xs font-semibold"
-                      >
-                        {info.action}
-                      </Button>
-                    </Link>
-                  </CardContent>
-                </Card>
-              ))}
+                  </div>
+                  <Link href="/services" className="inline-block text-[10px] font-bold tracking-[0.2em] text-[#d09d80] uppercase border-b border-[#d09d80] pb-0.5 hover:text-gray-900 hover:border-gray-900 transition-all">
+                    Book Visit
+                  </Link>
+                </div>
+              </div>
+
+              {/* Modern Trust Indicators */}
+              <div className="flex flex-wrap gap-8 pt-8 border-t border-gray-50">
+                <div className="flex items-center gap-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-brand-tan"></div>
+                  <span className="text-[10px] tracking-[0.2em] font-bold text-gray-900 uppercase">FDA-APPROVED</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-brand-tan"></div>
+                  <span className="text-[10px] tracking-[0.2em] font-bold text-gray-900 uppercase">LICENSED PROFESSIONALS</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-brand-tan"></div>
+                  <span className="text-[10px] tracking-[0.2em] font-bold text-gray-900 uppercase">PERSONALIZED CARE</span>
+                </div>
+              </div>
             </div>
           </div>
-        </section>
+        </main>
 
-        {/* Contact Form and Map Section */}
-        <section className="py-16 px-4 bg-white/50">
-          <div className="container mx-auto">
-            <div className="grid lg:grid-cols-2 gap-12">
-              {/* Contact Form */}
-              <Card className="border-[#fbc6c5]/20 shadow-lg">
-                <CardHeader>
-                  <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
-                    <Send className="w-6 h-6 text-[#d09d80] mr-3" />
-                    Send us a Message
-                  </CardTitle>
-                  <p className="text-gray-600 dark:text-gray-300">
-                    Fill out the form below and we'll get back to you within 24 hours.
+        {/* Editorial Form & Information Section */}
+        <section className="py-24 px-4 bg-[#fdfaf9]/30 border-t border-gray-100">
+          <div className="container mx-auto max-w-6xl">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 lg:gap-24">
+
+              {/* Left Side: Editorial Contact Form */}
+              <div className="lg:col-span-7 space-y-12">
+                <div className="space-y-4">
+                  <h2 className="text-4xl md:text-5xl font-serif text-gray-900 italic-serif">Contact form.</h2>
+                  <p className="text-[15px] text-gray-400 font-light max-w-md">
+                    Fill this out so we can learn more about you and your aesthetic needs.
                   </p>
-                </CardHeader>
-                <CardContent>
-                  {isSubmitted ? (
-                    <div className="text-center py-8" role="status" aria-live="polite">
-                      <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Message Sent Successfully!</h3>
-                      <p className="text-gray-600 dark:text-gray-300">
-                        Thank you for contacting us. We'll get back to you within 24 hours.
-                      </p>
-                    </div>
-                  ) : (
-                    <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-                      <div className="grid md:grid-cols-2 gap-4">
-                        <div>
-                          <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Full Name *
-                          </label>
-                          <Input
-                            id="name"
-                            name="name"
-                            type="text"
-                            required
-                            value={formData.name}
-                            onChange={handleInputChange}
-                            placeholder="Enter your full name"
-                            aria-invalid={!!errors.name}
-                            aria-describedby="name-error"
-                            className="border-[#fbc6c5]/30 focus:border-[#d09d80]"
-                          />
-                          {errors.name && (
-                            <p id="name-error" className="mt-1 text-sm text-red-600">{errors.name}</p>
-                          )}
-                        </div>
-                        <div>
-                          <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Email Address *
-                          </label>
-                          <Input
-                            id="email"
-                            name="email"
-                            type="email"
-                            required
-                            value={formData.email}
-                            onChange={handleInputChange}
-                            placeholder="Enter your email"
-                            aria-invalid={!!errors.email}
-                            aria-describedby="email-error"
-                            className="border-[#fbc6c5]/30 focus:border-[#d09d80]"
-                          />
-                          {errors.email && (
-                            <p id="email-error" className="mt-1 text-sm text-red-600">{errors.email}</p>
-                          )}
-                        </div>
+                </div>
+
+                {isSubmitted ? (
+                  <div className="bg-white p-12 rounded-[2rem] text-center space-y-6 shadow-sm border border-[#fbc6c5]/10">
+                    <CheckCircle className="w-16 h-16 text-brand-tan mx-auto" />
+                    <h3 className="text-2xl font-serif text-gray-900">Message Received.</h3>
+                    <p className="text-gray-500 font-light">Thank you for reaching out. Our medical team will contact you shortly.</p>
+                  </div>
+                ) : (
+                  <form onSubmit={handleSubmit} className="space-y-10">
+                    <div className="space-y-8">
+                      <div className="relative group">
+                        <input
+                          id="name"
+                          name="name"
+                          type="text"
+                          required
+                          value={formData.name}
+                          onChange={handleInputChange}
+                          className="w-full bg-transparent border-b border-gray-200 py-4 text-lg font-light focus:outline-none focus:border-brand-tan transition-all placeholder:text-gray-300 peer"
+                          placeholder="Name and Surname"
+                        />
+                        {errors.name && <p className="text-[10px] text-red-500 mt-1 uppercase tracking-widest">{errors.name}</p>}
                       </div>
-                      <div className="grid md:grid-cols-2 gap-4">
-                        <div>
-                          <label htmlFor="phone" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Phone Number
-                          </label>
-                          <Input
+
+                      <div className="relative group">
+                        <input
+                          id="email"
+                          name="email"
+                          type="email"
+                          required
+                          value={formData.email}
+                          onChange={handleInputChange}
+                          className="w-full bg-transparent border-b border-gray-200 py-4 text-lg font-light focus:outline-none focus:border-brand-tan transition-all placeholder:text-gray-300"
+                          placeholder="Email address"
+                        />
+                        {errors.email && <p className="text-[10px] text-red-500 mt-1 uppercase tracking-widest">{errors.email}</p>}
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="relative">
+                          <input
                             id="phone"
                             name="phone"
                             type="tel"
                             value={formData.phone}
                             onChange={handleInputChange}
-                            placeholder="+63 917 123 4567"
-                            className="border-[#fbc6c5]/30 focus:border-[#d09d80]"
+                            className="w-full bg-transparent border-b border-gray-200 py-4 text-lg font-light focus:outline-none focus:border-brand-tan transition-all placeholder:text-gray-300"
+                            placeholder="Phone Number"
                           />
-                          {errors.phone && (
-                            <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
-                          )}
                         </div>
-                        <div>
-                          <label htmlFor="service" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Service of Interest
-                          </label>
+                        <div className="relative">
                           <select
                             id="service"
                             name="service"
                             value={formData.service}
                             onChange={handleInputChange}
-                            className="w-full px-3 py-2 border border-[#fbc6c5]/30 rounded-md focus:outline-none focus:ring-2 focus:ring-[#d09d80] focus:border-[#d09d80]"
+                            className="w-full bg-transparent border-b border-gray-200 py-4 text-lg font-light focus:outline-none focus:border-brand-tan transition-all text-gray-400 appearance-none"
                           >
-                            <option value="">Select a service</option>
-                            {services.map((service) => (
-                              <option key={service} value={service}>
-                                {service}
-                              </option>
-                            ))}
+                            <option value="">Subject / Service</option>
+                            {services.map((s) => <option key={s} value={s}>{s}</option>)}
                           </select>
-                          {errors.service && (
-                            <p className="mt-1 text-sm text-red-600">{errors.service}</p>
-                          )}
                         </div>
                       </div>
-                      <div className="grid md:grid-cols-2 gap-4">
-                        <div>
-                          <label htmlFor="date" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Preferred Date *
-                          </label>
-                          <Input
-                            id="date"
-                            name="date"
-                            type="date"
-                            required
-                            value={formData.date}
-                            onChange={handleInputChange}
-                            className="border-[#fbc6c5]/30 focus:border-[#d09d80]"
-                          />
-                          {errors.date && (
-                            <p className="mt-1 text-sm text-red-600">{errors.date}</p>
-                          )}
-                        </div>
-                        <div>
-                          <label htmlFor="time" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Preferred Time *
-                          </label>
-                          <Input
-                            id="time"
-                            name="time"
-                            type="time"
-                            required
-                            value={formData.time}
-                            onChange={handleInputChange}
-                            className="border-[#fbc6c5]/30 focus:border-[#d09d80]"
-                          />
-                          {errors.time && (
-                            <p className="mt-1 text-sm text-red-600">{errors.time}</p>
-                          )}
-                        </div>
-                      </div>
-                      <div>
-                        <label htmlFor="message" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Message *
-                        </label>
-                        <Textarea
+
+                      <div className="relative group">
+                        <textarea
                           id="message"
                           name="message"
                           required
+                          rows={4}
                           value={formData.message}
                           onChange={handleInputChange}
-                          placeholder="Tell us about your aesthetic goals or any questions you have..."
-                          rows={5}
-                          aria-invalid={!!errors.message}
-                          aria-describedby="message-error"
-                          className="border-[#fbc6c5]/30 focus:border-[#d09d80]"
+                          className="w-full bg-transparent border-b border-gray-200 py-4 text-lg font-light focus:outline-none focus:border-brand-tan transition-all placeholder:text-gray-300 resize-none"
+                          placeholder="Tell us about your aesthetic goals..."
                         />
-                        {errors.message && (
-                          <p id="message-error" className="mt-1 text-sm text-red-600">{errors.message}</p>
-                        )}
+                        {errors.message && <p className="text-[10px] text-red-500 mt-1 uppercase tracking-widest">{errors.message}</p>}
                       </div>
-                      <Button
+                    </div>
+
+                    <div className="flex justify-end">
+                      <button
                         type="submit"
                         disabled={isSubmitting}
-                        variant="brand"
-                        size="lg"
-                        className="w-full py-3 text-lg"
+                        className="text-[11px] font-bold tracking-[0.2em] text-gray-900 border border-gray-900 uppercase px-12 py-4 hover:bg-gray-900 hover:text-white transition-all transform hover:scale-[1.02]"
                       >
-                        {isSubmitting ? (
-                          <>
-                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
-                            Sending Message...
-                          </>
-                        ) : (
-                          <>
-                            <Send className="w-5 h-5 mr-3" />
-                            Send Message 
-                          </>
-                        )}
-                      </Button>
-                    </form>
-                  )}
-                </CardContent>
-              </Card>
+                        {isSubmitting ? "Sending..." : "Send Message"}
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
 
-              {/* Map and Additional Info */}
-              <div className="space-y-6">
-                {/* Map Placeholder */}
-                <Card className="border-[#fbc6c5]/20 shadow-lg dark:bg-gray-900/60 dark:border-gray-800">
-                  <CardContent className="p-0">
-                    <div className="bg-gradient-to-br from-[#fbc6c5]/20 to-[#d09d80]/20 h-64 flex items-center justify-center rounded-lg">
-                      <div className="text-center">
-                        <MapPin className="w-12 h-12 text-[#d09d80] mx-auto mb-4" />
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Clinic</h3>
-                        <p className="text-gray-600 dark:text-gray-300 mb-4">Granda Building Road 8 Project 6<br />Quezon City, Metro Manila</p>
+              {/* Right Side: Editorial Information */}
+              <div className="lg:col-span-5 flex flex-col justify-center space-y-16 lg:pl-12 lg:border-l border-gray-100">
+                <div className="space-y-12">
+                  <div className="space-y-4 text-center lg:text-left">
+                    <h2 className="text-4xl font-serif text-gray-900">Skin Essentials.</h2>
+                    <div className="space-y-6 pt-4">
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-bold tracking-[0.2em] text-gray-900 uppercase">Address</p>
+                        <p className="text-gray-500 font-light leading-relaxed">
+                          Granda Building, Road 8 Project 6<br />Quezon City, Metro Manila<br />Philippines 1100
+                        </p>
+                      </div>
 
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-bold tracking-[0.2em] text-gray-900 uppercase">Email us</p>
+                        <p className="text-gray-500 font-light">hello@skinessentials.ph</p>
+                      </div>
+
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-bold tracking-[0.2em] text-gray-900 uppercase">Call us</p>
+                        <p className="text-gray-500 font-light">0995-260-3451</p>
+                        <p className="text-[11px] text-gray-400 italic">Monday — Saturday: 9:00 AM to 7:00 PM</p>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-                {/* Social Media */}
-                <Card className="border-[#fbc6c5]/20 shadow-lg dark:bg-gray-900/60 dark:border-gray-800">
-                  <CardHeader>
-                    <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">Follow Us</CardTitle>
-                    <p className="text-gray-600 dark:text-gray-300">Stay updated with our latest treatments and results</p>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {socialMedia.map((social, index) => (
-                        <Link key={index} href={social.href} target="_blank" rel="noopener noreferrer">
-                          <div className="flex items-center p-4 rounded-xl border border-[#fbc6c5]/20 hover:shadow-md transition-all duration-300 group">
-                            <div className={`w-12 h-12 ${social.color} rounded-xl flex items-center justify-center text-white mr-4 group-hover:scale-110 transition-transform duration-300`}>
-                              {social.icon}
-                            </div>
-                            <div>
-                              <h4 className="font-semibold text-gray-900 dark:text-white">{social.name}</h4>
-                              <p className="text-sm text-gray-600 dark:text-gray-300">{social.handle}</p>
-                            </div>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
+                  </div>
 
-                {/* Quick Actions */}
-                <Card className="border-[#fbc6c5]/20 shadow-lg dark:bg-gray-900/60 dark:border-gray-800">
-                  <CardHeader>
-                    <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">Quick Actions</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <Button
-                        onClick={() => setIsBookingOpen(true)}
-                        variant="brand"
-                        className="w-full justify-start"
+                  {/* Social Icons - Styled minimal */}
+                  <div className="flex justify-center lg:justify-start gap-4 pt-4">
+                    {socialMedia.map((social, i) => (
+                      <Link
+                        key={i}
+                        href={social.href}
+                        className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 hover:bg-brand-tan hover:text-white transition-all"
                       >
-                        <Calendar className="w-4 h-4 mr-3" />
-                        Book Appointment
-                      </Button>
-                      <Link href="/portfolio">
-                        <Button variant="brand-outline" className="w-full justify-start">
-                          <Star className="w-4 h-4 mr-3" />
-                          View Portfolio
-                        </Button>
+                        {social.icon && <social.icon.type className="w-4 h-4" />}
                       </Link>
-                      <Link href="tel:+639171234567">
-                        <Button variant="brand-outline" className="w-full justify-start">
-                          <Phone className="w-4 h-4 mr-3" />
-                          Call Now
-                        </Button>
-                      </Link>
-                    </div>
-                  </CardContent>
-                </Card>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Map Mini-View */}
+                <div className="relative h-48 rounded-[2rem] overflow-hidden group shadow-sm border border-gray-100">
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#fbc6c5]/10 to-[#d09d80]/10 flex items-center justify-center group-hover:scale-105 transition-transform duration-700">
+                    <MapPin className="w-8 h-8 text-brand-tan" />
+                  </div>
+                  <Link href="https://maps.app.goo.gl/5KJSiPVRd49m7DbY8" target="_blank" className="absolute inset-0 flex items-end p-6 bg-gradient-to-t from-white/90 to-transparent">
+                    <span className="text-[10px] font-bold tracking-[0.1em] text-gray-900 uppercase border-b border-gray-900">Open in Maps &reg;</span>
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Emergency Contact */}
-        <section className="py-16 px-4">
-          <div className="container mx-auto">
-            <Card className="bg-gradient-to-r from-red-50 to-orange-50 border-red-200">
-              <CardContent className="p-8 text-center">
-                <h3 className="text-2xl font-bold text-red-800 mb-4">Emergency Contact</h3>
-                <p className="text-red-700 mb-6">
-                  If you're experiencing any complications or urgent concerns related to your treatment, please contact us immediately.
-                </p>
+        {/* Emergency Contact - Editorial Refactor */}
+        <section className="py-24 px-4 border-t border-gray-100">
+          <div className="container mx-auto max-w-6xl">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-24 items-center">
+
+              {/* Left Side: Status Label */}
+              <div className="md:col-span-3">
+                <p className="text-[11px] tracking-[0.3em] font-bold text-red-500 uppercase">Urgent notice.</p>
+              </div>
+
+              {/* Right Side: Emergency Messaging */}
+              <div className="md:col-span-9 flex flex-col md:flex-row items-center justify-between gap-12 bg-red-50/30 p-12 rounded-[3rem] border border-red-100/50">
+                <div className="max-w-xl text-center md:text-left space-y-4">
+                  <h3 className="text-2xl md:text-3xl font-serif text-gray-900 leading-tight">
+                    Experiencing complications or unusual symptoms?
+                  </h3>
+                  <p className="text-gray-600 font-light leading-relaxed">
+                    Safety is our priority. If you experience severe pain, excessive swelling, or any unusual reactions, contact our medical team immediately.
+                  </p>
+                </div>
+
                 <Link href="tel:+639952603451">
-                  <Button className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 text-lg font-semibold">
-                    <Phone className="w-5 h-5 mr-3" />
-                    Emergency Hotline: 0995-260-3451
-                  </Button>
+                  <button className="whitespace-nowrap bg-red-500 text-white px-10 py-5 rounded-full text-[11px] font-bold tracking-[0.2em] uppercase hover:bg-red-600 transition-all transform hover:scale-[1.02] shadow-xl shadow-red-200/50 flex items-center gap-3">
+                    <Phone className="w-4 h-4" /> 0995-260-3451
+                  </button>
                 </Link>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
         </section>
 

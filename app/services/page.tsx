@@ -13,36 +13,10 @@ import { useState, useEffect, Suspense } from "react"
 import { MobileNav } from "@/components/mobile-nav"
 import { PullToRefresh } from "@/components/pull-to-refresh"
 import { SharedHeader } from "@/components/shared-header"
+import { cn } from "@/lib/utils"
 import { BookingModal } from "@/components/booking-modal"
+import { serviceCategories as localServiceCategories, type Service, type ServiceCategory } from "@/lib/services-data"
 
-interface ServiceFAQ {
-  q: string
-  a: string
-}
-
-interface Service {
-  name: string
-  price: string
-  description: string
-  duration?: string
-  results?: string
-  sessions?: string
-  includes?: string
-  benefits?: string[]
-  faqs?: ServiceFAQ[]
-  originalPrice?: string
-  badge?: string
-  pricing?: string
-}
-
-interface ServiceCategory {
-  id: string
-  category: string
-  description: string
-  image: string
-  color: string
-  services: Service[]
-}
 
 function BookingQueryEffect({ setSelectedServiceId, setIsBookingOpen }: { setSelectedServiceId: (v: string) => void, setIsBookingOpen: (v: boolean) => void }) {
   const searchParams = useSearchParams()
@@ -67,7 +41,7 @@ function ServicesContent() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
   const [preview, setPreview] = useState<{ service: Service; category: ServiceCategory } | null>(null)
   const reduceMotion = useReducedMotion()
-  const [categories, setCategories] = useState<ServiceCategory[]>([])
+  const [categories, setCategories] = useState<ServiceCategory[]>(localServiceCategories)
   const searchParams = useSearchParams()
 
   useEffect(() => {
@@ -96,434 +70,9 @@ function ServicesContent() {
 
   const toId = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
 
-  const serviceCategories: ServiceCategory[] = [
-    {
-      id: "thread-lifts",
-      category: "Thread Lifts & Face Contouring",
-      description: "Non-surgical lifting and contouring using advanced PDO/PCL threads",
-      image: "/placeholder.svg?height=300&width=400&text=Thread+Lifts",
-      color: "from-[#fbc6c5] to-[#d09d80]",
-      services: [
-        {
-          name: "Hiko Nose Thread Lift",
-          price: "₱9,999",
-          description: "Instantly lifts and defines the nose bridge and tip using dissolvable PDO/PCL threads for a more refined profile.",
-          duration: "~1 hour",
-          results: "1-2 years",
-          includes: "Unlimited PCL threads, free consultation, and post-care kit",
-          benefits: [
-            "Immediate nose bridge enhancement",
-            "No surgery or downtime required",
-            "Natural-looking results",
-            "Stimulates collagen production",
-          ],
-          faqs: [
-            {
-              q: "Does it hurt?",
-              a: "A topical anesthetic is applied to ensure comfort. Most clients report feeling only minimal pressure during the procedure.",
-            },
-            {
-              q: "How long do results last?",
-              a: "Results typically last 1-2 years as the threads stimulate your own collagen production for lasting improvement.",
-            },
-          ],
-        },
-        {
-          name: "Face Thread Lift",
-          price: "₱1,000/thread",
-          originalPrice: "₱1,500/thread",
-          description: "Lifts and tightens sagging skin in the cheeks, jowls, and neck for a rejuvenated, V-shaped facial contour.",
-          duration: "1-1.5 hours",
-          results: "12-18 months",
-          badge: "PROMO",
-          benefits: [
-            "Immediate lifting effect",
-            "V-shaped facial contouring",
-            "Minimal downtime",
-            "Natural collagen stimulation",
-          ],
-          faqs: [
-            {
-              q: "Can threads lift sagging cheeks and jawline?",
-              a: "Yes, this is one of the primary functions of face thread lifts, providing an immediate lifting effect for sagging areas.",
-            },
-          ],
-        },
-        {
-          name: "Eyebrow Thread Lift",
-          price: "₱8,000",
-          description: "Lifts and shapes eyebrows for a more youthful, alert appearance using specialized PDO threads.",
-          duration: "45 minutes",
-          results: "12-18 months",
-          benefits: [
-            "Natural eyebrow lift",
-            "Enhanced eye area",
-            "No surgical scars",
-            "Immediate results",
-          ],
-        },
-        {
-          name: "Neck Thread Lift",
-          price: "₱12,000",
-          description: "Tightens loose neck skin and reduces the appearance of neck bands for a more defined jawline.",
-          duration: "1 hour",
-          results: "12-18 months",
-          benefits: [
-            "Neck skin tightening",
-            "Improved jawline definition",
-            "Reduced neck bands",
-            "Non-surgical solution",
-          ],
-        },
-      ],
-    },
-    {
-      id: "dermal-fillers",
-      category: "Dermal Fillers & Volume Enhancement",
-      description: "Premium hyaluronic acid fillers for natural volume enhancement",
-      image: "/placeholder.svg?height=300&width=400&text=Dermal+Fillers",
-      color: "from-[#d09d80] to-[#fbc6c5]",
-      services: [
-        {
-          name: "Lip Fillers",
-          price: "₱6,000/1mL",
-          description: "Enhance lip volume and definition with premium hyaluronic acid fillers for naturally beautiful lips.",
-          duration: "30-45 minutes",
-          results: "6-12 months",
-          benefits: [
-            "Enhanced lip volume",
-            "Improved lip definition",
-            "Natural-looking results",
-            "Customizable enhancement",
-          ],
-          faqs: [
-            {
-              q: "Will my lips look natural?",
-              a: "Yes, our expert technique focuses on enhancing your natural lip shape for beautiful, proportionate results.",
-            },
-          ],
-        },
-        {
-          name: "Cheek Fillers",
-          price: "₱6,000/1mL",
-          description: "Restore volume and create defined cheekbones for a youthful, sculpted appearance.",
-          duration: "45 minutes",
-          results: "12-18 months",
-          benefits: [
-            "Enhanced cheek volume",
-            "Improved facial contours",
-            "Youthful appearance",
-            "Natural-looking results",
-          ],
-        },
-        {
-          name: "Under-Eye Fillers",
-          price: "₱6,000/1mL",
-          description: "Reduce dark circles and hollowing under the eyes for a refreshed, youthful look.",
-          duration: "30 minutes",
-          results: "12-15 months",
-          benefits: [
-            "Reduced under-eye hollowing",
-            "Diminished dark circles",
-            "Refreshed appearance",
-            "Minimal downtime",
-          ],
-        },
-        {
-          name: "Chin Fillers",
-          price: "₱6,000/1mL",
-          description: "Enhance chin projection and create better facial balance and profile definition.",
-          duration: "30 minutes",
-          results: "12-18 months",
-          benefits: [
-            "Improved facial balance",
-            "Enhanced chin projection",
-            "Better profile definition",
-            "Non-surgical enhancement",
-          ],
-        },
-        {
-          name: "Jawline Fillers",
-          price: "₱8,000/1mL",
-          description: "Create a more defined, masculine or feminine jawline depending on your aesthetic goals.",
-          duration: "45 minutes",
-          results: "12-18 months",
-          benefits: [
-            "Enhanced jawline definition",
-            "Improved facial structure",
-            "Customizable results",
-            "Immediate enhancement",
-          ],
-        },
-        {
-          name: "Body Fillers (BBL)",
-          price: "₱27,000/500cc",
-          description: "Injectable HA gels for buttocks and hip enhancement, creating beautiful curves and proportions.",
-          duration: "1-2 hours",
-          results: "12-24 months",
-          benefits: [
-            "Enhanced body curves",
-            "Non-surgical enhancement",
-            "Natural-feeling results",
-            "Customizable volume",
-          ],
-          faqs: [
-            {
-              q: "Can I sit normally after butt filler injections?",
-              a: "Avoid direct, prolonged pressure for the first 2-3 days to ensure optimal results and healing.",
-            },
-          ],
-        },
-      ],
-    },
-    {
-      id: "botox-treatments",
-      category: "Botox & Neuromodulators",
-      description: "FDA-approved treatments to smooth wrinkles and prevent aging",
-      image: "/placeholder.svg?height=300&width=400&text=Botox+Treatments",
-      color: "from-[#fbc6c5]/90 to-[#d09d80]/90",
-      services: [
-        {
-          name: "Forehead Botox",
-          price: "₱8,000",
-          description: "Smooth horizontal forehead lines and prevent future wrinkle formation.",
-          duration: "15-20 minutes",
-          results: "3-6 months",
-          benefits: [
-            "Smooth forehead lines",
-            "Prevents new wrinkles",
-            "Natural-looking results",
-            "Quick treatment",
-          ],
-        },
-        {
-          name: "Crow's Feet Botox",
-          price: "₱8,000",
-          description: "Reduce fine lines around the eyes for a more youthful, refreshed appearance.",
-          duration: "15 minutes",
-          results: "3-6 months",
-          benefits: [
-            "Reduced eye wrinkles",
-            "Youthful eye area",
-            "Prevents deepening lines",
-            "Minimal discomfort",
-          ],
-        },
-        {
-          name: "Frown Lines Botox",
-          price: "₱8,000",
-          description: "Smooth the vertical lines between eyebrows for a more relaxed, approachable look.",
-          duration: "10-15 minutes",
-          results: "3-6 months",
-          benefits: [
-            "Smooth frown lines",
-            "More relaxed appearance",
-            "Prevents line deepening",
-            "Quick procedure",
-          ],
-        },
-        {
-          name: "Masseter Botox (Jaw Slimming)",
-          price: "₱12,000",
-          description: "Slim the jawline by relaxing the masseter muscles for a more V-shaped face.",
-          duration: "20 minutes",
-          results: "4-6 months",
-          benefits: [
-            "Slimmer jawline",
-            "V-shaped face",
-            "Reduced teeth grinding",
-            "Facial feminization",
-          ],
-        },
-        {
-          name: "Lip Flip Botox",
-          price: "₱4,000",
-          description: "Create the appearance of fuller lips by relaxing the muscles around the mouth.",
-          duration: "10 minutes",
-          results: "2-3 months",
-          benefits: [
-            "Fuller-looking lips",
-            "Enhanced lip shape",
-            "Subtle enhancement",
-            "No added volume",
-          ],
-        },
-      ],
-    },
-    {
-      id: "laser-treatments",
-      category: "Laser Treatments & Hair Removal",
-      description: "Advanced laser technology for hair removal and skin rejuvenation",
-      image: "/placeholder.svg?height=300&width=400&text=Laser+Treatments",
-      color: "from-[#fbc6c5]/80 to-[#d09d80]/80",
-      services: [
-        {
-          name: "Diode Laser Hair Removal - Underarms",
-          price: "₱1,000",
-          description: "Permanently reduces unwanted underarm hair using comfortable diode laser technology.",
-          duration: "15 minutes",
-          sessions: "6-8 sessions typically needed",
-          benefits: [
-            "Permanent hair reduction",
-            "Comfortable treatment",
-            "Quick sessions",
-            "Smooth underarms",
-          ],
-        },
-        {
-          name: "Diode Laser Hair Removal - Face",
-          price: "₱2,500",
-          description: "Remove unwanted facial hair for smooth, hair-free skin.",
-          duration: "20-30 minutes",
-          sessions: "6-8 sessions typically needed",
-          benefits: [
-            "Smooth facial skin",
-            "Precision treatment",
-            "Safe for sensitive areas",
-            "Long-lasting results",
-          ],
-        },
-        {
-          name: "Diode Laser Hair Removal - Arms",
-          price: "₱3,000",
-          description: "Full arm hair removal for smooth, hair-free arms.",
-          duration: "30-45 minutes",
-          sessions: "6-8 sessions typically needed",
-          benefits: [
-            "Smooth arms",
-            "Comfortable treatment",
-            "Permanent reduction",
-            "No more shaving",
-          ],
-        },
-        {
-          name: "Diode Laser Hair Removal - Legs",
-          price: "₱5,000",
-          description: "Full leg hair removal for permanently smooth legs.",
-          duration: "45-60 minutes",
-          sessions: "6-8 sessions typically needed",
-          benefits: [
-            "Smooth legs",
-            "Permanent hair reduction",
-            "No ingrown hairs",
-            "Long-term savings",
-          ],
-        },
-        {
-          name: "Diode Laser Hair Removal - Bikini",
-          price: "₱5,000",
-          description: "Bikini area hair removal for confidence and comfort.",
-          duration: "30 minutes",
-          sessions: "6-8 sessions typically needed",
-          benefits: [
-            "Smooth bikini area",
-            "Reduced irritation",
-            "Precision treatment",
-            "Comfortable procedure",
-          ],
-        },
-        {
-          name: "Pico Laser",
-          price: "₱1,000",
-          description: "Advanced laser delivering ultra-short energy pulses to treat pigmentation and rejuvenate skin effectively.",
-          duration: "30-45 minutes",
-          benefits: [
-            "Treats stubborn pigmentation",
-            "Skin rejuvenation",
-            "Minimal downtime",
-            "Safe for all skin types",
-          ],
-          faqs: [
-            {
-              q: "Can it treat melasma and sunspots?",
-              a: "Yes, Pico laser is highly effective for treating stubborn pigmentation issues including melasma and age spots.",
-            },
-          ],
-        },
-        {
-          name: "Tattoo Removal",
-          price: "₱4,000-₱15,000",
-          description: "Advanced laser technology breaks down ink particles, allowing your body to naturally clear them away.",
-          duration: "15-45 minutes per session",
-          sessions: "5-15+ sessions (varies by tattoo)",
-          benefits: [
-            "Complete tattoo removal",
-            "Minimal scarring",
-            "All ink colors treatable",
-            "Gradual fading process",
-          ],
-        },
-      ],
-    },
-    {
-      id: "skin-treatments",
-      category: "Skin Rejuvenation & Facials",
-      description: "Medical-grade treatments for youthful, radiant skin",
-      image: "/placeholder.svg?height=300&width=400&text=Skin+Treatments",
-      color: "from-[#d09d80]/70 to-[#fbc6c5]/70",
-      services: [
-        {
-          name: "Vampire Facial (PRP + Microneedling)",
-          price: "₱3,500",
-          description: "Powerful anti-aging treatment combining microneedling with your own Platelet-Rich Plasma for natural skin regeneration.",
-          duration: "~1 hour",
-          sessions: "3-4 sessions recommended",
-          benefits: ["Natural skin regeneration", "Improved skin texture", "Reduced fine lines", "Enhanced skin glow"],
-          faqs: [
-            {
-              q: "Is there redness afterward?",
-              a: "Mild redness similar to a sunburn is expected and typically subsides within 24-48 hours.",
-            },
-          ],
-        },
-        {
-          name: "Thermage RF Skin Tightening",
-          price: "₱3,500/area",
-          description: "Non-invasive radiofrequency treatment that stimulates collagen production for smoother, tighter skin.",
-          duration: "45-90 minutes",
-          results: "Results develop over 3-6 months",
-          benefits: ["Skin tightening", "Collagen stimulation", "No downtime", "Long-lasting results"],
-        },
-        {
-          name: "Stem Cell Boosters",
-          price: "₱2,500-₱6,000",
-          description: "Rejuvenating treatment infusing skin with growth factors to repair damage and boost natural collagen production.",
-          duration: "~1 hour",
-          benefits: ["Cellular regeneration", "Improved skin quality", "Natural healing", "Anti-aging effects"],
-          faqs: [
-            {
-              q: "How does it differ from traditional facials?",
-              a: "Stem cell boosters work at a cellular level to regenerate and repair skin from within, providing deeper rejuvenation.",
-            },
-          ],
-        },
-        {
-          name: "HydraFacial",
-          price: "₱4,500",
-          description: "Multi-step facial treatment that cleanses, exfoliates, extracts, and hydrates skin for immediate glow.",
-          duration: "45 minutes",
-          benefits: ["Instant skin glow", "Deep cleansing", "Hydration boost", "No downtime"],
-        },
-        {
-          name: "Chemical Peel",
-          price: "₱2,500-₱5,000",
-          description: "Professional chemical exfoliation to improve skin texture, tone, and reduce signs of aging.",
-          duration: "30-45 minutes",
-          benefits: ["Improved skin texture", "Reduced pigmentation", "Smoother skin", "Enhanced radiance"],
-        },
-        {
-          name: "Microneedling",
-          price: "₱3,000",
-          description: "Stimulates collagen production through controlled micro-injuries for improved skin texture and tone.",
-          duration: "45 minutes",
-          benefits: ["Collagen stimulation", "Improved texture", "Reduced scars", "Enhanced absorption"],
-        },
-      ],
-    },
-  ]
 
   useEffect(() => {
-    const list = categories.length ? categories : serviceCategories
+    const list = categories.length ? categories : localServiceCategories
     if (list.length && !activeCategoryId) setTimeout(() => setActiveCategoryId(list[0].id), 0)
     const observers: IntersectionObserver[] = []
     list.forEach((cat) => {
@@ -546,7 +95,7 @@ function ServicesContent() {
   useEffect(() => {
     const slug = searchParams?.get('preview') || ''
     if (!slug) return
-    const list = categories.length ? categories : serviceCategories
+    const list = categories.length ? categories : localServiceCategories
     for (const category of list) {
       const svc = category.services.find((s) => toId(s.name) === slug)
       if (svc) {
@@ -577,121 +126,202 @@ function ServicesContent() {
         <SharedHeader showBackButton={true} backHref="/" />
 
         {/* Hero Section */}
-        <section className="pt-24 pb-16 bg-gradient-to-br from-gray-50 to-white">
-          <div className="container mx-auto px-4">
-            <div className="text-center max-w-4xl mx-auto">
-              <Badge className="bg-[#fbc6c5]/10 text-[#d09d80] px-4 py-2 mb-6">Quezon City&rsquo;s Premier Aesthetic Clinic</Badge>
-
-              <h3 className="italic-serif text-brand-tan text-2xl mb-4">Beyond Beautiful</h3>
-              <h1 className="text-4xl md:text-5xl lg:text-7xl font-bold text-gray-900 mb-6 leading-tight text-gradient-lux">
-                Complete Range of
-                <span className="block mt-2">Aesthetic Services</span>
+        <section className="pt-40 pb-32 px-4 relative z-10 bg-white">
+          <div className="container mx-auto max-w-6xl">
+            <div className="mb-24 text-center md:text-left">
+              <h1 className="text-5xl md:text-[80px] lg:text-[100px] font-bold tracking-tight text-gray-900 leading-none uppercase">
+                Aesthetic<br />Services<span className="text-brand-tan">.</span>
               </h1>
+            </div>
 
-              <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-                Discover Quezon City&rsquo;s most comprehensive collection of medical-grade aesthetic treatments, including our signature
-                <span className="font-semibold text-[#d09d80]"> Hiko Nose Thread Lifts</span>, designed to enhance your
-                natural beauty with <span className="font-semibold text-[#d09d80]">FDA-approved materials</span> and expert care.
-              </p>
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-24">
+              <div className="md:col-span-3 space-y-2">
+                <p className="text-[14px] tracking-[0.05em] font-medium text-gray-900">Complete Range.</p>
+                <p className="text-[14px] tracking-[0.05em] font-medium text-gray-400">Expert Care.</p>
+                <p className="text-[14px] tracking-[0.05em] font-medium text-gray-400">Premium Clinic.</p>
+              </div>
 
-              {/* Trust Indicators */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
-                {[
-                  {
-                    icon: Shield,
-                    title: "FDA-Approved Materials",
-                    description: "Only premium, medical-grade products",
-                  },
-                  {
-                    icon: Award,
-                    title: "Licensed Professionals",
-                    description: "Expert medical team you can trust",
-                  },
-                  {
-                    icon: Users,
-                    title: "10,000+ Happy Clients",
-                    description: "Proven track record of excellence",
-                  },
-                ].map((item, index) => (
-                  <div key={index} className="text-center">
-                    <div className="w-16 h-16 bg-brand-rose/10 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-brand-gradient transition-colors duration-300">
-                      <item.icon className="w-8 h-8 text-brand-tan group-hover:text-white" />
+              <div className="md:col-span-9 space-y-12">
+                <div className="space-y-8">
+                  <p className="text-[15px] md:text-lg leading-[1.8] text-gray-500 font-light max-w-4xl">
+                    <span className="text-gray-900 font-medium italic block mb-2 text-xl">Beyond Beautiful</span>
+                    Discover Quezon City&rsquo;s most comprehensive collection of medical-grade aesthetic treatments, including our signature
+                    <span className="text-gray-900 font-medium italic"> Hiko Nose Thread Lifts</span>, designed to enhance your
+                    natural beauty with <span className="text-brand-tan font-semibold uppercase tracking-widest text-sm">FDA-approved materials</span> and expert care.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-12 pt-12 border-t border-gray-100">
+                  {[
+                    {
+                      title: "FDA-Approved Materials",
+                      description: "Only premium, medical-grade products",
+                    },
+                    {
+                      title: "Licensed Professionals",
+                      description: "Expert medical team you can trust",
+                    },
+                    {
+                      title: "3,000+ Happy Clients",
+                      description: "Proven track record of excellence",
+                    },
+                  ].map((item, index) => (
+                    <div key={index} className="space-y-4">
+                      <h3 className="text-[11px] tracking-[0.3em] uppercase font-bold text-gray-900">{item.title}</h3>
+                      <p className="text-sm leading-relaxed text-gray-500 font-light">{item.description}</p>
                     </div>
-                    <h3 className="font-bold text-gray-900 mb-2 font-serif italic">{item.title}</h3>
-                    <p className="text-gray-600 text-sm">{item.description}</p>
+                  ))}
+                </div>
+
+                <div className="flex flex-wrap gap-8 pt-8">
+                  <div className="flex items-center gap-3">
+                    <div className="w-1.5 h-1.5 rounded-full bg-brand-tan"></div>
+                    <span className="text-[10px] tracking-[0.2em] font-bold text-gray-900 uppercase">QUEZON CITY&rsquo;S PREMIER CLINIC</span>
                   </div>
-                ))}
+                  <div className="flex items-center gap-3">
+                    <div className="w-1.5 h-1.5 rounded-full bg-brand-tan"></div>
+                    <span className="text-[10px] tracking-[0.2em] font-bold text-gray-900 uppercase">FDA-APPROVED</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-1.5 h-1.5 rounded-full bg-brand-tan"></div>
+                    <span className="text-[10px] tracking-[0.2em] font-bold text-gray-900 uppercase">LICENSED PROFESSIONALS</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </section>
 
-        <section className={`border-b border-gray-200 bg-white ${isScrolled ? "shadow-sm" : ""}`}>
+        {/* Category & Filter Section */}
+        <section className="py-12 bg-[#f8f9fc] border-b border-gray-200">
           <div className="container mx-auto px-4">
-            <div className="flex flex-col lg:flex-row justify-between items-center gap-6 mb-8 py-4">
-              <div className="flex-1">
-                <div className="hidden md:grid grid-cols-3 lg:grid-cols-5 gap-2">
-                  {categories.map((cat) => (
-                    <motion.a
-                      key={cat.id}
-                      href={`#${cat.id}`}
-                      className={`px-4 py-3 rounded-xl transition-all duration-300 text-center border ${activeCategoryId === cat.id
-                          ? "bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-lg border-transparent"
-                          : "bg-white/80 backdrop-blur-sm hover:bg-gray-50 text-gray-700 border-gray-200"
-                        }`}
-                      whileHover={reduceMotion ? undefined : { scale: 1.02 }}
-                      whileTap={reduceMotion ? undefined : { scale: 0.98 }}
+            {/* Category Header */}
+            <div className="mb-6">
+              <h2 className="text-[#1a3a6d] font-bold text-sm tracking-wider uppercase mb-6">Category</h2>
+              <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+                {categories.map((cat) => (
+                  <motion.button
+                    key={cat.id}
+                    onClick={() => {
+                      setActiveCategoryId(cat.id)
+                      const el = document.getElementById(cat.id)
+                      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" })
+                    }}
+                    className="flex-shrink-0 w-48 group relative"
+                    whileHover={{ y: -4 }}
+                  >
+                    <div className={cn(
+                      "bg-white rounded-lg overflow-hidden shadow-sm border transition-all duration-300",
+                      activeCategoryId === cat.id ? "border-[#d09d80] ring-1 ring-[#d09d80]" : "border-gray-100"
+                    )}>
+                      {/* Category Image */}
+                      <div className="relative aspect-[16/9] w-full bg-gray-100">
+                        <img
+                          src={cat.image || `https://res.cloudinary.com/dbviya1rj/image/upload/v1766221339/zbuimximnplv1zcnm7id.jpg`}
+                          alt={cat.category}
+                          className="w-full h-full object-cover"
+                        />
+                        {/* Green Checkmark for Active State */}
+                        {activeCategoryId === cat.id && (
+                          <div className="absolute top-2 right-2 bg-[#76bc5c] text-white p-0.5 rounded shadow-sm">
+                            <CheckCircle className="w-4 h-4" />
+                          </div>
+                        )}
+                      </div>
+                      {/* Category Name */}
+                      <div className="py-3 px-2 text-center">
+                        <span className={cn(
+                          "text-xs font-bold tracking-tight block truncate",
+                          activeCategoryId === cat.id ? "text-[#1a3a6d]" : "text-gray-500"
+                        )}>
+                          {cat.category}
+                        </span>
+                      </div>
+                    </div>
+                  </motion.button>
+                ))}
+              </div>
+            </div>
+
+            {/* Filter & Search Header */}
+            <div className="mt-10">
+              <h2 className="text-[#1a3a6d] font-bold text-sm tracking-wider uppercase mb-6">Filter By & Search</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+                {/* Company Name / Primary Category Select */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Select Category</label>
+                  <div className="relative">
+                    <select
+                      value={activeCategoryId}
+                      onChange={(e) => {
+                        const id = e.target.value
+                        setActiveCategoryId(id)
+                        const el = document.getElementById(id)
+                        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" })
+                      }}
+                      className="w-full appearance-none bg-white border border-gray-200 rounded-md px-4 py-2.5 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#d09d80] pr-10"
                     >
-                      {cat.category}
-                    </motion.a>
-                  ))}
-                </div>
-                <div className="md:hidden overflow-x-auto scrollbar-hide">
-                  <div className="flex gap-2 min-w-max">
-                    {categories.map((cat) => (
-                      <motion.a
-                        key={cat.id}
-                        href={`#${cat.id}`}
-                        className={`px-4 py-2 rounded-xl transition-all duration-300 text-center ${activeCategoryId === cat.id
-                            ? "bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-lg"
-                            : "bg-white text-gray-700 hover:bg-gray-50"
-                          }`}
-                        whileHover={reduceMotion ? undefined : { scale: 1.02 }}
-                        whileTap={reduceMotion ? undefined : { scale: 0.98 }}
-                      >
-                        {cat.category}
-                      </motion.a>
-                    ))}
+                      {categories.map((cat) => (
+                        <option key={cat.id} value={cat.id}>{cat.category}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                   </div>
                 </div>
-              </div>
-              <div className="flex items-center space-x-3">
-                <select
-                  aria-label="Jump to category"
-                  value={activeCategoryId}
-                  onChange={(e) => {
-                    const id = e.target.value
-                    setActiveCategoryId(id)
-                    const el = document.getElementById(id)
-                    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" })
-                  }}
-                  className="bg-white md:bg-white/70 md:backdrop-blur-sm rounded-xl px-3 py-2 shadow-sm border border-gray-300 text-sm text-gray-700"
-                >
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.category}
-                    </option>
-                  ))}
-                </select>
-                <div className="flex items-center border border-gray-300 rounded-xl p-1 bg-white/80 backdrop-blur-sm" role="search">
-                  <Search className="w-4 h-4 text-gray-500 mr-2" />
-                  <input
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Search services..."
-                    className="bg-transparent outline-none text-sm text-gray-700 placeholder:text-gray-400"
-                    aria-label="Search services"
-                  />
+
+                {/* Duration Filter */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Select Duration</label>
+                  <div className="relative">
+                    <select className="w-full appearance-none bg-white border border-gray-200 rounded-md px-4 py-2.5 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#d09d80] pr-10">
+                      <option>All Durations</option>
+                      <option>Under 30 mins</option>
+                      <option>30-60 mins</option>
+                      <option>Over 1 hour</option>
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                  </div>
+                </div>
+
+                {/* Price Range Filter */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Select Price Range</label>
+                  <div className="relative">
+                    <select className="w-full appearance-none bg-white border border-gray-200 rounded-md px-4 py-2.5 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#d09d80] pr-10">
+                      <option>All Prices</option>
+                      <option>Below ₱5,000</option>
+                      <option>₱5,000 - ₱10,000</option>
+                      <option>Above ₱10,000</option>
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                  </div>
+                </div>
+
+                {/* Status Filter */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Select Status</label>
+                  <div className="relative">
+                    <select className="w-full appearance-none bg-white border border-gray-200 rounded-md px-4 py-2.5 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#d09d80] pr-10">
+                      <option>All Status</option>
+                      <option>Available</option>
+                      <option>Promo</option>
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                  </div>
+                </div>
+
+                {/* Search */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Search</label>
+                  <div className="relative">
+                    <input
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      placeholder="Type to search..."
+                      className="w-full bg-white border border-gray-200 rounded-md px-4 py-2.5 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#d09d80] pr-10"
+                    />
+                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  </div>
                 </div>
               </div>
             </div>
@@ -708,7 +338,6 @@ function ServicesContent() {
             <div className="container mx-auto px-4">
               {/* Category Header */}
               <div className="text-center mb-12">
-                <Badge className="bg-brand-rose/10 text-brand-tan px-4 py-2 mb-4 hover:shadow-md transition-shadow">Category {categoryIndex + 1}</Badge>
                 <h2 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6 font-serif italic text-gradient-lux">{category.category}</h2>
                 <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8 opacity-80">{category.description}</p>
                 <div className="flex items-center justify-center gap-3">
@@ -733,30 +362,46 @@ function ServicesContent() {
                 </div>
               </div>
 
-              <div className="max-w-4xl mx-auto bg-white rounded-2xl border border-gray-200 divide-y" role="list">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8" role="list">
                 {category.services
                   .filter(matchesQuery)
                   .slice(0, expandedCategories[category.id] ? category.services.length : 6)
                   .map((service, serviceIndex) => (
                     <motion.button
                       key={serviceIndex}
-                      className="w-full text-left px-4 py-4 hover:bg-gray-50 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[#d09d80]"
+                      className="group flex flex-col items-center text-center w-full h-full focus:outline-none"
                       onClick={() => { setPreview({ service, category }); setIsPreviewOpen(true) }}
-                      whileHover={reduceMotion ? undefined : { y: -1 }}
-                      whileTap={reduceMotion ? undefined : { scale: 0.99 }}
+                      whileHover={reduceMotion ? undefined : { y: -5 }}
+                      whileTap={reduceMotion ? undefined : { scale: 0.98 }}
                       role="listitem"
                       aria-label={`${service.name}, ${service.price}`}
-                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setPreview({ service, category }); setIsPreviewOpen(true) } }}
                     >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="font-semibold text-gray-900">{service.name}</div>
-                          <div className="text-sm text-gray-500">
-                            {service.duration ? <span>{service.duration}</span> : null}{service.duration && service.results ? ' • ' : ''}{service.results ? <span>{service.results}</span> : null}
-                          </div>
-                        </div>
-                        <div className="text-lg font-bold bg-gradient-to-r from-[#d09d80] to-[#fbc6c5] bg-clip-text text-transparent">
-                          {service.price}
+                      {/* Card Image */}
+                      <div className="w-full aspect-[4/3] bg-gray-100 mb-6 overflow-hidden rounded-[2rem] rounded-bl-[3rem] shadow-sm relative">
+                        <img
+                          src={service.image || `/placeholder.svg?height=400&width=600&text=${encodeURIComponent(service.name)}`}
+                          alt={service.name}
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                        />
+                        <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors" />
+                      </div>
+
+                      {/* Content */}
+                      <div className="flex flex-col flex-grow w-full px-2">
+                        <h3 className="font-serif text-lg tracking-widest text-gray-900 uppercase mb-3 line-clamp-1 group-hover:text-[#d09d80] transition-colors">{service.name}</h3>
+
+                        <p className="text-sm text-gray-500 leading-relaxed mb-6 line-clamp-3 min-h-[4.5em]">
+                          {service.description}
+                        </p>
+
+                        <div className="mt-auto pt-4 border-t border-gray-100 w-full flex items-center justify-center gap-4 text-[10px] sm:text-xs tracking-wider text-gray-400 uppercase font-medium">
+                          {service.duration && (
+                            <>
+                              <span>Duration: {service.duration.replace(/minutes|mins/i, 'MINS').replace(/hour/i, 'HR')}</span>
+                              {service.price && <span className="w-px h-3 bg-gray-300" />}
+                            </>
+                          )}
+                          <span className="text-[#d09d80] font-semibold">Price: {service.price}</span>
                         </div>
                       </div>
                     </motion.button>
@@ -769,33 +414,44 @@ function ServicesContent() {
           </section>
         ))}
 
-        {/* CTA Section */}
-        <section className="py-20 bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] text-white">
-          <div className="container mx-auto px-4 text-center">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">Ready to Transform Your Look?</h2>
-            <p className="text-xl mb-8 opacity-90 max-w-3xl mx-auto leading-relaxed">
-              Schedule your complimentary consultation today and let our experts create a personalized treatment plan
-              for your aesthetic goals.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-6 justify-center">
-              <Button
-                variant="secondary"
-                size="lg"
-                className="text-brand-tan px-8 py-4 text-lg font-semibold rounded-xl"
-              >
-                <Phone className="w-5 h-5 mr-3" />
-                Call 0995-260-3451
-              </Button>
-              <Link href="/portfolio">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="border-2 border-white text-white hover:bg-white hover:text-brand-tan bg-transparent px-8 py-4 text-lg font-semibold rounded-xl"
-                >
-                  View Our Portfolio
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </Button>
-              </Link>
+        {/* Editorial CTA Section */}
+        <section className="py-32 px-4 relative z-10 bg-white border-t border-gray-100">
+          <div className="container mx-auto max-w-6xl">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-24">
+              <div className="md:col-span-4 space-y-2">
+                <p className="text-[14px] tracking-[0.05em] font-medium text-gray-900">Next Steps.</p>
+                <p className="text-[14px] tracking-[0.05em] font-medium text-gray-400">Complimentary Consultation.</p>
+                <p className="text-[14px] tracking-[0.05em] font-medium text-gray-400">Professional Assessment.</p>
+              </div>
+
+              <div className="md:col-span-8 space-y-12">
+                <div className="space-y-8">
+                  <h2 className="text-4xl md:text-6xl font-bold tracking-tight text-gray-900 leading-none uppercase">
+                    Ready to Transform<br />Your Look<span className="text-brand-tan">?</span>
+                  </h2>
+                  <p className="text-[15px] md:text-lg leading-[1.8] text-gray-500 font-light max-w-2xl">
+                    <span className="text-gray-900 font-medium italic block mb-2 text-xl italic-serif">Tailored Precision.</span>
+                    Schedule your complimentary consultation today and let our experts create a personalized treatment plan for your aesthetic goals.
+                  </p>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-6">
+                  <button
+                    className="text-[11px] font-bold tracking-[0.2em] text-white bg-gray-900 uppercase px-12 py-4 rounded-full hover:bg-gray-800 transition-all transform hover:scale-[1.02] flex items-center justify-center gap-3"
+                  >
+                    <Phone className="w-4 h-4" />
+                    Call 0995-260-3451
+                  </button>
+                  <Link href="/portfolio">
+                    <button
+                      className="text-[11px] font-bold tracking-[0.2em] text-gray-900 border border-gray-200 uppercase px-12 py-4 rounded-full hover:bg-gray-50 transition-all flex items-center justify-center gap-3"
+                    >
+                      View Our Portfolio
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </Link>
+                </div>
+              </div>
             </div>
           </div>
         </section>

@@ -370,6 +370,7 @@ create table if not exists services (
   original_price text,
   badge text,
   pricing text,
+  image text,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );

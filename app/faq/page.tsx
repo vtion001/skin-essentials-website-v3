@@ -245,7 +245,7 @@ export default function FAQPage() {
       filtered = filtered.map(section => ({
         ...section,
         questions: section.questions.filter(
-          (qa: { q: string; a: string }) => 
+          (qa: { q: string; a: string }) =>
             qa.q.toLowerCase().includes(searchQuery.toLowerCase()) ||
             qa.a.toLowerCase().includes(searchQuery.toLowerCase())
         )
@@ -257,253 +257,167 @@ export default function FAQPage() {
 
   return (
     <PullToRefresh>
-      <div className="min-h-screen bg-[#fffaff] dark:bg-gray-950 pb-20 md:pb-0 relative overflow-hidden">
-        {/* Animated Background Elements */}
-        <div className="fixed inset-0 pointer-events-none">
-          <div className="absolute top-20 left-10 w-32 h-32 bg-gradient-to-br from-[#fbc6c5]/20 to-[#d09d80]/20 dark:from-[#fbc6c5]/10 dark:to-[#d09d80]/10 rounded-full blur-xl animate-pulse"></div>
-          <div className="absolute top-40 right-20 w-24 h-24 bg-gradient-to-br from-[#d09d80]/30 to-[#fbc6c5]/30 dark:from-[#d09d80]/20 dark:to-[#fbc6c5]/20 rounded-full blur-lg animate-bounce"></div>
-          <div className="absolute bottom-40 left-1/4 w-40 h-40 bg-gradient-to-br from-[#fbc6c5]/10 to-[#d09d80]/10 dark:from-[#fbc6c5]/5 dark:to-[#d09d80]/5 rounded-full blur-2xl animate-pulse delay-1000"></div>
-        </div>
-
-        {/* Glassmorphism Header */}
+      <div className="min-h-screen bg-white pb-20 md:pb-0 relative overflow-hidden">
         <SharedHeader showBackButton={true} backHref="/" />
 
-        {/* Hero Section */}
-        <section className="pt-32 pb-20 px-4 relative">
-          <div className="container mx-auto text-center relative z-10">
-            <div className="max-w-6xl mx-auto">
-              {/* Floating Badge */}
-              <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-[#fbc6c5]/20 to-[#d09d80]/20 backdrop-blur-sm rounded-full border border-[#fbc6c5]/30 mb-8 animate-fadeInUp">
-                <Heart className="w-4 h-4 text-[#d09d80] mr-2" />
-                <span className="text-sm font-medium text-gray-700">Your Questions Answered</span>
+        <main className="container mx-auto max-w-6xl px-4 pt-40 pb-32">
+          {/* Oversized Header Section */}
+          <div className="mb-24 text-center md:text-left">
+            <h1 className="text-7xl md:text-[120px] font-bold tracking-tight text-gray-900 leading-none">
+              FAQ<span className="text-[#d09d80]">.</span>
+            </h1>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-24">
+
+            {/* Left Column: Sidebar Labels */}
+            <div className="md:col-span-3 space-y-8">
+              <div className="space-y-2">
+                <p className="text-[14px] tracking-[0.05em] font-medium text-gray-900">Your questions.</p>
+                <p className="text-[14px] tracking-[0.05em] font-medium text-gray-400">Our protocols.</p>
+                <p className="text-[14px] tracking-[0.05em] font-medium text-gray-400">Expert guidance.</p>
               </div>
 
-              <h2 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-8 leading-tight">
-                <span className="bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800 bg-clip-text text-transparent">
-                  Frequently Asked
-                </span>
-                <br />
-                <span className="bg-gradient-to-r from-[#fbc6c5] via-[#d09d80] to-[#fbc6c5] bg-clip-text text-transparent animate-gradient">
-                  Questions
-                </span>
-              </h2>
+              <div className="pt-8 lg:sticky lg:top-48">
+                <button
+                  className="w-full text-[11px] font-bold tracking-[0.2em] text-gray-900 border border-gray-900 uppercase px-8 py-4 rounded-full hover:bg-gray-900 hover:text-white transition-all transform hover:scale-[1.02]"
+                  onClick={() => window.location.href = "tel:09952603451"}
+                >
+                  Ask a Question
+                </button>
 
-              <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-12 leading-relaxed max-w-4xl mx-auto">
-                Find answers to common questions about our procedures, safety protocols, and what to expect during your
-                <span className="font-semibold text-[#d09d80]"> beauty transformation journey</span>.
-              </p>
-
-              {/* Search and Filter Section */}
-              <div className="max-w-4xl mx-auto mb-12">
-                <div className="bg-white/60 dark:bg-white/10 backdrop-blur-sm rounded-2xl shadow-xl border border-[#fbc6c5]/20 p-4 md:p-6 sticky top-16 z-30">
-                  <div className="flex flex-col gap-4">
-                    {/* Search Input */}
-                    <div className="relative w-full">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 z-10" />
-                      <Input
-                        type="text"
-                        placeholder="Search FAQs..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10 pr-4 py-3 w-full border-gray-200 rounded-xl focus:ring-2 focus:ring-[#fbc6c5] focus:border-transparent bg-white/80 backdrop-blur-sm"
-                      />
-                    </div>
-                    
-                    {/* Category Filter */}
-                    <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
-                      {categories.map((category) => (
-                        <button
-                          key={category}
-                          onClick={() => setSelectedCategory(category)}
-                          className={`px-3 py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap ${
-                            selectedCategory === category
-                              ? 'bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] text-white shadow-lg'
-                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                          }`}
-                        >
-                          {category === 'All' && <Filter className="w-3 h-3 sm:w-4 sm:h-4" />}
-                          {category === 'Investment Opportunities' && <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4" />}
-                          {category === 'Thread Lifts & Face Contouring' && <Zap className="w-3 h-3 sm:w-4 sm:h-4" />}
-                          {category === 'Dermal Fillers & Volume Enhancement' && <Heart className="w-3 h-3 sm:w-4 sm:h-4" />}
-                          <span className="truncate max-w-[120px] sm:max-w-none">{category}</span>
-                        </button>
-                      ))}
-                    </div>
-                    
-                    {/* Results Count */}
-                    <div className="text-sm text-gray-500 dark:text-gray-400 text-center sm:text-left">
-                      {filteredFAQs.reduce((total, section) => total + section.questions.length, 0)} questions found
+                <div className="pt-12 space-y-6 hidden md:block">
+                  <div className="space-y-2">
+                    <p className="text-[11px] tracking-[0.2em] font-bold text-gray-900 uppercase">The Standard.</p>
+                    <div className="space-y-1">
+                      <p className="text-[10px] tracking-widest text-gray-400 uppercase">FDA-Approved</p>
+                      <p className="text-[10px] tracking-widest text-gray-400 uppercase">Licensed Pros</p>
+                      <p className="text-[10px] tracking-widest text-gray-400 uppercase">10k+ Clients</p>
                     </div>
                   </div>
                 </div>
               </div>
+            </div>
 
-              {/* Trust Indicators */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 mt-16">
-                {[
-                  {
-                    icon: Shield,
-                    title: "Safety First",
-                    description: "FDA-approved materials & licensed professionals",
-                    color: "from-[#fbc6c5] to-[#d09d80]",
-                  },
-                  {
-                    icon: Award,
-                    title: "Expert Care",
-                    description: "Personalized treatments & aftercare support",
-                    color: "from-[#d09d80] to-[#fbc6c5]",
-                  },
-                  {
-                    icon: Users,
-                    title: "Trusted by Thousands",
-                    description: "10,000+ satisfied clients & growing",
-                    color: "from-[#fbc6c5]/80 to-[#d09d80]/80",
-                  },
-                ].map((item, index) => (
-                  <div key={index} className="group cursor-pointer">
-                    <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-6 lg:p-8 border border-[#fbc6c5]/20 shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-500 hover:bg-white/80 h-full flex flex-col">
-                      <div
-                        className={`w-14 h-14 lg:w-16 lg:h-16 bg-gradient-to-br ${item.color} rounded-2xl flex items-center justify-center mb-4 lg:mb-6 mx-auto group-hover:rotate-6 transition-transform duration-300 flex-shrink-0`}
-                      >
-                        <item.icon className="w-6 h-6 lg:w-8 lg:h-8 text-white" />
+            {/* Right Column: Search + FAQ List */}
+            <div className="md:col-span-9 space-y-16">
+
+              {/* Search & Filter Bar */}
+              <div className="space-y-8 border-b border-gray-100 pb-12">
+                <div className="relative group">
+                  <Search className="absolute left-0 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-[#d09d80] transition-colors" />
+                  <input
+                    type="text"
+                    placeholder="Search by treatment or topic..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full bg-transparent border-b border-gray-200 py-6 pl-8 text-xl font-light focus:outline-none focus:border-[#d09d80] transition-all placeholder:text-gray-300"
+                  />
+                </div>
+
+                <div className="flex flex-wrap gap-x-8 gap-y-4">
+                  {categories.map((category) => (
+                    <button
+                      key={category}
+                      onClick={() => setSelectedCategory(category)}
+                      className={`text-[10px] font-bold tracking-[0.2em] uppercase transition-all pb-2 border-b-2 ${selectedCategory === category
+                        ? 'border-[#d09d80] text-gray-900'
+                        : 'border-transparent text-gray-400 hover:text-gray-600'
+                        }`}
+                    >
+                      {category}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* FAQ List */}
+              <div className="divide-y divide-gray-100">
+                {filteredFAQs.map((category, categoryIndex) => (
+                  <div key={categoryIndex} className="space-y-0">
+                    {category.questions.map((faq, faqIndex) => (
+                      <div key={faqIndex} className="py-12 first:pt-0">
+                        <div className="grid grid-cols-1 md:grid-cols-[140px_1fr] gap-6 md:gap-12">
+                          <div className="space-y-6">
+                            <div>
+                              <span className="text-[10px] font-bold tracking-[0.25em] text-gray-400 uppercase block mb-1">Question.</span>
+                              <span className="text-[9px] font-medium text-[#d09d80] uppercase tracking-widest bg-[#fbc6c5]/10 px-2 py-0.5 rounded">
+                                {category.category}
+                              </span>
+                            </div>
+                            <div className="hidden md:block pt-12">
+                              <span className="text-[10px] font-bold tracking-[0.25em] text-gray-400 uppercase">Response.</span>
+                            </div>
+                          </div>
+
+                          <div className="space-y-8">
+                            <h3 className="text-xl md:text-2xl font-medium text-gray-900 leading-snug">
+                              {faq.q}
+                            </h3>
+
+                            <div className="md:hidden">
+                              <span className="text-[10px] font-bold tracking-[0.25em] text-gray-400 uppercase">Response.</span>
+                            </div>
+
+                            <div className="space-y-6">
+                              <p className="text-base md:text-lg leading-relaxed text-gray-500 font-light whitespace-pre-wrap">
+                                {faq.a}
+                              </p>
+                              <div className="flex items-center justify-between pt-4">
+                                <span className="text-[10px] font-bold tracking-[0.2em] text-[#d09d80] uppercase">
+                                  By Skin Essentials &reg;
+                                </span>
+
+                                <div className="flex items-center gap-4 text-[10px] font-bold text-gray-300">
+                                  <span>Helpful?</span>
+                                  <button className="border border-gray-100 px-3 py-1 rounded hover:bg-gray-50 transition-colors uppercase tracking-widest">Yes</button>
+                                  <button className="border border-gray-100 px-3 py-1 rounded hover:bg-gray-50 transition-colors uppercase tracking-widest">No</button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      <h3 className="font-bold text-gray-900 mb-3 text-lg text-center break-words">{item.title}</h3>
-                      <p className="text-gray-600 leading-relaxed text-center text-sm lg:text-base break-words flex-1">{item.description}</p>
-                    </div>
+                    ))}
                   </div>
                 ))}
+
+                {(filteredFAQs.length === 0 || filteredFAQs.every(s => s.questions.length === 0)) && (
+                  <div className="py-20 text-center">
+                    <p className="text-gray-400 font-light italic text-xl">
+                      No results found for your search. Try a different term or browse our categories.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
-        </section>
 
-        {/* General FAQs */}
-        <section className="py-20 relative">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-16">
-              <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-[#fbc6c5]/20 to-[#d09d80]/20 backdrop-blur-sm rounded-full border border-[#fbc6c5]/30 mb-6">
-                <Star className="w-4 h-4 text-[#d09d80] mr-2" />
-                <span className="text-sm font-medium text-gray-700">Most Asked Questions</span>
-              </div>
-              <h2 className="text-4xl md:text-5xl font-bold mb-6">
-                <span className="bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-                  General Questions
-                </span>
-              </h2>
-              <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                Everything you need to know about our treatments, safety, and procedures
-              </p>
-            </div>
-
-            <div className="max-w-6xl mx-auto space-y-8">
-              {filteredFAQs.map((category, categoryIndex) => (
-                <Card
-                  key={categoryIndex}
-                  className="bg-white/60 dark:bg-gray-900/60 backdrop-blur-sm border border-[#fbc6c5]/20 dark:border-gray-800 shadow-lg hover:shadow-2xl transition-all duration-500 rounded-3xl overflow-hidden group"
-                >
-                  <CardHeader className="pb-4">
-                    <CardTitle className="flex items-center space-x-4 text-lg sm:text-xl">
-                      <div
-                        className={`w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br ${category.color} rounded-2xl flex items-center justify-center group-hover:rotate-6 transition-transform duration-300 flex-shrink-0`}
-                      >
-                        {category.icon}
-                      </div>
-                      <span className="bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent break-words min-w-0 flex-1">
-                        {category.category}
-                      </span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-0 px-4 sm:px-6">
-                    <Accordion type="single" collapsible>
-                      {category.questions.map((faq, faqIndex) => (
-                        <AccordionItem
-                          key={faqIndex}
-                          value={`faq-${categoryIndex}-${faqIndex}`}
-                          className="border-[#fbc6c5]/20"
-                        >
-                          <AccordionTrigger className="text-left font-semibold text-gray-800 dark:text-white py-4 hover:text-[#d09d80] transition-colors duration-300 hover:no-underline text-sm sm:text-base break-words hyphens-auto">
-                            <span className="pr-2 leading-relaxed">{faq.q}</span>
-                          </AccordionTrigger>
-                          <AccordionContent className="text-gray-600 dark:text-gray-300 leading-relaxed pb-4 text-sm sm:text-base">
-                            <div className="whitespace-pre-wrap break-words hyphens-auto max-w-none overflow-wrap-anywhere">
-                              {faq.a}
-                            </div>
-                          </AccordionContent>
-                        </AccordionItem>
-                      ))}
-                    </Accordion>
-                  </CardContent>
-                </Card>
-              ))}
-              {filteredFAQs.length === 0 || filteredFAQs.every(s => s.questions.length === 0) ? (
-                <div className="text-center text-gray-600 dark:text-gray-300">
-                  No results found. Try adjusting your filters or search.
+          {/* Emergency Section - Redesigned Editorial */}
+          <div className="mt-32 pt-24 border-t border-gray-100">
+            <div className="bg-[#fdf9f9] rounded-[3rem] p-8 md:p-16 flex flex-col md:flex-row items-center justify-between gap-12">
+              <div className="max-w-xl space-y-6 text-center md:text-left">
+                <div className="inline-flex items-center gap-2 text-red-500 scale-125 md:scale-100">
+                  <AlertTriangle className="w-5 h-5" />
+                  <span className="text-[11px] tracking-[0.3em] font-bold uppercase">Emergency Notice.</span>
                 </div>
-              ) : null}
-            </div>
-          </div>
-        </section>
-
-
-
-        {/* Emergency Contact */}
-        <section className="py-20 relative">
-          <div className="container mx-auto px-4">
-            <div className="max-w-4xl mx-auto">
-              <Card className="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 shadow-2xl rounded-3xl overflow-hidden">
-                <CardHeader className="bg-gradient-to-r from-amber-500 to-orange-500 text-white">
-                  <CardTitle className="flex items-center space-x-4 text-xl sm:text-2xl">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center flex-shrink-0">
-                      <AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                    </div>
-                    <span className="break-words min-w-0 flex-1">Important Notice</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-6 sm:p-8">
-                  <p className="text-amber-800 mb-6 text-base sm:text-lg leading-relaxed break-words">
-                    If you experience any unusual symptoms or complications after your treatment, please contact us
-                    immediately. Our team is available to address any concerns and provide appropriate guidance.
-                  </p>
-                  <Button variant="brand" size="lg" className="w-full py-3 sm:py-4 text-base sm:text-lg font-semibold rounded-2xl">
-                    <Phone className="w-4 h-4 sm:w-5 sm:h-5 mr-2 sm:mr-3 flex-shrink-0" />
-                    <span className="break-words">Emergency Contact: 0995-260-3451</span>
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </section>
-
-        {/* CTA Section */}
-        <section className="py-20 bg-gradient-to-r from-[#fbc6c5] to-[#d09d80] text-white relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-black/10 to-transparent"></div>
-          <div className="container mx-auto px-4 text-center relative z-10">
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 break-words">Still Have Questions?</h2>
-            <p className="text-lg md:text-xl lg:text-2xl mb-8 opacity-90 max-w-3xl mx-auto leading-relaxed break-words">
-              Our friendly team is here to help. Contact us for personalized answers and expert guidance on your beauty
-              <span className="font-semibold"> transformation journey</span>.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center max-w-2xl mx-auto">
-              <Button
-          size="lg"
-          variant="secondary"
-          className="text-brand-tan px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold rounded-2xl w-full sm:w-auto"
-        >
-                <Phone className="w-4 h-4 sm:w-5 sm:h-5 mr-2 sm:mr-3 flex-shrink-0" />
-                <span className="break-words">Call 0995-260-3451</span>
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-2 border-white text-white hover:bg-white hover:text-brand-tan bg-transparent px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold rounded-2xl w-full sm:w-auto"
+                <h2 className="text-2xl md:text-4xl font-bold text-gray-900 uppercase tracking-tight">
+                  Experiencing complications<br />or unusual symptoms?
+                </h2>
+                <p className="text-gray-500 font-light leading-relaxed">
+                  Safety is our priority. If you experience severe pain, excessive swelling, or any unusual reactions, contact our medical team immediately for guidance.
+                </p>
+              </div>
+              <button
+                className="bg-red-500 text-white px-12 py-5 rounded-full text-sm font-bold tracking-[0.2em] uppercase hover:bg-red-600 transition-all transform hover:scale-[1.02] shadow-xl shadow-red-200/50"
+                onClick={() => window.location.href = "tel:09952603451"}
               >
-                <span className="break-words">Book Free Consultation</span>
-              </Button>
+                0995-260-3451
+              </button>
             </div>
           </div>
-        </section>
+        </main>
 
-        {/* Mobile Bottom Navigation */}
         <MobileNav />
       </div>
     </PullToRefresh>

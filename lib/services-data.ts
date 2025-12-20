@@ -16,6 +16,7 @@ export interface Service {
   originalPrice?: string
   badge?: string
   pricing?: string
+  image?: string
 }
 
 export interface ServiceCategory {
@@ -32,7 +33,7 @@ export const serviceCategories: ServiceCategory[] = [
     id: "thread-lifts",
     category: "Thread Lifts & Face Contouring",
     description: "Non-surgical lifting and contouring using advanced PDO/PCL threads",
-    image: "/placeholder.svg?height=300&width=400&text=Thread+Lifts",
+    image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1766221339/zbuimximnplv1zcnm7id.jpg",
     color: "from-[#fbc6c5] to-[#d09d80]",
     services: [
       {
@@ -42,6 +43,7 @@ export const serviceCategories: ServiceCategory[] = [
           "Instantly lifts and defines the nose bridge and tip using dissolvable PDO/PCL threads for a more refined profile.",
         duration: "~1 hour",
         results: "1-2 years",
+        image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1766220084/d5r31yajne1stprtmaan.jpg",
         includes: "Unlimited PCL threads, free consultation, and post-care kit",
         benefits: [
           "Immediate nose bridge enhancement",
@@ -69,6 +71,7 @@ export const serviceCategories: ServiceCategory[] = [
         duration: "1-1.5 hours",
         results: "12-18 months",
         badge: "PROMO",
+        image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1766220084/uayo7iukwlgrikgtptrp.jpg",
         benefits: [
           "Immediate lifting effect",
           "V-shaped facial contouring",
@@ -89,6 +92,7 @@ export const serviceCategories: ServiceCategory[] = [
           "Lifts and shapes eyebrows for a more youthful, alert appearance using specialized PDO threads.",
         duration: "45 minutes",
         results: "12-18 months",
+        image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1766220083/czrq8nym6sibfvtyjayw.jpg",
         benefits: [
           "Natural eyebrow lift",
           "Enhanced eye area",
@@ -103,6 +107,7 @@ export const serviceCategories: ServiceCategory[] = [
           "Tightens loose neck skin and reduces the appearance of neck bands for a more defined jawline.",
         duration: "1 hour",
         results: "12-18 months",
+        image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1766220084/vbc7ram9d7bpvj5zbosb.jpg",
         benefits: [
           "Neck skin tightening",
           "Improved jawline definition",
@@ -116,7 +121,7 @@ export const serviceCategories: ServiceCategory[] = [
     id: "dermal-fillers",
     category: "Dermal Fillers & Volume Enhancement",
     description: "Premium hyaluronic acid fillers for natural volume enhancement",
-    image: "/placeholder.svg?height=300&width=400&text=Dermal+Fillers",
+    image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1766221331/lhznpaoueostk08iabif.jpg",
     color: "from-[#d09d80] to-[#fbc6c5]",
     services: [
       {
@@ -126,6 +131,7 @@ export const serviceCategories: ServiceCategory[] = [
           "Enhance lip volume and definition with premium hyaluronic acid fillers for naturally beautiful lips.",
         duration: "30-45 minutes",
         results: "6-12 months",
+        image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1766220404/jnasnv8r2imiid0oqg0h.jpg",
         benefits: [
           "Enhanced lip volume",
           "Improved lip definition",
@@ -145,6 +151,7 @@ export const serviceCategories: ServiceCategory[] = [
         description: "Restore volume and create defined cheekbones for a youthful, sculpted appearance.",
         duration: "45 minutes",
         results: "12-18 months",
+        image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1766220403/mztdahbihbtqzfya5zct.jpg",
         benefits: [
           "Enhanced cheek volume",
           "Improved facial contours",
@@ -159,6 +166,7 @@ export const serviceCategories: ServiceCategory[] = [
           "Reduce dark circles and hollowing under the eyes for a refreshed, youthful look.",
         duration: "30 minutes",
         results: "12-15 months",
+        image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1766220403/jfhnlhtiri5uokk7rjbw.jpg",
         benefits: [
           "Reduced under-eye hollowing",
           "Diminished dark circles",
@@ -173,6 +181,7 @@ export const serviceCategories: ServiceCategory[] = [
           "Enhance chin projection and create better facial balance and profile definition.",
         duration: "30 minutes",
         results: "12-18 months",
+        image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1766220390/tt7n6vnp13xi4sfbnmeh.jpg",
         benefits: [
           "Improved facial balance",
           "Enhanced chin projection",
@@ -187,6 +196,7 @@ export const serviceCategories: ServiceCategory[] = [
           "Create a more defined, masculine or feminine jawline depending on your aesthetic goals.",
         duration: "45 minutes",
         results: "12-18 months",
+        image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1766220390/dlevvnk3loxhahnwqvcs.jpg",
         benefits: [
           "Enhanced jawline definition",
           "Improved facial structure",
@@ -201,6 +211,7 @@ export const serviceCategories: ServiceCategory[] = [
           "Injectable HA gels for buttocks and hip enhancement, creating beautiful curves and proportions.",
         duration: "1-2 hours",
         results: "12-24 months",
+        image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1766220390/zz9r5gruont1taftq7xq.jpg",
         benefits: [
           "Enhanced body curves",
           "Non-surgical enhancement",
@@ -220,7 +231,7 @@ export const serviceCategories: ServiceCategory[] = [
     id: "botox-treatments",
     category: "Botox & Neuromodulators",
     description: "FDA-approved treatments to smooth wrinkles and prevent aging",
-    image: "/placeholder.svg?height=300&width=400&text=Botox+Treatments",
+    image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1766221331/yvqpfabiaciq5aitdpsl.jpg",
     color: "from-[#fbc6c5]/90 to-[#d09d80]/90",
     services: [
       {
@@ -229,6 +240,7 @@ export const serviceCategories: ServiceCategory[] = [
         description: "Smooth horizontal forehead lines and prevent future wrinkle formation.",
         duration: "15-20 minutes",
         results: "3-6 months",
+        image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1766217215/aj3icnakrvzrfan0ta9x.jpg",
         benefits: [
           "Smooth forehead lines",
           "Prevents new wrinkles",
@@ -242,6 +254,7 @@ export const serviceCategories: ServiceCategory[] = [
         description: "Reduce fine lines around the eyes for a more youthful, refreshed appearance.",
         duration: "15 minutes",
         results: "3-6 months",
+        image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1766217215/ee3sxqwk5vytvyfgq3ns.jpg",
         benefits: [
           "Reduced eye wrinkles",
           "Youthful eye area",
@@ -256,6 +269,7 @@ export const serviceCategories: ServiceCategory[] = [
           "Smooth the vertical lines between eyebrows for a more relaxed, approachable look.",
         duration: "10-15 minutes",
         results: "3-6 months",
+        image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1766217215/aj3icnakrvzrfan0ta9x.jpg",
         benefits: [
           "Smooth frown lines",
           "More relaxed appearance",
@@ -270,6 +284,7 @@ export const serviceCategories: ServiceCategory[] = [
           "Slim the jawline by relaxing the masseter muscles for a more V-shaped face.",
         duration: "20 minutes",
         results: "4-6 months",
+        image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1766217215/cxyogk8wq0vepnzxemzz.jpg",
         benefits: [
           "Slimmer jawline",
           "V-shaped face",
@@ -284,6 +299,7 @@ export const serviceCategories: ServiceCategory[] = [
           "Create the appearance of fuller lips by relaxing the muscles around the mouth.",
         duration: "10 minutes",
         results: "2-3 months",
+        image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1766217215/al0uljsnj1epjtljg2ed.jpg",
         benefits: [
           "Fuller-looking lips",
           "Enhanced lip shape",
@@ -297,7 +313,7 @@ export const serviceCategories: ServiceCategory[] = [
     id: "laser-treatments",
     category: "Laser Treatments & Hair Removal",
     description: "Advanced laser technology for hair removal and skin rejuvenation",
-    image: "/placeholder.svg?height=300&width=400&text=Laser+Treatments",
+    image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1766221331/qrdmehe5kmeuzckzjtb2.jpg",
     color: "from-[#fbc6c5]/80 to-[#d09d80]/80",
     services: [
       {
@@ -306,6 +322,7 @@ export const serviceCategories: ServiceCategory[] = [
         description: "Permanently reduces unwanted underarm hair using comfortable diode laser technology.",
         duration: "15 minutes",
         sessions: "6-8 sessions typically needed",
+        image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1766220673/u2pcni1tf1aqsepdqb9a.jpg",
         benefits: [
           "Permanent hair reduction",
           "Comfortable treatment",
@@ -319,6 +336,7 @@ export const serviceCategories: ServiceCategory[] = [
         description: "Remove unwanted facial hair for smooth, hair-free skin.",
         duration: "20-30 minutes",
         sessions: "6-8 sessions typically needed",
+        image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1766220672/tpdkwe2agkye0mqrrxx0.jpg",
         benefits: [
           "Smooth facial skin",
           "Precision treatment",
@@ -332,6 +350,7 @@ export const serviceCategories: ServiceCategory[] = [
         description: "Full arm hair removal for smooth, hair-free arms.",
         duration: "30-45 minutes",
         sessions: "6-8 sessions typically needed",
+        image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1766220672/mcz6drbm0nqc2ghw9akw.jpg",
         benefits: [
           "Smooth arms",
           "Comfortable treatment",
@@ -345,6 +364,7 @@ export const serviceCategories: ServiceCategory[] = [
         description: "Full leg hair removal for permanently smooth legs.",
         duration: "45-60 minutes",
         sessions: "6-8 sessions typically needed",
+        image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1766220672/pkl3orci8atnwubnkawa.jpg",
         benefits: [
           "Smooth legs",
           "Permanent hair reduction",
@@ -358,6 +378,7 @@ export const serviceCategories: ServiceCategory[] = [
         description: "Bikini area hair removal for confidence and comfort.",
         duration: "30 minutes",
         sessions: "6-8 sessions typically needed",
+        image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1766220672/t96bhriofdevpkzu7wkt.jpg",
         benefits: [
           "Smooth bikini area",
           "Reduced irritation",
@@ -371,6 +392,7 @@ export const serviceCategories: ServiceCategory[] = [
         description:
           "Advanced laser delivering ultra-short energy pulses to treat pigmentation and rejuvenate skin effectively.",
         duration: "30-45 minutes",
+        image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1766220672/qwr00xne9a2ouf45fw8h.jpg",
         benefits: [
           "Treats stubborn pigmentation",
           "Skin rejuvenation",
@@ -391,6 +413,7 @@ export const serviceCategories: ServiceCategory[] = [
           "Advanced laser technology breaks down ink particles, allowing your body to naturally clear them away.",
         duration: "15-45 minutes per session",
         sessions: "5-15+ sessions (varies by tattoo)",
+        image: "/images/services/tattoo-removal.jpg",
         benefits: [
           "Complete tattoo removal",
           "Minimal scarring",
@@ -404,7 +427,7 @@ export const serviceCategories: ServiceCategory[] = [
     id: "skin-treatments",
     category: "Skin Rejuvenation & Facials",
     description: "Medical-grade treatments for youthful, radiant skin",
-    image: "/placeholder.svg?height=300&width=400&text=Skin+Treatments",
+    image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1766221331/hogur4vl78yem4fbl3e9.jpg",
     color: "from-[#d09d80]/70 to-[#fbc6c5]/70",
     services: [
       {
@@ -414,6 +437,7 @@ export const serviceCategories: ServiceCategory[] = [
           "Powerful anti-aging treatment combining microneedling with your own Platelet-Rich Plasma for natural skin regeneration.",
         duration: "~1 hour",
         sessions: "3-4 sessions recommended",
+        image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1766220913/uqprxlihpgnp5v7rxqza.jpg",
         benefits: ["Natural skin regeneration", "Improved skin texture", "Reduced fine lines", "Enhanced skin glow"],
         faqs: [
           {
@@ -429,6 +453,7 @@ export const serviceCategories: ServiceCategory[] = [
           "Non-invasive radiofrequency treatment that stimulates collagen production for smoother, tighter skin.",
         duration: "45-90 minutes",
         results: "Results develop over 3-6 months",
+        image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1766220912/cjjpcnd3z8sufsmegrx1.jpg",
         benefits: ["Skin tightening", "Collagen stimulation", "No downtime", "Long-lasting results"],
       },
       {
@@ -437,6 +462,7 @@ export const serviceCategories: ServiceCategory[] = [
         description:
           "Rejuvenating treatment infusing skin with growth factors to repair damage and boost natural collagen production.",
         duration: "~1 hour",
+        image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1766220912/thb2eqq1aq2eyfktr9pm.jpg",
         benefits: ["Cellular regeneration", "Improved skin quality", "Natural healing", "Anti-aging effects"],
         faqs: [
           {
@@ -451,6 +477,7 @@ export const serviceCategories: ServiceCategory[] = [
         description:
           "Multi-step facial treatment that cleanses, exfoliates, extracts, and hydrates skin for immediate glow.",
         duration: "45 minutes",
+        image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1766220912/ra8hzttwr8tp2a7gzrxd.jpg",
         benefits: ["Instant skin glow", "Deep cleansing", "Hydration boost", "No downtime"],
       },
       {
@@ -459,6 +486,7 @@ export const serviceCategories: ServiceCategory[] = [
         description:
           "Professional chemical exfoliation to improve skin texture, tone, and reduce signs of aging.",
         duration: "30-45 minutes",
+        image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1766220912/aoyzbvxshqetlhjxuenm.jpg",
         benefits: ["Improved skin texture", "Reduced pigmentation", "Smoother skin", "Enhanced radiance"],
       },
       {
@@ -467,6 +495,7 @@ export const serviceCategories: ServiceCategory[] = [
         description:
           "Stimulates collagen production through controlled micro-injuries for improved skin texture and tone.",
         duration: "45 minutes",
+        image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1766220911/loyrbf1rakp7glrfdbhg.jpg",
         benefits: ["Collagen stimulation", "Improved texture", "Reduced scars", "Enhanced absorption"],
       },
     ],
@@ -500,9 +529,9 @@ class ServicesDataService {
         localStorage.setItem(this.key, JSON.stringify(this.data))
         window.dispatchEvent(new CustomEvent("services_data_updated", { detail: { data: this.data } }))
       }
-    } catch {}
+    } catch { }
     this.subscribers.forEach(cb => {
-      try { cb([...this.data]) } catch {}
+      try { cb([...this.data]) } catch { }
     })
   }
 

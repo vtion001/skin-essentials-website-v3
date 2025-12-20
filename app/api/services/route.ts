@@ -18,6 +18,7 @@ interface Service {
   originalPrice?: string
   badge?: string
   pricing?: string
+  image?: string
 }
 
 interface ServiceCategory {
@@ -33,11 +34,18 @@ interface ServiceCategory {
 
 export async function GET() {
   const admin = supabaseAdminClient()
+  if (!admin) {
+    console.error("[API Services] Supabase admin client not initialized. Check your environment variables.")
+    return jsonError('Supabase admin client not initialized', 500)
+  }
   const { data, error } = await admin
     .from('service_categories')
-    .select('id, category, description, image, color, services:services(id, name, price, description, duration, results, sessions, includes, benefits, faqs, original_price, badge, pricing)')
+    .select('id, category, description, image, color, services:services(id, name, price, description, duration, results, sessions, includes, benefits, faqs, original_price, badge, pricing, image)')
     .order('category', { ascending: true })
-  if (error) return jsonError(error.message, 500)
+  if (error) {
+    console.error("[API Services] Database error:", error.message)
+    return jsonError(error.message, 500)
+  }
   // Seed from local defaults if empty
   if (!error && Array.isArray(data) && data.length === 0 && Array.isArray(defaultServiceCategories) && defaultServiceCategories.length > 0) {
     // Insert categories
@@ -55,7 +63,7 @@ export async function GET() {
     for (const c of defaultServiceCategories) {
       for (const s of c.services) {
         svcPayloads.push({
-          id: `svc_${Date.now()}_${Math.random().toString(36).slice(2,8)}`,
+          id: `svc_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
           category_id: c.id,
           name: String(s.name || ''),
           price: String(s.price || ''),
@@ -69,6 +77,7 @@ export async function GET() {
           original_price: s.originalPrice ? String(s.originalPrice) : null,
           badge: s.badge ? String(s.badge) : null,
           pricing: s.pricing ? String(s.pricing) : null,
+          image: s.image ? String(s.image) : null,
         })
       }
     }
@@ -79,7 +88,7 @@ export async function GET() {
     // Re-query after seed
     const seeded = await admin
       .from('service_categories')
-      .select('id, category, description, image, color, services:services(id, name, price, description, duration, results, sessions, includes, benefits, faqs, original_price, badge, pricing)')
+      .select('id, category, description, image, color, services:services(id, name, price, description, duration, results, sessions, includes, benefits, faqs, original_price, badge, pricing, image)')
       .order('category', { ascending: true })
     if (seeded.error) return jsonError(seeded.error.message, 500)
     const seededCategories: ServiceCategory[] = (seeded.data || []).map((c: any) => ({
@@ -101,6 +110,7 @@ export async function GET() {
         originalPrice: s.original_price || undefined,
         badge: s.badge || undefined,
         pricing: s.pricing || undefined,
+        image: s.image || undefined,
       })) : [],
     }))
     return jsonOk(seededCategories)
@@ -124,6 +134,7 @@ export async function GET() {
       originalPrice: s.original_price || undefined,
       badge: s.badge || undefined,
       pricing: s.pricing || undefined,
+      image: s.image || undefined,
     })) : [],
   }))
   return jsonOk(categories)
@@ -143,6 +154,7 @@ export async function POST(req: NextRequest) {
         return jsonError('Invalid service payload', 422, { issues: parsed.error.issues })
       }
       const admin = supabaseAdminClient()
+      if (!admin) return jsonError('Supabase admin client not initialized', 500)
       const payload = {
         id: `svc_${Date.now()}`,
         category_id: categoryId,
@@ -158,6 +170,7 @@ export async function POST(req: NextRequest) {
         original_price: service.originalPrice ? String(service.originalPrice) : null,
         badge: service.badge ? String(service.badge) : null,
         pricing: service.pricing ? String(service.pricing) : null,
+        image: service.image ? String(service.image) : null,
       }
       const { error } = await admin.from('services').insert(payload)
       if (error) return jsonError(error.message, 500)
@@ -168,6 +181,7 @@ export async function POST(req: NextRequest) {
       const categoryId = String(body.categoryId || '')
       const name = String(body.name || '')
       const admin = supabaseAdminClient()
+      if (!admin) return jsonError('Supabase admin client not initialized', 500)
       const { error } = await admin.from('services').delete().eq('category_id', categoryId).eq('name', name)
       if (error) return jsonError(error.message, 500)
       return jsonOk(true)
@@ -178,6 +192,7 @@ export async function POST(req: NextRequest) {
       const originalName = String(body.originalName || '')
       const service = body.service as Service
       const admin = supabaseAdminClient()
+      if (!admin) return jsonError('Supabase admin client not initialized', 500)
       const updates: any = {
         name: service.name !== undefined ? String(service.name) : undefined,
         price: service.price !== undefined ? String(service.price) : undefined,
@@ -189,6 +204,7 @@ export async function POST(req: NextRequest) {
         original_price: service.originalPrice !== undefined ? String(service.originalPrice) : undefined,
         badge: service.badge !== undefined ? String(service.badge) : undefined,
         pricing: service.pricing !== undefined ? String(service.pricing) : undefined,
+        image: service.image !== undefined ? String(service.image) : undefined,
         benefits: Array.isArray(service.benefits) ? service.benefits : undefined,
         faqs: Array.isArray(service.faqs) ? service.faqs : undefined,
         updated_at: new Date().toISOString(),
@@ -206,6 +222,7 @@ export async function POST(req: NextRequest) {
       if (!category) return jsonError('Category name required', 422)
       const id = body.id ? String(body.id) : category.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
       const admin = supabaseAdminClient()
+      if (!admin) return jsonError('Supabase admin client not initialized', 500)
       const exists = await admin.from('service_categories').select('id').eq('id', id).limit(1)
       if (!exists.error && Array.isArray(exists.data) && exists.data.length > 0) return jsonError('Category already exists', 409)
       const { error } = await admin.from('service_categories').insert({ id, category, description, image, color })
@@ -224,6 +241,7 @@ export async function POST(req: NextRequest) {
         updated_at: new Date().toISOString(),
       }
       const admin = supabaseAdminClient()
+      if (!admin) return jsonError('Supabase admin client not initialized', 500)
       const { error } = await admin.from('service_categories').update(updates).eq('id', id)
       if (error) return jsonError(error.message, 500)
       return jsonOk(true)
@@ -233,6 +251,7 @@ export async function POST(req: NextRequest) {
       const id = String(body.id || '')
       if (!id) return jsonError('Missing id', 400)
       const admin = supabaseAdminClient()
+      if (!admin) return jsonError('Supabase admin client not initialized', 500)
       const { error } = await admin.from('service_categories').delete().eq('id', id)
       if (error) return jsonError(error.message, 500)
       return jsonOk(true)

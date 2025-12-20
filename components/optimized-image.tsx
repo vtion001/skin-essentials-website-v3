@@ -33,6 +33,7 @@ export function OptimizedImage({
   ...props
 }: OptimizedImageProps) {
   const [isLoaded, setIsLoaded] = useState(false)
+  const [hasError, setHasError] = useState(false)
   const [isInView, setIsInView] = useState(priority)
   const imageRef = useRef<HTMLDivElement>(null)
 
@@ -50,14 +51,21 @@ export function OptimizedImage({
     setIsLoaded(true)
   }
 
+  const handleError = () => {
+    setHasError(true)
+    setIsLoaded(true) // Stop showing pulse
+  }
+
+  const placeholderImg = `https://res.cloudinary.com/dbviya1rj/image/upload/v1765213459/placeholder_v3.png`
+
   const imageProps = {
-    src,
+    src: hasError ? placeholderImg : src,
     alt,
     quality,
     onLoad: handleLoad,
-    className: `transition-opacity duration-300 ${
-      isLoaded ? 'opacity-100' : 'opacity-0'
-    } ${className}`,
+    onError: handleError,
+    className: `transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'
+      } ${className}`,
     sizes,
     ...props,
   }
@@ -90,9 +98,8 @@ export function OptimizedImage({
       )}
       {!isLoaded && (isInView || priority) && (
         <div
-          className={`absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 animate-pulse ${
-            fill ? 'w-full h-full' : ''
-          }`}
+          className={`absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 animate-pulse ${fill ? 'w-full h-full' : ''
+            }`}
           style={!fill ? { width, height } : undefined}
         />
       )}

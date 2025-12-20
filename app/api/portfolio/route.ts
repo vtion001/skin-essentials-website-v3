@@ -19,11 +19,18 @@ interface PortfolioItem {
 export async function GET() {
   try {
     const admin = supabaseAdminClient()
+    if (!admin) {
+      console.error("[API Portfolio] Supabase admin client not initialized. Check your environment variables.")
+      return jsonError('Supabase admin client not initialized', 500)
+    }
     const { data, error } = await admin
       .from('portfolio_items')
       .select('id, title, category, before_image, after_image, description, treatment, duration, results, extra_results')
       .order('created_at', { ascending: false })
-    if (error) return jsonError(error.message, 500)
+    if (error) {
+      console.error("[API Portfolio] Database error:", error.message)
+      return jsonError(error.message, 500)
+    }
 
     if (!error && Array.isArray(data) && data.length === 0 && Array.isArray(defaultPortfolioItems) && defaultPortfolioItems.length > 0) {
       const payloads = defaultPortfolioItems.map((p) => ({
@@ -110,6 +117,10 @@ export async function POST(request: Request) {
   try {
     const body = await request.json()
     const admin = supabaseAdminClient()
+    if (!admin) {
+      console.error("[API Portfolio POST] Supabase admin client not initialized")
+      return jsonError('Supabase admin client not initialized', 500)
+    }
     const id = `pf_${Date.now()}`
     const payload = {
       id,

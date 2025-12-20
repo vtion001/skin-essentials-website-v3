@@ -18,6 +18,7 @@ export const ServiceSchema = z.object({
   originalPrice: z.string().optional(),
   badge: z.string().optional(),
   pricing: z.string().optional(),
+  image: z.string().optional(),
 })
 
 export const ServiceCategorySchema = z.object({

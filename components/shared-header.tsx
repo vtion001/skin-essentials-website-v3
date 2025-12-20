@@ -14,7 +14,12 @@ import {
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 
-export const SharedHeader = () => {
+interface SharedHeaderProps {
+  showBackButton?: boolean
+  backHref?: string
+}
+
+export const SharedHeader = ({ showBackButton, backHref }: SharedHeaderProps) => {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const pathname = usePathname()

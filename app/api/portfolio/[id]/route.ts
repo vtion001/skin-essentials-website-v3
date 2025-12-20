@@ -6,6 +6,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const { id } = await params
     const admin = supabaseAdminClient()
+    if (!admin) return jsonError('Supabase admin client not initialized', 500)
     const { data, error } = await admin
       .from('portfolio_items')
       .select('id, title, category, before_image, after_image, description, treatment, duration, results, extra_results')
@@ -35,6 +36,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const body = await request.json()
     const { id } = await params
     const admin = supabaseAdminClient()
+    if (!admin) return jsonError('Supabase admin client not initialized', 500)
     const updates: any = {
       title: body.title !== undefined ? String(body.title) : undefined,
       category: body.category !== undefined ? String(body.category) : undefined,
@@ -71,6 +73,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   try {
     const { id } = await params
     const admin = supabaseAdminClient()
+    if (!admin) return jsonError('Supabase admin client not initialized', 500)
     const { error } = await admin.from('portfolio_items').delete().eq('id', id)
     if (error) return jsonError('Portfolio item not found', 404)
     return jsonOk(true, { headers: { 'Cache-Control': 'no-store' } })

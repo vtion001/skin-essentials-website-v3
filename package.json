@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "next build",
-    "dev": "npx -y -p node@20 node ./node_modules/next/dist/bin/next dev",
+    "dev": "next dev",
     "lint": "next lint --quiet",
     "start": "next start",
     "test": "vitest run",

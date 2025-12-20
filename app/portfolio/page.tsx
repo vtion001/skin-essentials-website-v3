@@ -9,7 +9,8 @@ import { SharedHeader } from '@/components/shared-header'
 import type { PortfolioItem } from '@/lib/portfolio-data'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Shield } from 'lucide-react'
+import { Shield, ArrowRight } from 'lucide-react'
+import Link from 'next/link'
 
 export default function PortfolioPage() {
   const [ageConfirmed, setAgeConfirmed] = useState<boolean>(() => {
@@ -43,33 +44,57 @@ export default function PortfolioPage() {
         <SharedHeader />
 
         {/* Hero Section */}
-        <section className="relative z-10 pt-24 pb-12 px-4">
-          <div className="max-w-6xl mx-auto text-center">
-            <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-rose-100 to-pink-100 rounded-full text-rose-600 font-medium text-sm mb-6">
-              <span className="w-2 h-2 bg-rose-400 rounded-full mr-2 animate-pulse"></span>
-              Real Results Gallery
+        <section className="pt-40 pb-32 px-4 relative z-10 bg-white">
+          <div className="container mx-auto max-w-6xl">
+            <div className="mb-24 text-center md:text-left">
+              <h1 className="text-5xl md:text-[80px] lg:text-[100px] font-bold tracking-tight text-gray-900 leading-none uppercase">
+                Real Results<br />Gallery<span className="text-brand-tan">.</span>
+              </h1>
             </div>
-            <h3 className="italic-serif text-brand-tan text-2xl mb-4">Beyond Beautiful</h3>
-            <h1 className="text-4xl md:text-5xl lg:text-7xl font-bold text-gray-900 mb-6 leading-tight text-gradient-lux">
-              Before & After
-              <span className="block mt-2">Transformations</span>
-            </h1>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8 leading-relaxed">
-              Discover the remarkable results achieved by our clients through our comprehensive range of aesthetic treatments.
-              Each transformation showcases the expertise and artistry that defines Skin Essentials By Her.
-            </p>
-            <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-500">
-              <div className="flex items-center">
-                <div className="w-3 h-3 bg-rose-400 rounded-full mr-2"></div>
-                28 Treatment Types
+
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-24">
+              <div className="md:col-span-3 space-y-2">
+                <p className="text-[14px] tracking-[0.05em] font-medium text-gray-900">Before & After.</p>
+                <p className="text-[14px] tracking-[0.05em] font-medium text-gray-400">Authentic Cases.</p>
+                <p className="text-[14px] tracking-[0.05em] font-medium text-gray-400">Proven Results.</p>
               </div>
-              <div className="flex items-center">
-                <div className="w-3 h-3 bg-pink-400 rounded-full mr-2"></div>
-                5 Service Categories
-              </div>
-              <div className="flex items-center">
-                <div className="w-3 h-3 bg-purple-400 rounded-full mr-2"></div>
-                Real Client Results
+
+              <div className="md:col-span-9 space-y-12">
+                <div className="space-y-8">
+                  <p className="text-[15px] md:text-lg leading-[1.8] text-gray-500 font-light max-w-4xl">
+                    <span className="text-gray-900 font-medium italic block mb-2 text-xl">Beyond Beautiful</span>
+                    Discover the remarkable results achieved by our clients through our comprehensive range of medical-grade aesthetic treatments.
+                    Each transformation showcases the expertise and artistry that defines <span className="text-brand-tan font-semibold uppercase tracking-widest text-sm">Skin Essentials By Her</span>.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-12 pt-12 border-t border-gray-100">
+                  {[
+                    { title: "28 Treatment Types", description: "Comprehensive range of aesthetic solutions" },
+                    { title: "5 Service Categories", description: "Specialized care in every discipline" },
+                    { title: "Real Client Results", description: "Authentic transformations from true stories" },
+                  ].map((item, index) => (
+                    <div key={index} className="space-y-4">
+                      <h3 className="text-[11px] tracking-[0.3em] uppercase font-bold text-gray-900">{item.title}</h3>
+                      <p className="text-sm leading-relaxed text-gray-500 font-light">{item.description}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex flex-wrap gap-8 pt-8">
+                  <div className="flex items-center gap-3">
+                    <div className="w-1.5 h-1.5 rounded-full bg-brand-tan"></div>
+                    <span className="text-[10px] tracking-[0.2em] font-bold text-gray-900 uppercase">QUEZON CITY&rsquo;S PREMIER CLINIC</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-1.5 h-1.5 rounded-full bg-brand-tan"></div>
+                    <span className="text-[10px] tracking-[0.2em] font-bold text-gray-900 uppercase">REAL TRANSFORMATIONS</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-1.5 h-1.5 rounded-full bg-brand-tan"></div>
+                    <span className="text-[10px] tracking-[0.2em] font-bold text-gray-900 uppercase">ARTISTRY & PRECISION</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -118,22 +143,43 @@ export default function PortfolioPage() {
           </div>
         </section>
 
-        {/* CTA Section */}
-        <section className="relative z-10 py-20 px-4 bg-gradient-to-r from-rose-500 via-pink-500 to-purple-500 text-white">
-          <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6">
-              Ready to Transform Your Look?
-            </h2>
-            <p className="text-xl md:text-2xl mb-8 text-rose-100 leading-relaxed">
-              Book your consultation today and join our gallery of satisfied clients
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-md mx-auto">
-              <button className="bg-white text-rose-500 px-8 py-4 rounded-full font-semibold hover:bg-rose-50 transition-all duration-300 hover:scale-105 shadow-lg">
-                Book Consultation
-              </button>
-              <button className="border-2 border-white text-white px-8 py-4 rounded-full font-semibold hover:bg-white hover:text-rose-500 transition-all duration-300 hover:scale-105">
-                View Services
-              </button>
+        {/* Editorial CTA Section */}
+        <section className="py-32 px-4 relative z-10 bg-white border-t border-gray-100">
+          <div className="container mx-auto max-w-6xl">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-24">
+              <div className="md:col-span-4 space-y-2">
+                <p className="text-[14px] tracking-[0.05em] font-medium text-gray-900">Next Steps.</p>
+                <p className="text-[14px] tracking-[0.05em] font-medium text-gray-400">Join our Gallery.</p>
+                <p className="text-[14px] tracking-[0.05em] font-medium text-gray-400">Real Transformations.</p>
+              </div>
+
+              <div className="md:col-span-8 space-y-12">
+                <div className="space-y-8">
+                  <h2 className="text-4xl md:text-6xl font-bold tracking-tight text-gray-900 leading-none uppercase">
+                    Ready to Transform<br />Your Look<span className="text-brand-tan">?</span>
+                  </h2>
+                  <p className="text-[15px] md:text-lg leading-[1.8] text-gray-500 font-light max-w-2xl">
+                    <span className="text-gray-900 font-medium italic block mb-2 text-xl italic-serif">Proven Results.</span>
+                    Book your consultation today and join our gallery of satisfied clients who have achieved their aesthetic goals with our specialized treatments.
+                  </p>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-6">
+                  <button
+                    className="text-[11px] font-bold tracking-[0.2em] text-white bg-gray-900 uppercase px-12 py-4 rounded-full hover:bg-gray-800 transition-all transform hover:scale-[1.02]"
+                  >
+                    Book Consultation
+                  </button>
+                  <Link href="/services">
+                    <button
+                      className="text-[11px] font-bold tracking-[0.2em] text-gray-900 border border-gray-200 uppercase px-12 py-4 rounded-full hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
+                    >
+                      View Services
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </Link>
+                </div>
+              </div>
             </div>
           </div>
         </section>
