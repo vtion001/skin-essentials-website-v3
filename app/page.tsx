@@ -33,7 +33,6 @@ import { Label } from "@/components/ui/label"
 import Link from "next/link"
 import Image from "next/image"
 import { useState, useEffect } from "react"
-import { MobileNav } from "@/components/mobile-nav"
 import { PullToRefresh } from "@/components/pull-to-refresh"
 import { SharedHeader } from "@/components/shared-header"
 import { BookingModal } from "@/components/booking-modal"
@@ -683,7 +682,6 @@ export default function HomePage() {
 
 
           {/* Mobile Bottom Navigation */}
-          <MobileNav />
         </main>
       </div>
     </>

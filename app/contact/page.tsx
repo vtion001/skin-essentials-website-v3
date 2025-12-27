@@ -20,7 +20,6 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { useState, useEffect } from "react"
-import { MobileNav } from "@/components/mobile-nav"
 import { PullToRefresh } from "@/components/pull-to-refresh"
 import { SharedHeader } from "@/components/shared-header"
 import { BookingModal } from "@/components/booking-modal"
@@ -454,7 +453,6 @@ export default function ContactPage() {
         <BookingModal isOpen={isBookingOpen} onClose={() => setIsBookingOpen(false)} />
 
         {/* Mobile Bottom Navigation */}
-        <MobileNav />
       </div>
     </PullToRefresh>
   )

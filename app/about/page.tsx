@@ -21,7 +21,6 @@ import {
 import Link from "next/link"
 import Image from "next/image"
 import { useState, useEffect } from "react"
-import { MobileNav } from "@/components/mobile-nav"
 import { PullToRefresh } from "@/components/pull-to-refresh"
 import { SharedHeader } from "@/components/shared-header"
 
@@ -255,8 +254,6 @@ export default function AboutPage() {
                 </section>
 
 
-                {/* Mobile Bottom Navigation */}
-                <MobileNav />
             </div>
         </PullToRefresh>
     )

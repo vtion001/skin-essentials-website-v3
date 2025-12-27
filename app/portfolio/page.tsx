@@ -2,7 +2,6 @@
 export const dynamic = 'force-dynamic'
 
 import { useState, useEffect } from 'react'
-import { MobileNav } from '@/components/mobile-nav'
 import { PullToRefresh } from '@/components/pull-to-refresh'
 import { PortfolioGallery } from '@/components/portfolio-gallery'
 import { SharedHeader } from '@/components/shared-header'
@@ -198,8 +197,6 @@ export default function PortfolioPage() {
             </div>
           </div>
         </section>
-
-        <MobileNav />
       </div>
 
       {/* Age Gate Modal */}

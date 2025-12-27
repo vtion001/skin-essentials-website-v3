@@ -58,7 +58,7 @@ export const SharedHeader = ({ showBackButton, backHref }: SharedHeaderProps) =>
       {/* Main Header (White) */}
       <div className={cn(
         "bg-white transition-all duration-300 border-b border-gray-100",
-        isScrolled ? "py-2.5 shadow-md" : "py-6"
+        isScrolled ? "py-2 shadow-md" : "py-3 xl:py-6"
       )}>
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between">
@@ -67,7 +67,7 @@ export const SharedHeader = ({ showBackButton, backHref }: SharedHeaderProps) =>
               <img
                 src="https://res.cloudinary.com/dbviya1rj/image/upload/v1753674655/skinessentials_logo_350_x_180_px_fpp26r.png"
                 alt="Skin Essentials by HER"
-                className="h-11 w-auto object-contain"
+                className="h-9 md:h-11 w-auto object-contain"
               />
             </Link>
 
@@ -108,9 +108,9 @@ export const SharedHeader = ({ showBackButton, backHref }: SharedHeaderProps) =>
                   </Button>
                 </Link>
 
-                {/* Mobile Menu Toggle */}
+                {/* Mobile Menu Toggle - Hidden in favor of MobileNav */}
                 <button
-                  className="lg:hidden p-2 text-gray-900"
+                  className="hidden"
                   onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 >
                   {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}

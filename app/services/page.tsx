@@ -10,7 +10,6 @@ import { Clock, Star, Phone, Award, Shield, Users, CheckCircle, ArrowRight, Cale
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { useState, useEffect, Suspense } from "react"
-import { MobileNav } from "@/components/mobile-nav"
 import { PullToRefresh } from "@/components/pull-to-refresh"
 import { SharedHeader } from "@/components/shared-header"
 import { cn } from "@/lib/utils"
@@ -121,7 +120,7 @@ function ServicesContent() {
 
   return (
     <PullToRefresh>
-      <div className="min-h-screen bg-white pb-20 md:pb-0">
+      <div className="min-h-screen bg-white pb-24 lg:pb-0">
         {/* Header */}
         <SharedHeader showBackButton={true} backHref="/" />
 
@@ -456,8 +455,6 @@ function ServicesContent() {
           </div>
         </section>
 
-        {/* Mobile Bottom Navigation */}
-        <MobileNav />
       </div>
       <Dialog open={isPreviewOpen} onOpenChange={(v) => { if (!v) { setIsPreviewOpen(false); setPreview(null) } }}>
         <DialogContent className="max-w-2xl rounded-2xl">

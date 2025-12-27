@@ -9,6 +9,7 @@ import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "@/components/theme-provider"
 import { ThemeWrapper } from "@/components/theme-wrapper"
 import SharedFooter from "@/components/shared-footer"
+import { MobileNav } from "@/components/mobile-nav"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -98,7 +99,7 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="//fonts.googleapis.com" />
         <link rel="dns-prefetch" href="//fonts.gstatic.com" />
       </head>
-      <body className={`${inter.variable} ${playfair.variable} ${inter.className} antialiased`}>
+      <body className={`${inter.variable} ${playfair.variable} ${inter.className} antialiased`} suppressHydrationWarning>
         <ThemeProvider
           attribute="class"
           defaultTheme="light"
@@ -109,10 +110,13 @@ export default function RootLayout({
           <PerformanceMonitor />
           <SmoothScroll>
             <ThemeWrapper>
-              {children}
+              <main className="pb-24 md:pb-0">
+                {children}
+              </main>
             </ThemeWrapper>
           </SmoothScroll>
           <SharedFooter />
+          <MobileNav />
           {process.env.NODE_ENV === "production" && <Analytics />}
         </ThemeProvider>
       </body>

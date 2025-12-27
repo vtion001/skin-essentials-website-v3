@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Phone, Shield, Clock, CreditCard, Camera, AlertTriangle, Heart, Star, Award, Users, Search, TrendingUp, Briefcase, Zap, Filter } from "lucide-react"
 import { useState, useEffect, useMemo } from "react"
-import { MobileNav } from "@/components/mobile-nav"
 import { PullToRefresh } from "@/components/pull-to-refresh"
 import { SharedHeader } from "@/components/shared-header"
 
@@ -257,7 +256,7 @@ export default function FAQPage() {
 
   return (
     <PullToRefresh>
-      <div className="min-h-screen bg-white pb-20 md:pb-0 relative overflow-hidden">
+      <div className="min-h-screen bg-white pb-24 lg:pb-0 relative overflow-hidden">
         <SharedHeader showBackButton={true} backHref="/" />
 
         <main className="container mx-auto max-w-6xl px-4 pt-40 pb-32">
@@ -418,7 +417,6 @@ export default function FAQPage() {
           </div>
         </main>
 
-        <MobileNav />
       </div>
     </PullToRefresh>
   )
