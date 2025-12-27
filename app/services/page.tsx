@@ -192,12 +192,12 @@ function ServicesContent() {
         </section>
 
         {/* Category & Filter Section */}
-        <section className="py-12 bg-[#f8f9fc] border-b border-gray-200">
-          <div className="container mx-auto px-4">
+        <section className="py-12 bg-[#f8f9fc] border-b border-gray-200 overflow-hidden">
+          <div className="container mx-auto px-4 max-w-full">
             {/* Category Header */}
             <div className="mb-6">
               <h2 className="text-[#1a3a6d] font-bold text-sm tracking-wider uppercase mb-6">Category</h2>
-              <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+              <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide -mx-4 px-4">
                 {categories.map((cat) => (
                   <motion.button
                     key={cat.id}
@@ -457,7 +457,7 @@ function ServicesContent() {
 
       </div>
       <Dialog open={isPreviewOpen} onOpenChange={(v) => { if (!v) { setIsPreviewOpen(false); setPreview(null) } }}>
-        <DialogContent className="max-w-2xl rounded-2xl">
+        <DialogContent className="!w-[92vw] sm:!max-w-2xl !rounded-2xl !max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-gray-900">{preview?.service.name}</DialogTitle>
           </DialogHeader>

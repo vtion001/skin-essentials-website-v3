@@ -67,18 +67,18 @@ export function BookingModal({ isOpen, onClose, defaultServiceId }: BookingModal
     <Dialog open={isOpen} onOpenChange={(v) => { if (!v) handleClose() }} modal={false}>
       <DialogContent
         ref={contentRef}
-        className="max-w-5xl max-h-[90vh] overflow-y-auto bg-white/95 backdrop-blur-md border border-white/20 shadow-2xl p-0"
+        className="!w-[92vw] sm:!max-w-5xl !max-h-[85vh] sm:!max-h-[90vh] overflow-y-auto bg-white/95 backdrop-blur-md border border-white/20 shadow-2xl !p-0 !rounded-[2rem] sm:!rounded-3xl"
       >
         <div className="flex flex-col">
           {/* Editorial Header Section */}
-          <div className="p-8 pb-0">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 border-b border-gray-100 pb-8">
+          <div className="p-5 sm:p-8 pb-0">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-6 sm:mb-8 border-b border-gray-100 pb-6 sm:pb-8">
               <div className="space-y-4">
                 <span className="text-[10px] tracking-[0.3em] font-bold text-[#d09d80] uppercase block">
                   {step === 1 ? "Service Selection" : step === 2 ? "Appointment Details" : "Success"}
                 </span>
                 <DialogHeader className="p-0 space-y-0">
-                  <DialogTitle className="font-serif text-3xl lg:text-5xl tracking-[0.05em] text-gray-900 uppercase leading-none">
+                  <DialogTitle className="font-serif text-[clamp(1.25rem,6vw,3rem)] tracking-[0.02em] text-gray-900 uppercase leading-[1.1] text-left">
                     {step === 1 ? "Choose Your Service" : step === 2 ? "Your Information" : "Booking Confirmed"}
                   </DialogTitle>
                 </DialogHeader>
@@ -97,7 +97,7 @@ export function BookingModal({ isOpen, onClose, defaultServiceId }: BookingModal
             </div>
           </div>
 
-          <div className="px-8 pb-12">
+          <div className="px-5 sm:px-8 pb-8 sm:pb-12">
             {step === 1 && (
               <div className="space-y-12">
                 {/* Search & Filter Header */}
@@ -110,7 +110,7 @@ export function BookingModal({ isOpen, onClose, defaultServiceId }: BookingModal
                         value={serviceQuery}
                         onChange={(e) => setServiceQuery(e.target.value)}
                         placeholder="Search treatments..."
-                        className="w-full bg-transparent border-b border-gray-200 py-3 pl-8 text-xl font-light focus:outline-none focus:border-[#d09d80] transition-all placeholder:text-gray-300"
+                        className="w-full bg-transparent border-b border-gray-200 py-3 pl-8 text-base sm:text-xl font-light focus:outline-none focus:border-[#d09d80] transition-all placeholder:text-gray-300"
                       />
                     </div>
                   </div>
@@ -127,13 +127,13 @@ export function BookingModal({ isOpen, onClose, defaultServiceId }: BookingModal
                 </div>
 
                 {/* Service Cards Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-12 border-t border-gray-100">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 pt-10 sm:pt-12 border-t border-gray-100">
                   {filteredServices.map((service) => (
                     <div
                       key={service.id}
-                      className={`group cursor-pointer p-6 rounded-[2rem] border transition-all duration-300 ${selectedService === service.id
-                          ? "border-[#d09d80] bg-[#fdf9f7]"
-                          : "border-gray-100 bg-white hover:border-[#d09d80]/30 hover:shadow-xl hover:shadow-[#fbc6c5]/10"
+                      className={`group cursor-pointer p-5 sm:p-6 rounded-[1.5rem] sm:rounded-[2rem] border transition-all duration-300 ${selectedService === service.id
+                        ? "border-[#d09d80] bg-[#fdf9f7]"
+                        : "border-gray-100 bg-white hover:border-[#d09d80]/30 hover:shadow-xl hover:shadow-[#fbc6c5]/10"
                         }`}
                       onClick={() => { setSelectedService(service.id); setStep(2) }}
                     >
@@ -182,10 +182,10 @@ export function BookingModal({ isOpen, onClose, defaultServiceId }: BookingModal
             )}
 
             {step === 2 && (
-              <div className="space-y-16">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+              <div className="space-y-8 sm:space-y-16">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12">
                   {/* Left Column: Form Section */}
-                  <div className="lg:col-span-8 space-y-12">
+                  <div className="lg:col-span-8 space-y-8 sm:space-y-12">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       <div className="relative group">
                         <label htmlFor="name" className="text-[10px] tracking-widest font-bold text-gray-400 uppercase block mb-1">Full Name</label>
@@ -194,7 +194,7 @@ export function BookingModal({ isOpen, onClose, defaultServiceId }: BookingModal
                           type="text"
                           value={formData.name}
                           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                          className="w-full bg-transparent border-b border-gray-200 py-3 text-lg font-light focus:outline-none focus:border-[#d09d80] transition-all placeholder:text-gray-300"
+                          className="w-full bg-transparent border-b border-gray-200 py-3 text-base sm:text-lg font-light focus:outline-none focus:border-[#d09d80] transition-all placeholder:text-gray-300"
                           placeholder="Your full name"
                         />
                       </div>
@@ -205,7 +205,7 @@ export function BookingModal({ isOpen, onClose, defaultServiceId }: BookingModal
                           type="tel"
                           value={formData.phone}
                           onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                          className="w-full bg-transparent border-b border-gray-200 py-3 text-lg font-light focus:outline-none focus:border-[#d09d80] transition-all placeholder:text-gray-300"
+                          className="w-full bg-transparent border-b border-gray-200 py-3 text-base sm:text-lg font-light focus:outline-none focus:border-[#d09d80] transition-all placeholder:text-gray-300"
                           placeholder="+63"
                         />
                       </div>
@@ -216,7 +216,7 @@ export function BookingModal({ isOpen, onClose, defaultServiceId }: BookingModal
                           type="email"
                           value={formData.email}
                           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                          className="w-full bg-transparent border-b border-gray-200 py-3 text-lg font-light focus:outline-none focus:border-[#d09d80] transition-all placeholder:text-gray-300"
+                          className="w-full bg-transparent border-b border-gray-200 py-3 text-base sm:text-lg font-light focus:outline-none focus:border-[#d09d80] transition-all placeholder:text-gray-300"
                           placeholder="hello@example.com"
                         />
                       </div>
@@ -316,7 +316,7 @@ export function BookingModal({ isOpen, onClose, defaultServiceId }: BookingModal
                   </div>
 
                   {/* Right Column: Case Summary (Sidebar style) */}
-                  <div className="lg:col-span-4 space-y-8 bg-[#fdf9f7] rounded-[2rem] p-8 h-fit">
+                  <div className="lg:col-span-4 space-y-6 sm:space-y-8 bg-[#fdf9f7] rounded-[1.5rem] sm:rounded-[2rem] p-6 sm:p-8 h-fit">
                     <div className="space-y-2">
                       <p className="text-[11px] tracking-[0.2em] font-bold text-gray-900 uppercase">Selected Treatment.</p>
                       <p className="text-[14px] leading-relaxed text-gray-500 font-light italic-serif">
@@ -412,7 +412,7 @@ export function BookingModal({ isOpen, onClose, defaultServiceId }: BookingModal
           </div>
 
           {/* Footer Clause */}
-          <div className="px-8 pb-12 border-t border-gray-100 mt-12 pt-12">
+          <div className="px-5 sm:px-8 pb-8 sm:pb-12 border-t border-gray-100 mt-8 sm:mt-12 pt-8 sm:pt-12">
             <p className="text-center text-gray-400 text-[10px] tracking-[0.2em] font-medium uppercase leading-relaxed max-w-2xl mx-auto">
               By requesting an appointment, you agree to our terms of service and clinical protocols. Consult with our specialists for a personalized assessment based on your unique profile.
             </p>

@@ -47,10 +47,16 @@ export function MobileNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-[100] bg-white/98 backdrop-blur-xl border-t border-gray-200/60 lg:hidden safe-area-bottom"
-      style={{ boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.04)' }}
+      className="fixed bottom-0 inset-x-0 z-[100] bg-white/98 backdrop-blur-xl border-t border-gray-200/60 lg:hidden safe-area-bottom"
+      style={{
+        boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.04)',
+        width: '100vw',
+        maxWidth: '100vw',
+        left: 0,
+        right: 0,
+      }}
     >
-      <div className="grid grid-cols-5 h-16 w-full">
+      <div className="grid grid-cols-5 h-16 w-full max-w-full overflow-hidden">
         {navItems.map((item) => {
           const Icon = item.icon
           const isActive = pathname === item.href
@@ -60,10 +66,10 @@ export function MobileNav() {
               key={item.href}
               href={item.href}
               prefetch={false}
-              className="flex flex-col items-center justify-center gap-0.5 transition-colors duration-200 relative group"
+              className="flex flex-col items-center justify-center gap-0.5 transition-colors duration-200 relative group min-w-0"
             >
               <div className={cn(
-                "p-2 rounded-full transition-all duration-200",
+                "p-2 rounded-full transition-all duration-200 flex-shrink-0",
                 isActive
                   ? "bg-brand-gradient shadow-md"
                   : "bg-transparent group-hover:bg-gray-100/80"
@@ -74,7 +80,7 @@ export function MobileNav() {
                 )} />
               </div>
               <span className={cn(
-                "text-[10px] uppercase tracking-wider transition-all duration-200 text-center font-medium mt-0.5",
+                "text-[9px] uppercase tracking-wide transition-all duration-200 text-center font-medium mt-0.5 truncate max-w-full px-1",
                 isActive
                   ? "text-brand-rose font-semibold"
                   : "text-gray-400 group-hover:text-gray-600"
