@@ -72,7 +72,7 @@ export const SharedHeader = ({ showBackButton, backHref }: SharedHeaderProps) =>
             </Link>
 
             {/* Navigation (Desktop) */}
-            <nav className="hidden xl:flex items-center gap-10">
+            <nav className="hidden lg:flex items-center gap-10">
               {navLinks.map((link) => (
                 <Link
                   key={link.name}

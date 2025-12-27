@@ -182,7 +182,7 @@ export default function HomePage() {
                       Trusted by 3,000+ Clients
                     </Badge>
 
-                    <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
+                    <h1 className="text-[clamp(1.875rem,4vw+1rem,3.75rem)] font-bold leading-tight">
                       <span className="text-gray-900">Quezon City's Top</span>
                       <br />
                       <span className="text-brand-gradient">
@@ -347,7 +347,7 @@ export default function HomePage() {
             <div className="py-24 bg-white">
               <div className="container mx-auto px-4 text-center">
                 <div className="mb-16">
-                  <h2 className="text-4xl md:text-5xl font-serif italic text-gray-900 mb-4 inline-block relative after:content-[''] after:absolute after:-bottom-4 after:left-1/2 after:-translate-x-1/2 after:w-20 after:h-[1px] after:bg-brand-tan">
+                  <h2 className="text-[clamp(2.25rem,4vw+1rem,3rem)] font-serif italic text-gray-900 mb-4 inline-block relative after:content-[''] after:absolute after:-bottom-4 after:left-1/2 after:-translate-x-1/2 after:w-20 after:h-[1px] after:bg-brand-tan">
                     Choose a treatment
                   </h2>
                 </div>
@@ -494,7 +494,7 @@ export default function HomePage() {
                 <div className="space-y-8 order-1 lg:order-2">
                   <div className="space-y-4">
                     <h3 className="text-brand-tan font-serif italic text-2xl">Beyond Beautiful</h3>
-                    <h2 className="text-4xl md:text-5xl font-bold leading-tight text-gray-900">
+                    <h2 className="text-[clamp(2.25rem,4vw+1rem,3rem)] font-bold leading-tight text-gray-900">
                       Unveil Your Best Self with <span className="text-brand-gradient italic">Artistic Precision</span>
                     </h2>
                     <p className="text-gray-600 leading-relaxed text-lg max-w-xl">
@@ -619,7 +619,7 @@ export default function HomePage() {
               <div className="text-center mb-20 space-y-4">
                 <div className="text-gray-400 text-sm tracking-[0.3em] uppercase">Testimonials</div>
                 <div className="w-12 h-[1px] bg-brand-tan/40 mx-auto"></div>
-                <h2 className="text-5xl md:text-6xl font-serif italic text-gray-900 pt-2">
+                <h2 className="text-[clamp(2.5rem,5vw+1rem,3.75rem)] font-serif italic text-gray-900 pt-2">
                   What Our Fantastic Clients Say
                 </h2>
               </div>

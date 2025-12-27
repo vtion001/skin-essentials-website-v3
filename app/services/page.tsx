@@ -128,7 +128,7 @@ function ServicesContent() {
         <section className="pt-40 pb-32 px-4 relative z-10 bg-white">
           <div className="container mx-auto max-w-6xl">
             <div className="mb-24 text-center md:text-left">
-              <h1 className="text-5xl md:text-[80px] lg:text-[100px] font-bold tracking-tight text-gray-900 leading-none uppercase">
+              <h1 className="text-[clamp(3rem,8vw+1rem,6.25rem)] font-bold tracking-tight text-gray-900 leading-none uppercase">
                 Aesthetic<br />Services<span className="text-brand-tan">.</span>
               </h1>
             </div>
@@ -337,7 +337,7 @@ function ServicesContent() {
             <div className="container mx-auto px-4">
               {/* Category Header */}
               <div className="text-center mb-12">
-                <h2 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6 font-serif italic text-gradient-lux">{category.category}</h2>
+                <h2 className="text-[clamp(2.25rem,5vw+1rem,3.75rem)] font-bold text-gray-900 mb-6 font-serif italic text-gradient-lux">{category.category}</h2>
                 <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8 opacity-80">{category.description}</p>
                 <div className="flex items-center justify-center gap-3">
                   <Button
@@ -425,7 +425,7 @@ function ServicesContent() {
 
               <div className="md:col-span-8 space-y-12">
                 <div className="space-y-8">
-                  <h2 className="text-4xl md:text-6xl font-bold tracking-tight text-gray-900 leading-none uppercase">
+                  <h2 className="text-[clamp(2.25rem,5vw+1rem,3.75rem)] font-bold tracking-tight text-gray-900 leading-none uppercase">
                     Ready to Transform<br />Your Look<span className="text-brand-tan">?</span>
                   </h2>
                   <p className="text-[15px] md:text-lg leading-[1.8] text-gray-500 font-light max-w-2xl">

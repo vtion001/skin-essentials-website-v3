@@ -102,7 +102,7 @@ export default function AboutPage() {
                     <div className="container mx-auto max-w-6xl">
                         {/* Huge Editorial Title */}
                         <div className="mb-24 text-center md:text-left">
-                            <h1 className="text-7xl md:text-[120px] font-bold tracking-tight text-gray-900 leading-none">
+                            <h1 className="text-[clamp(3.75rem,10vw+1rem,7.5rem)] font-bold tracking-tight text-gray-900 leading-none">
                                 ABOUT US.
                             </h1>
                         </div>
@@ -204,7 +204,7 @@ export default function AboutPage() {
 
                             {/* Left: Staggered Image Grid */}
                             {/* Left: Single Feature Image */}
-                            <div className="lg:col-span-6 relative h-[600px] md:h-[800px] shadow-2xl rounded-sm overflow-hidden group bg-gray-100">
+                            <div className="lg:col-span-6 relative h-[clamp(400px,70vh,800px)] shadow-2xl rounded-sm overflow-hidden group bg-gray-100">
                                 <Image
                                     src={teamMembers[0].image}
                                     alt={teamMembers[0].name}
@@ -221,7 +221,7 @@ export default function AboutPage() {
                             {/* Right: Content & Counters */}
                             <div className="lg:col-span-6 pt-12">
                                 <div className="max-w-xl">
-                                    <h2 className="text-7xl md:text-8xl font-bold tracking-tighter text-gray-900 mb-12 uppercase leading-none">
+                                    <h2 className="text-[clamp(3rem,6vw+1rem,6rem)] font-bold tracking-tighter text-gray-900 mb-12 uppercase leading-none">
                                         THE TEAM.
                                     </h2>
 
