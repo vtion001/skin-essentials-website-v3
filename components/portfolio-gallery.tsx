@@ -445,25 +445,25 @@ export function PortfolioGallery() {
           {selectedItem && (
             <div className="flex flex-col">
               {/* Header Image Header / Title */}
-              <div className="p-8 pb-0">
-                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 border-b border-gray-100 pb-8">
+              <div className="p-5 sm:p-8 pb-0">
+                <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-6 sm:mb-8 border-b border-gray-100 pb-6 sm:pb-8">
                   <div className="space-y-4">
                     <span className="text-[10px] tracking-[0.3em] font-bold text-[#d09d80] uppercase block">
                       {selectedItem.category}
                     </span>
-                    <h2 className="font-serif text-3xl lg:text-5xl tracking-[0.05em] text-gray-900 uppercase leading-none">
+                    <DialogTitle className="font-serif text-2xl sm:text-3xl lg:text-5xl tracking-[0.05em] text-gray-900 uppercase leading-tight">
                       {selectedItem.title}
-                    </h2>
+                    </DialogTitle>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
                     <button
-                      className="text-[11px] font-bold tracking-[0.2em] text-white bg-gray-900 uppercase px-8 py-3 rounded-full hover:bg-gray-800 transition-all transform hover:scale-[1.02]"
+                      className="w-full sm:w-auto text-[11px] font-bold tracking-[0.2em] text-white bg-gray-900 uppercase px-8 py-4 sm:py-3 rounded-full hover:bg-gray-800 transition-all transform hover:scale-[1.02]"
                       onClick={() => handleBookingClick(selectedItem.treatment)}
                     >
                       Book Consultation
                     </button>
                     <button
-                      className="text-[11px] font-bold tracking-[0.2em] text-gray-900 border border-gray-200 uppercase px-8 py-3 rounded-full hover:bg-gray-50 transition-all"
+                      className="w-full sm:w-auto text-[11px] font-bold tracking-[0.2em] text-gray-900 border border-gray-200 uppercase px-8 py-4 sm:py-3 rounded-full hover:bg-gray-50 transition-all font-sans"
                       onClick={() => setShowSimilar((v) => !v)}
                     >
                       {showSimilar ? "Close Gallery" : "More Cases"}
@@ -472,7 +472,7 @@ export function PortfolioGallery() {
                 </div>
               </div>
 
-              <div className="px-8 pb-12 space-y-12">
+              <div className="px-5 sm:px-8 pb-12 space-y-8 sm:space-y-12">
                 {/* Before/After Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-4">
@@ -509,7 +509,7 @@ export function PortfolioGallery() {
                 </div>
 
                 {/* Treatment Insights */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 pt-12 border-t border-gray-100">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 pt-8 sm:pt-12 border-t border-gray-100">
                   <div className="lg:col-span-4 space-y-6">
                     <div className="space-y-2">
                       <p className="text-[11px] tracking-[0.2em] font-bold text-gray-900 uppercase">Treatment Details.</p>

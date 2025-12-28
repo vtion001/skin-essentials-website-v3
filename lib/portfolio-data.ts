@@ -17,8 +17,8 @@ export const defaultPortfolioItems: PortfolioItem[] = [
     id: "1",
     title: "Hiko Nose Thread Lift Transformation",
     category: "Thread Lifts & Face Contouring",
-    beforeImage: "/uploads/portfolio/before-1765188515939.jpeg",
-    afterImage: "/uploads/portfolio/after-1765188524852.jpeg",
+    beforeImage: "https://res.cloudinary.com/dbviya1rj/image/upload/v1758858520/thgaptaukyvwweysmawt.jpg",
+    afterImage: "https://res.cloudinary.com/dbviya1rj/image/upload/v1758858517/rymvbcmiq248mvbilmcj.jpg",
     description: "Instantly lifts and defines the nose bridge and tip using dissolvable PDO/PCL threads for a more refined profile.",
     treatment: "Hiko Nose Thread Lift",
     duration: "1 hour",
@@ -29,8 +29,8 @@ export const defaultPortfolioItems: PortfolioItem[] = [
     id: "2",
     title: "Collagen Biostem V-Shape Contouring",
     category: "Thread Lifts & Face Contouring",
-    beforeImage: "/uploads/portfolio/before-1765190390391.jpeg",
-    afterImage: "/uploads/portfolio/after-1765190397188.jpeg",
+    beforeImage: "https://res.cloudinary.com/dbviya1rj/image/upload/v1758863762/gohyu5q20gye3wd4dutl.jpg",
+    afterImage: "https://res.cloudinary.com/dbviya1rj/image/upload/v1758863763/ygmomz8uqexehwkuhohk.jpg",
     description: "Stimulates natural collagen production to lift and tighten sagging skin in the cheeks, jowls, and neck for a rejuvenated, V-shaped facial contour.",
     treatment: "Collagen Biostem",
     duration: "1-1.5 hours",
@@ -41,8 +41,8 @@ export const defaultPortfolioItems: PortfolioItem[] = [
     id: "3",
     title: "Dimpleplasty Creation",
     category: "Thread Lifts & Face Contouring",
-    beforeImage: "/uploads/portfolio/before-1765203174987.jpeg",
-    afterImage: "/uploads/portfolio/after-1765203180941.jpeg",
+    beforeImage: "https://res.cloudinary.com/dbviya1rj/image/upload/v1758863446/hetyofv58v3dabc6hktt.jpg",
+    afterImage: "https://res.cloudinary.com/dbviya1rj/image/upload/v1758863447/vzjicf7rkpw5ogvbrgc5.jpg",
     description: "Creates natural-looking dimples on the cheeks through a minimally invasive procedure for a charming smile.",
     treatment: "Dimpleplasty",
     duration: "30 minutes",
@@ -159,7 +159,7 @@ export const defaultPortfolioItems: PortfolioItem[] = [
     extraResults: []
   },
 ]
-const PORTFOLIO_DATA_VERSION = 4
+const PORTFOLIO_DATA_VERSION = 5
 
 class PortfolioService {
   private items: PortfolioItem[] = []

@@ -493,22 +493,33 @@ function ServicesContent() {
                     </div>
                   </div>
                 )}
-                <div className="flex justify-end gap-3 pt-2">
-                  <Link href={`/portfolio?service=${toId(preview.service.name)}&similar=true`}>
-                    <Button variant="outline" className="rounded-xl">
+                <div className="flex flex-col sm:flex-row sm:justify-end gap-3 pt-6">
+                  <Link
+                    href={`/portfolio?service=${toId(preview.service.name)}&similar=true`}
+                    className="w-full sm:w-auto"
+                  >
+                    <Button variant="outline" className="rounded-xl w-full h-11 sm:h-9">
                       View More Results
                       <ArrowRight className="w-4 h-4 ml-2" />
                     </Button>
                   </Link>
                   {preview.service.name === 'Hiko Nose Thread Lift' ? (
-                    <Link href="/hiko-nose-lift">
-                      <Button variant="brand" className="rounded-xl">
+                    <Link href="/hiko-nose-lift" className="w-full sm:w-auto">
+                      <Button variant="brand" className="rounded-xl w-full h-11 sm:h-9">
                         Learn More
                         <ArrowRight className="w-4 h-4 ml-2" />
                       </Button>
                     </Link>
                   ) : (
-                    <Button variant="brand" className="rounded-xl" onClick={() => { setSelectedServiceId(toId(preview.service.name)); setIsBookingOpen(true); setIsPreviewOpen(false) }}>
+                    <Button
+                      variant="brand"
+                      className="rounded-xl w-full h-11 sm:h-9"
+                      onClick={() => {
+                        setSelectedServiceId(toId(preview.service.name));
+                        setIsBookingOpen(true);
+                        setIsPreviewOpen(false)
+                      }}
+                    >
                       Book Now
                       <Calendar className="w-4 h-4 ml-2" />
                     </Button>
