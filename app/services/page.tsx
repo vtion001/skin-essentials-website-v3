@@ -457,7 +457,7 @@ function ServicesContent() {
 
       </div>
       <Dialog open={isPreviewOpen} onOpenChange={(v) => { if (!v) { setIsPreviewOpen(false); setPreview(null) } }}>
-        <DialogContent className="!w-[92vw] sm:!max-w-2xl !rounded-2xl !max-h-[85vh] overflow-y-auto">
+        <DialogContent className="w-full max-w-[calc(100vw-2rem)] sm:max-w-2xl rounded-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-gray-900">{preview?.service.name}</DialogTitle>
           </DialogHeader>

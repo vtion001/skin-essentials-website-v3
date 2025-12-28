@@ -45,16 +45,6 @@ export const SharedHeader = ({ showBackButton, backHref }: SharedHeaderProps) =>
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 transition-all duration-300">
-      {/* Top Utility Bar (Black) */}
-      <div className="bg-black text-white py-2.5 px-4 font-inter">
-        <div className="container mx-auto flex justify-center items-center text-[9px] tracking-[0.3em] font-medium uppercase text-center">
-          <div className="flex items-center gap-2">
-            <span className="opacity-80">✦ FREE CONSULTATION FOR FIRST-TIME CLIENTS</span>
-            <Link href="/contact" className="underline underline-offset-4 hover:text-brand-tan transition-colors decoration-white/20 hover:decoration-brand-tan">LEARN MORE</Link>
-          </div>
-        </div>
-      </div>
-
       {/* Main Header (White) */}
       <div className={cn(
         "bg-white transition-all duration-300 border-b border-gray-100",

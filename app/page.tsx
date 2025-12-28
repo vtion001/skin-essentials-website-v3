@@ -284,6 +284,7 @@ export default function HomePage() {
                   src="https://res.cloudinary.com/dbviya1rj/image/upload/v1766177517/Ads_Pin_oxhwqn.jpg"
                   alt="Premium Aesthetic"
                   fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
                   className="object-cover transition-transform duration-1000 group-hover:scale-110"
                 />
               </div>
@@ -299,6 +300,7 @@ export default function HomePage() {
                   src="https://res.cloudinary.com/dbviya1rj/image/upload/v1766177518/Aesthetic_Clinic_Picture_ifcih6.jpg"
                   alt="Skin Rejuvenation"
                   fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
                   className="object-cover transition-transform duration-1000 group-hover:scale-110"
                 />
               </div>
@@ -323,6 +325,7 @@ export default function HomePage() {
                   src="https://res.cloudinary.com/dbviya1rj/image/upload/v1766177802/Reverse_Sagging_Skin_Ozempic_Mounjaro_in1ash.jpg"
                   alt="Dermal Treatment"
                   fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
                   className="object-cover transition-transform duration-1000 group-hover:scale-110"
                 />
               </div>
@@ -338,6 +341,7 @@ export default function HomePage() {
                   src="https://res.cloudinary.com/dbviya1rj/image/upload/v1766177517/Asian_Woman_Premium_Photo_mfhnf4.jpg"
                   alt="Medical Care"
                   fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
                   className="object-cover transition-transform duration-1000 group-hover:scale-110"
                 />
               </div>
@@ -455,6 +459,7 @@ export default function HomePage() {
                           src="https://res.cloudinary.com/dbviya1rj/image/upload/v1766178228/Project_Ideas_Pin_g4caor.jpg"
                           alt="Aesthetic Treatment"
                           fill
+                          sizes="(max-width: 1024px) 50vw, 25vw"
                           className="object-cover"
                         />
                       </div>
@@ -463,6 +468,7 @@ export default function HomePage() {
                           src="https://res.cloudinary.com/dbviya1rj/image/upload/v1766178228/Dermato_Pin_r994zz.jpg"
                           alt="Skin Treatment"
                           fill
+                          sizes="(max-width: 1024px) 50vw, 25vw"
                           className="object-cover"
                         />
                       </div>
@@ -473,6 +479,7 @@ export default function HomePage() {
                           src="https://res.cloudinary.com/dbviya1rj/image/upload/v1766179153/Night_Mask_Myths_jguvms.jpg"
                           alt="Medical Team"
                           fill
+                          sizes="(max-width: 1024px) 50vw, 25vw"
                           className="object-cover"
                         />
                       </div>
@@ -481,6 +488,7 @@ export default function HomePage() {
                           src="https://res.cloudinary.com/dbviya1rj/image/upload/v1766178228/Exclude_These_Foods_for_Clear_Skin_yuqlhx.jpg"
                           alt="Clinic Interior"
                           fill
+                          sizes="(max-width: 1024px) 50vw, 25vw"
                           className="object-cover"
                         />
                       </div>
@@ -654,6 +662,7 @@ export default function HomePage() {
                         src={testimonial.avatar}
                         alt={testimonial.name}
                         fill
+                        sizes="160px"
                         className="object-cover"
                       />
                     </div>

@@ -67,7 +67,7 @@ export function BookingModal({ isOpen, onClose, defaultServiceId }: BookingModal
     <Dialog open={isOpen} onOpenChange={(v) => { if (!v) handleClose() }} modal={false}>
       <DialogContent
         ref={contentRef}
-        className="!w-[92vw] sm:!max-w-5xl !max-h-[85vh] sm:!max-h-[90vh] overflow-y-auto bg-white/95 backdrop-blur-md border border-white/20 shadow-2xl !p-0 !rounded-[2rem] sm:!rounded-3xl"
+        className="w-full max-w-[calc(100vw-1.5rem)] sm:max-w-5xl max-h-[90vh] overflow-y-auto overflow-x-hidden bg-white/95 backdrop-blur-md border border-white/20 shadow-2xl p-0 rounded-[1.5rem] sm:rounded-3xl"
       >
         <div className="flex flex-col">
           {/* Editorial Header Section */}
@@ -78,7 +78,7 @@ export function BookingModal({ isOpen, onClose, defaultServiceId }: BookingModal
                   {step === 1 ? "Service Selection" : step === 2 ? "Appointment Details" : "Success"}
                 </span>
                 <DialogHeader className="p-0 space-y-0">
-                  <DialogTitle className="font-serif text-[clamp(1.25rem,6vw,3rem)] tracking-[0.02em] text-gray-900 uppercase leading-[1.1] text-left">
+                  <DialogTitle className="font-serif text-[clamp(1.1rem,5vw,2.5rem)] tracking-[0.02em] text-gray-900 uppercase leading-[1.1] text-left">
                     {step === 1 ? "Choose Your Service" : step === 2 ? "Your Information" : "Booking Confirmed"}
                   </DialogTitle>
                 </DialogHeader>
@@ -97,7 +97,7 @@ export function BookingModal({ isOpen, onClose, defaultServiceId }: BookingModal
             </div>
           </div>
 
-          <div className="px-5 sm:px-8 pb-8 sm:pb-12">
+          <div className="px-4 sm:px-8 pb-6 sm:pb-12">
             {step === 1 && (
               <div className="space-y-12">
                 {/* Search & Filter Header */}
@@ -127,7 +127,7 @@ export function BookingModal({ isOpen, onClose, defaultServiceId }: BookingModal
                 </div>
 
                 {/* Service Cards Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 pt-10 sm:pt-12 border-t border-gray-100">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 pt-6 sm:pt-12 border-t border-gray-100">
                   {filteredServices.map((service) => (
                     <div
                       key={service.id}
@@ -137,12 +137,12 @@ export function BookingModal({ isOpen, onClose, defaultServiceId }: BookingModal
                         }`}
                       onClick={() => { setSelectedService(service.id); setStep(2) }}
                     >
-                      <div className="space-y-6">
-                        <div className="flex justify-between items-start gap-4">
-                          <h3 className="font-serif text-xl text-gray-900 group-hover:text-[#d09d80] transition-colors leading-tight">
+                      <div className="space-y-4 sm:space-y-6">
+                        <div className="flex justify-between items-start gap-2 sm:gap-4">
+                          <h3 className="font-serif text-base sm:text-xl text-gray-900 group-hover:text-[#d09d80] transition-colors leading-tight break-words min-w-0">
                             {service.name}
                           </h3>
-                          <div className="flex gap-2 shrink-0">
+                          <div className="flex gap-1 sm:gap-2 shrink-0 flex-wrap justify-end">
                             {service.popular && (
                               <span className="text-[8px] font-bold tracking-widest uppercase bg-green-500/10 text-green-600 px-2 py-1 rounded">Popular</span>
                             )}
@@ -152,19 +152,20 @@ export function BookingModal({ isOpen, onClose, defaultServiceId }: BookingModal
                           </div>
                         </div>
 
-                        <p className="text-sm text-gray-500 font-light leading-relaxed line-clamp-2 italic-serif">
+                        <p className="text-xs sm:text-sm text-gray-500 font-light leading-relaxed line-clamp-2 italic-serif">
                           {service.description}
                         </p>
 
-                        <div className="flex items-center justify-between pt-4 border-t border-gray-100/50">
-                          <div className="flex flex-col">
-                            <span className="text-[10px] tracking-widest text-gray-400 uppercase font-bold">Investment</span>
-                            <span className="text-sm font-bold text-gray-900">{service.price}</span>
+                        <div className="flex items-center justify-between pt-3 sm:pt-4 border-t border-gray-100/50 gap-2">
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-[9px] sm:text-[10px] tracking-widest text-gray-400 uppercase font-bold">Investment</span>
+                            <span className="text-xs sm:text-sm font-bold text-gray-900 truncate">{service.price}</span>
                           </div>
-                          <div className="flex flex-col items-end">
-                            <span className="text-[10px] tracking-widest text-gray-400 uppercase font-bold">Time</span>
-                            <span className="text-sm text-gray-500 flex items-center font-light">
-                              <Clock className="w-3 h-3 mr-1" /> {service.duration}
+                          <div className="flex flex-col items-end min-w-0">
+                            <span className="text-[9px] sm:text-[10px] tracking-widest text-gray-400 uppercase font-bold">Time</span>
+                            <span className="text-xs sm:text-sm text-gray-500 flex items-center font-light">
+                              <Clock className="w-3 h-3 mr-1 shrink-0" />
+                              <span className="truncate">{service.duration}</span>
                             </span>
                           </div>
                         </div>
