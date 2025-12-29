@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { SmsAnalytics } from "./sms-analytics"
+import { ScheduledSmsList } from "./scheduled-sms-list"
 
 interface SmsStatus {
     configured: boolean
@@ -256,6 +257,7 @@ export function SmsManager({ smsStatus, refreshSmsStatus, showNotification }: Sm
                 </CardContent>
             </Card>
             <SmsAnalytics />
+            <ScheduledSmsList />
         </div >
     )
 }

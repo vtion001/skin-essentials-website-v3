@@ -1,3 +1,5 @@
+import { format } from "date-fns"
+import { supabaseAdminClient } from "@/lib/supabase-admin"
 
 export async function createMessageReminder(phoneNumber: string, message: string, scheduledDate: Date) {
     const iprogToken = process.env.IPROGSMS_API_TOKEN
@@ -6,12 +8,7 @@ export async function createMessageReminder(phoneNumber: string, message: string
         return { ok: false, error: "IPROGSMS_API_TOKEN is not set" }
     }
 
-    // Format date as "YYYY-MM-DD HH:MMAM/PM"
-    // Note: The example shows 05:00AM. We need to match this format.
-    // However, JS 'en-US' options for timeStyle might vary. We should construct manually or use careful options.
-    // Example: 2025-03-08 05:00AM
-
-    // We can use toLocaleString with strict options to match close enough, but constructing is safer.
+    // Format using local date methods to build YYYY-MM-DD HH:MMAM/PM
     const YYYY = scheduledDate.getFullYear()
     const MM = String(scheduledDate.getMonth() + 1).padStart(2, '0')
     const DD = String(scheduledDate.getDate()).padStart(2, '0')
@@ -19,18 +16,12 @@ export async function createMessageReminder(phoneNumber: string, message: string
     let hours = scheduledDate.getHours()
     const ampm = hours >= 12 ? 'PM' : 'AM'
     hours = hours % 12
-    hours = hours ? hours : 12 // the hour '0' should be '12'
+    hours = hours ? hours : 12
     const hh = String(hours).padStart(2, '0')
     const mm = String(scheduledDate.getMinutes()).padStart(2, '0')
 
-    // Construct format: YYYY-MM-DD HH:MMAM/PM
-    // Note: The example has HH:MMAM (no space before AM/PM)
     const formattedDate = `${YYYY}-${MM}-${DD} ${hh}:${mm}${ampm}`
-
-    // Normalize phone number (iProg/Semaphore style)
     let phone = phoneNumber.replace(/[^0-9]/g, "")
-    // Docs say 0917... or maybe generic. Let's keep existing logic or just strip non-digits.
-    // Example shows "0917..."
 
     try {
         const res = await fetch("https://www.iprogsms.com/api/v1/message-reminders", {
@@ -52,10 +43,117 @@ export async function createMessageReminder(phoneNumber: string, message: string
             return { ok: false, error: data }
         }
 
+        // Persist to local DB for tracking (since API doesn't support listing)
+        try {
+            const supabase = supabaseAdminClient()
+            const reminderId = data.data?.id
+            if (reminderId) {
+                // Remove 'admin' possibly null check if safe or use optional chaining if admin client is typed as null-able
+                // Assuming supabaseAdminClient() returns a client always or handling error if implementation differs.
+                // The global rules say: 'admin' is possibly 'null'.
+                if (supabase) {
+                    await supabase.from('error_logs').insert({
+                        context: 'sms_schedule_active',
+                        message: message,
+                        details: JSON.stringify({ // Storing as JSON string to fit text column if needed, or if details is jsonb, this works too usually
+                            provider_id: reminderId,
+                            phone: phone,
+                            scheduled_at: data.data?.scheduled_at || scheduledDate.toISOString(),
+                            full_response: data
+                        })
+                    })
+                }
+            }
+        } catch (dbError) {
+            console.error("Failed to persist reminder to local DB:", dbError)
+        }
+
         return { ok: true, data }
 
     } catch (e) {
         console.error("Error creating message reminder:", e)
+        return { ok: false, error: e }
+    }
+}
+
+export async function listMessageReminders() {
+    // Fetch from local DB instead of API
+    try {
+        const supabase = supabaseAdminClient()
+        if (!supabase) return { ok: false, error: "DB Client unavailable" }
+
+        const { data, error } = await supabase
+            .from('error_logs')
+            .select('*')
+            .eq('context', 'sms_schedule_active')
+            .order('created_at', { ascending: true })
+
+        if (error) throw error
+
+        // Transform back to the shape our UI expects
+        const mapped = (data || []).map((row: any) => {
+            let details: any = {}
+            try { details = typeof row.details === 'string' ? JSON.parse(row.details) : row.details } catch { }
+
+            return {
+                id: details.provider_id || row.id, // Use provider ID if available
+                db_id: row.id, // Keep generic DB ID for deletion reference
+                phone_number: details.phone || "Unknown",
+                message: row.message,
+                scheduled_at: details.scheduled_at || row.created_at,
+                status: 'scheduled',
+                created_at: row.created_at
+            }
+        })
+
+        return { ok: true, data: mapped }
+    } catch (e) {
+        console.error("Local DB List Error:", e)
+        return { ok: false, error: e }
+    }
+}
+
+export async function deleteMessageReminder(id: string | number) {
+    const iprogToken = process.env.IPROGSMS_API_TOKEN
+    if (!iprogToken) return { ok: false, error: "Token missing" }
+
+    try {
+        // 1. Delete from Provider
+        const res = await fetch(`https://www.iprogsms.com/api/v1/message-reminders/${id}?api_token=${iprogToken}`, {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" }
+        })
+        const data = await res.json()
+
+        // Log provider error but proceed to cleanup local DB
+        if (!res.ok) console.warn("Provider delete failed (might be already gone):", data)
+
+        // 2. Delete from Local DB
+        const supabase = supabaseAdminClient()
+        if (supabase) {
+            // Find the record where provider_id matches
+            const { data: records } = await supabase
+                .from('error_logs')
+                .select('id, details')
+                .eq('context', 'sms_schedule_active')
+
+            if (records) {
+                const match = records.find((r: any) => {
+                    try {
+                        const d = typeof r.details === 'string' ? JSON.parse(r.details) : r.details
+                        // Compare as strings to be safe
+                        return String(d.provider_id) === String(id)
+                    } catch { return false }
+                })
+
+                if (match) {
+                    await supabase.from('error_logs').delete().eq('id', match.id)
+                }
+            }
+        }
+
+        return { ok: true, data }
+    } catch (e) {
         return { ok: false, error: e }
     }
 }
