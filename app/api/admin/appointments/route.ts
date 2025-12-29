@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { jsonMaybeMasked } from "@/lib/admin-mask"
 import { supabaseAdminClient } from "@/lib/supabase-admin"
+import { createMessageReminder } from "@/lib/iprogsms"
 
 export async function GET(req: NextRequest) {
   try {
@@ -38,6 +39,47 @@ export async function POST(req: NextRequest) {
     }
     const { data, error } = await admin.from('appointments').insert(payload).select('*').single()
     if (error) return jsonMaybeMasked(req, { ok: false, error: error.message }, { status: 500 })
+
+    // Send SMS Confirmation
+    if (payload.client_phone) {
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || ''
+      const msg = `Hi ${payload.client_name}, your appointment on ${payload.date} at ${payload.time} is confirmed. Reply YES to acknowledge.`
+      fetch(`${baseUrl}/api/sms`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: payload.client_phone, message: msg })
+      }).catch(err => console.error("Failed to send admin appointment SMS", err))
+    }
+
+    // Schedule Reminders (24h, 3h, 1h)
+    if (payload.client_phone && payload.date && payload.time) {
+      try {
+        const apptTime = new Date(`${payload.date}T${payload.time}:00`)
+        const now = new Date()
+
+        // 24h
+        const time24 = new Date(apptTime.getTime() - 24 * 60 * 60 * 1000)
+        if (time24 > now) {
+          const msg = `Hello ${payload.client_name}, this is a gentle reminder for your appointment with Skin Essentials on ${payload.date} at ${payload.time}. See you soon!`
+          createMessageReminder(payload.client_phone, msg, time24).catch(console.error)
+        }
+
+        // 3h
+        const time3 = new Date(apptTime.getTime() - 3 * 60 * 60 * 1000)
+        if (time3 > now) {
+          const msg = `Hi ${payload.client_name}, seeing you in 3 hours for your ${payload.service || 'appointment'} at Skin Essentials today at ${payload.time}!`
+          createMessageReminder(payload.client_phone, msg, time3).catch(console.error)
+        }
+
+        // 1h
+        const time1 = new Date(apptTime.getTime() - 1 * 60 * 60 * 1000)
+        if (time1 > now) {
+          const msg = `Hi ${payload.client_name}, just a quick reminder! Your appointment is in 1 hour (${payload.time}). We're ready for you!`
+          createMessageReminder(payload.client_phone, msg, time1).catch(console.error)
+        }
+      } catch (e) { console.error("Scheduling admin appointment error", e) }
+    }
+
     return jsonMaybeMasked(req, { ok: true, appointment: data })
   } catch (e: any) {
     return NextResponse.json({ ok: false, error: 'Invalid request' }, { status: 400 })
@@ -80,7 +122,7 @@ export async function DELETE(req: NextRequest) {
       try {
         const parsed = await req.json()
         id = parsed?.id || null
-      } catch {}
+      } catch { }
     }
     if (!id) return jsonMaybeMasked(req, { ok: false, error: 'Missing id' }, { status: 400 })
     const admin = supabaseAdminClient()

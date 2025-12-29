@@ -1,21 +1,27 @@
 import { NextResponse } from "next/server"
+import { supabaseAdminClient } from "@/lib/supabase-admin"
 
 function normPhone(p: string) {
-  // Semaphore expects numbers like 09xxxxxxxxx or 639xxxxxxxxx.
+  // Semaphore/iProgSMS expects numbers like 09xxxxxxxxx or 639xxxxxxxxx.
   // Best to keep standard +63 format or just 09 locally.
-  // Docs example: 09998887777.
-  // Let's ensure it maps cleanly.
   const digits = p.replace(/[^0-9]/g, "")
-  // If it starts with 63, keep it.
   if (digits.startsWith("63")) return digits
-  // If it starts with 0, replace with 63 ??? Or just keep 09?
-  // Docs say: "Your recipient’s mobile number". Example shows 09998887777.
-  // Let's assume standard local format 09... is fine, but international format 639... is safer.
   if (digits.startsWith("0")) return "63" + digits.slice(1)
   return digits
 }
 
 export async function GET() {
+  const iprogToken = process.env.IPROGSMS_API_TOKEN
+  if (iprogToken) {
+    return NextResponse.json({
+      configured: true,
+      provider: "iProgSMS",
+      sender: "Default",
+      status: "Active",
+      balance: "Unlimited" // iProgSMS doesn't seemingly expose a balance endpoint
+    })
+  }
+
   const accountBase = "https://api.semaphore.co/api/v4"
   const sender = process.env.SEMAPHORE_SENDER_NAME || "SEMAPHORE"
   const keySet = Boolean(process.env.SEMAPHORE_API_KEY)
@@ -60,22 +66,60 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing 'to' or 'message'" }, { status: 400 })
     }
 
+    const number = normPhone(String(to))
+    if (!number) {
+      return NextResponse.json({ error: "Invalid phone number" }, { status: 400 })
+    }
+
+    // Check for iProgSMS first
+    const iprogToken = process.env.IPROGSMS_API_TOKEN
+    if (iprogToken) {
+      console.log(`[SMS] Sending via iProgSMS to: ${number}`)
+
+      const res = await fetch("https://www.iprogsms.com/api/v1/sms_messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          api_token: iprogToken,
+          phone_number: number,
+          message: String(message)
+        })
+      })
+
+      const data = await res.json().catch(() => null)
+      console.log("[SMS] iProgSMS Response:", res.status, data)
+
+      if (!res.ok) {
+        return NextResponse.json({ error: "Failed to send via iProgSMS", details: data }, { status: 502 })
+      }
+
+
+      const logEntry = {
+        context: 'sms_log',
+        message: `Sent to ${number} via iProgSMS`,
+        meta: { provider: 'iProgSMS', to, message, status: 'sent', timestamp: new Date().toISOString() }
+      }
+      const admin = supabaseAdminClient()
+      if (admin) {
+        const { error: logErr } = await admin.from('error_logs').insert(logEntry)
+        if (logErr) console.error("Failed to log SMS:", logErr)
+      }
+
+      return NextResponse.json({ ok: true, data })
+    }
+
+    // Fallback to Semaphore
     const apiKey = process.env.SEMAPHORE_API_KEY
     if (!apiKey) {
       console.log("[SMS] API key missing")
-      return NextResponse.json({ error: "Semaphore API key not configured" }, { status: 500 })
+      return NextResponse.json({ error: "SMS Provider not configured (No iProgSMS or Semaphore key)" }, { status: 500 })
     }
 
     const senderName = sender || process.env.SEMAPHORE_SENDER_NAME || "SEMAPHORE"
-    const number = normPhone(String(to))
 
-    console.log(`[SMS] Sending to: ${number} (${to}), Sender: ${senderName}`)
-
-    // Validations
-    if (!number) {
-      console.log("[SMS] Invalid phone number normalization")
-      return NextResponse.json({ error: "Invalid phone number" }, { status: 400 })
-    }
+    console.log(`[SMS] Sending via Semaphore to: ${number}, Sender: ${senderName}`)
 
     // Semaphore API endpoint
     const url = "https://api.semaphore.co/api/v4/messages"
@@ -103,9 +147,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Failed to send message via Semaphore", details: data }, { status: 502 })
     }
 
+    const logEntry = {
+      context: 'sms_log',
+      message: `Sent to ${number} via Semaphore`,
+      meta: { provider: 'Semaphore', to, message, status: 'sent', timestamp: new Date().toISOString() }
+    }
+    const admin = supabaseAdminClient()
+    if (admin) {
+      const { error: logErr } = await admin.from('error_logs').insert(logEntry)
+      if (logErr) console.error("Failed to log SMS:", logErr)
+    }
+
     return NextResponse.json({ ok: true, data })
 
-  } catch (e) {
+  } catch (e: any) {
     console.error("SMS Send Error:", e)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }

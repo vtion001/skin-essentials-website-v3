@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { supabaseAdminClient } from "@/lib/supabase-admin"
+import { createMessageReminder } from "@/lib/iprogsms"
 
 export async function POST(req: NextRequest) {
   try {
@@ -52,10 +53,10 @@ export async function POST(req: NextRequest) {
         total_spent: 0,
         last_visit: date,
       }, { onConflict: 'id' })
-    } catch {}
+    } catch { }
 
     // Insert appointment
-  const { error } = await admin.from('appointments').insert({
+    const { error } = await admin.from('appointments').insert({
       id: appointmentId,
       client_id: clientId,
       client_name: name,
@@ -73,32 +74,73 @@ export async function POST(req: NextRequest) {
       influencer_name: influencerName ?? null,
       referral_code: referralCode ?? null,
       discount_applied: Boolean(discountApplied ?? false),
-  })
+    })
 
-  if (error) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
-  }
+    if (error) {
+      return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    }
     try {
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || ''
+      // Send Email
       if (email) {
         const details = {
           to: email,
           subject: `Your Appointment is Scheduled: ${service}`,
-          html: `<div style="font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1f2937">`+
-                `<h2 style="margin:0 0 12px;font-size:20px;color:#111827">Thank you, ${name}</h2>`+
-                `<p style="margin:0 0 12px">Your booking has been received.</p>`+
-                `<p style="margin:0 0 12px"><strong>Service:</strong> ${service}</p>`+
-                `<p style="margin:0 0 12px"><strong>Date:</strong> ${date}</p>`+
-                `<p style="margin:0 0 12px"><strong>Time:</strong> ${time}</p>`+
-                `<p style="margin:16px 0 0">If you need to make changes, reply to this email.</p>`+
-                `</div>`
+          html: `<div style="font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1f2937">` +
+            `<h2 style="margin:0 0 12px;font-size:20px;color:#111827">Thank you, ${name}</h2>` +
+            `<p style="margin:0 0 12px">Your booking has been received.</p>` +
+            `<p style="margin:0 0 12px"><strong>Service:</strong> ${service}</p>` +
+            `<p style="margin:0 0 12px"><strong>Date:</strong> ${date}</p>` +
+            `<p style="margin:0 0 12px"><strong>Time:</strong> ${time}</p>` +
+            `<p style="margin:16px 0 0">If you need to make changes, reply to this email.</p>` +
+            `</div>`
         }
-        await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || ''}/api/email`, {
+        await fetch(`${baseUrl}/api/email`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'send', payload: details })
-        }).catch(() => {})
+        }).catch(() => { })
       }
-    } catch {}
+
+      // Send SMS Confirmation
+      if (phone) {
+        const msg = `Hi ${name}, your appointment on ${date} at ${time} is confirmed. Reply YES to acknowledge.`
+        await fetch(`${baseUrl}/api/sms`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ to: phone, message: msg })
+        }).catch(() => { })
+      }
+
+      // Schedule Reminders (24h, 3h, 1h)
+      if (phone && date && time) {
+        try {
+          const apptTime = new Date(`${date}T${time}:00`)
+          const now = new Date()
+
+          // 24h
+          const time24 = new Date(apptTime.getTime() - 24 * 60 * 60 * 1000)
+          if (time24 > now) {
+            const msg = `Hello ${name}, this is a gentle reminder for your appointment with Skin Essentials on ${date} at ${time}. See you soon!`
+            createMessageReminder(phone, msg, time24).catch(console.error)
+          }
+
+          // 3h
+          const time3 = new Date(apptTime.getTime() - 3 * 60 * 60 * 1000)
+          if (time3 > now) {
+            const msg = `Hi ${name}, seeing you in 3 hours for your ${service} at Skin Essentials today at ${time}!`
+            createMessageReminder(phone, msg, time3).catch(console.error)
+          }
+
+          // 1h
+          const time1 = new Date(apptTime.getTime() - 1 * 60 * 60 * 1000)
+          if (time1 > now) {
+            const msg = `Hi ${name}, just a quick reminder! Your appointment is in 1 hour (${time}). We're ready for you!`
+            createMessageReminder(phone, msg, time1).catch(console.error)
+          }
+        } catch (e) { console.error("Scheduling error", e) }
+      }
+    } catch { }
 
     return NextResponse.json({ success: true, id: appointmentId })
   } catch (e) {

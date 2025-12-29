@@ -111,6 +111,7 @@ import { EnhancedButton } from "@/components/ui/enhanced-button"
 import { LazyTabContent } from "@/components/ui/lazy-tab-content"
 import { InfluencerModal } from "@/components/admin/modals/influencer-modal"
 import { AdminProfileButton } from "@/components/admin/admin-profile-button"
+import { SmsManager } from "@/components/admin/sms-manager"
 
 const ServiceEditDialog = memo(function ServiceEditDialog({ open, onOpenChange, target, selectedCategory, onSaved }: { open: boolean; onOpenChange: (v: boolean) => void; target: { name: string; price: string; description: string; duration?: string; results?: string; sessions?: string; includes?: string; originalPrice?: string; badge?: string; pricing?: string; image?: string; benefits?: string[]; faqs?: { q: string; a: string }[] } | null; selectedCategory: string; onSaved: () => void }) {
   const [draft, setDraft] = useState<{ name: string; price: string; description: string; duration?: string; results?: string; sessions?: string; includes?: string; originalPrice?: string; badge?: string; pricing?: string; image?: string; benefits?: string[]; faqs?: { q: string; a: string }[] }>({ name: "", price: "", description: "", benefits: [], faqs: [] })
@@ -515,7 +516,6 @@ export default function AdminDashboard() {
   }
 
   useEffect(() => { if (activeTab === 'email') refreshEmailPreview() }, [activeTab, refreshEmailPreview])
-  const [smsForm, setSmsForm] = useState<{ to: string; message: string }>({ to: '', message: '' })
 
   useEffect(() => { if (activeTab === 'sms') refreshSmsStatus() }, [activeTab, refreshSmsStatus])
 
@@ -1902,7 +1902,7 @@ export default function AdminDashboard() {
                             Clinical Breakdown
                           </CardTitle>
                         </CardHeader>
-                        <CardContent className="p-6 h-[350px] flex items-center">
+                        <CardContent className="p-6 h-[350px]">
                           <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                               <Pie
@@ -2410,76 +2410,11 @@ export default function AdminDashboard() {
                 </LazyTabContent>
                 <LazyTabContent isActive={activeTab === "sms"}>
                   <TabsContent value="sms" className="space-y-8">
-                    <Card className="border-white/60 bg-white/70 backdrop-blur-xl shadow-xl rounded-3xl">
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <MessageSquare className="w-5 h-5 text-emerald-600" />
-                          SMS Services
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-6">
-                        <div className="grid md:grid-cols-2 gap-6">
-                          <div>
-                            <Label>Sender ID</Label>
-                            <Input value={smsStatus?.sender || 'SEMAPHORE'} disabled />
-                            <p className="text-xs text-gray-500 mt-2">Uses {smsStatus?.provider || 'Semaphore'} SMS provider</p>
-                          </div>
-                          <div>
-                            <Label>Status</Label>
-                            <div className="flex items-center gap-3">
-                              <Badge className={smsStatus?.configured ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}>
-                                {smsStatus?.status || (smsStatus?.configured ? 'Active' : 'Not Configured')}
-                              </Badge>
-                              {smsStatus?.balance && (
-                                <Badge variant="outline" className="text-gray-600">
-                                  Credits: {smsStatus.balance}
-                                </Badge>
-                              )}
-                              <Button variant="secondary" onClick={refreshSmsStatus}>Refresh</Button>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="grid md:grid-cols-2 gap-6">
-                          <div className="space-y-3">
-                            <Label>Recipient Phone</Label>
-                            <Input value={smsForm.to} onChange={(e) => setSmsForm(prev => ({ ...prev, to: e.target.value }))} placeholder="e.g. +63XXXXXXXXXX" />
-                          </div>
-                          <div className="space-y-3 md:col-span-1">
-                            <Label>Message</Label>
-                            <Textarea value={smsForm.message} onChange={(e) => setSmsForm(prev => ({ ...prev, message: e.target.value }))} placeholder="Type your message" />
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <Button
-                            onClick={async () => {
-                              try {
-                                const to = String(smsForm.to || '').trim()
-                                const message = String(smsForm.message || '').trim()
-                                if (!to || !message) { showNotification('error', 'Please enter phone and message'); return }
-                                const res = await fetch('/api/sms', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ to, message }) })
-                                const j = await res.json()
-                                showNotification(j?.ok ? 'success' : 'error', j?.ok ? 'SMS sent' : (j?.error || 'Failed to send'))
-                              } catch { showNotification('error', 'Failed to send') }
-                            }}
-                            className="bg-[#0F2922] hover:bg-[#0F2922]/90 text-white shadow-2xl shadow-[#0F2922]/30 hover:shadow-[#0F2922]/40 transition-all duration-300 hover:scale-105 font-bold px-6 py-3 rounded-2xl"
-                          >
-                            Send SMS
-                          </Button>
-                          <Button
-                            onClick={async () => {
-                              try {
-                                const res = await fetch('/api/automation/sms-reminders', { method: 'POST', headers: { 'x-automation-secret': String(process.env.NEXT_PUBLIC_SMS_AUTOMATION_SECRET || '') } })
-                                const j = await res.json()
-                                showNotification(j?.ok ? 'success' : 'error', j?.ok ? `Reminders sent: ${j?.sent || 0}` : (j?.error || 'Failed to run'))
-                              } catch { showNotification('error', 'Failed to run automation') }
-                            }}
-                            variant="outline"
-                          >
-                            Run Reminder Scan
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
+                    <SmsManager
+                      smsStatus={smsStatus}
+                      refreshSmsStatus={refreshSmsStatus}
+                      showNotification={showNotification}
+                    />
                   </TabsContent>
                 </LazyTabContent>
                 <LazyTabContent isActive={activeTab === "content"}>
