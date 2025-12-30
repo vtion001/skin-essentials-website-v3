@@ -194,12 +194,12 @@ export default function AboutPage() {
 
                             {/* Left: Staggered Image Grid */}
                             {/* Left: Single Feature Image */}
-                            <div className="lg:col-span-6 relative h-[clamp(400px,70vh,800px)] shadow-2xl rounded-sm overflow-hidden group bg-gray-100">
+                            <div className="lg:col-span-6 relative aspect-[852/1280] shadow-2xl rounded-sm overflow-hidden group">
                                 <Image
                                     src={teamMembers[0].image}
                                     alt={teamMembers[0].name}
                                     fill
-                                    className="object-contain transition-transform duration-1000 group-hover:scale-105"
+                                    className="object-cover transition-transform duration-1000 group-hover:scale-105"
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-60"></div>
                                 <div className="absolute bottom-8 left-8 text-white z-30">
