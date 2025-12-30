@@ -113,273 +113,16 @@ import { InfluencerModal } from "@/components/admin/modals/influencer-modal"
 import { AdminProfileButton } from "@/components/admin/admin-profile-button"
 import { SmsManager } from "@/components/admin/sms-manager"
 
-const ServiceEditDialog = memo(function ServiceEditDialog({ open, onOpenChange, target, selectedCategory, onSaved }: { open: boolean; onOpenChange: (v: boolean) => void; target: { name: string; price: string; description: string; duration?: string; results?: string; sessions?: string; includes?: string; originalPrice?: string; badge?: string; pricing?: string; image?: string; benefits?: string[]; faqs?: { q: string; a: string }[] } | null; selectedCategory: string; onSaved: () => void }) {
-  const [draft, setDraft] = useState<{ name: string; price: string; description: string; duration?: string; results?: string; sessions?: string; includes?: string; originalPrice?: string; badge?: string; pricing?: string; image?: string; benefits?: string[]; faqs?: { q: string; a: string }[] }>({ name: "", price: "", description: "", benefits: [], faqs: [] })
-  useEffect(() => {
-    if (open) {
-      setDraft(target || { name: "", price: "", description: "", image: "", benefits: [], faqs: [] })
-    }
-  }, [open, target])
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Edit Service</DialogTitle>
-        </DialogHeader>
-        <div className="grid md:grid-cols-2 gap-4">
-          <div>
-            <Label>Name</Label>
-            <Input value={draft.name} onChange={(e) => setDraft(prev => ({ ...prev, name: e.target.value }))} placeholder="Service name" />
-          </div>
-          <div>
-            <Label>Price</Label>
-            <Input value={draft.price} onChange={(e) => setDraft(prev => ({ ...prev, price: e.target.value }))} placeholder="₱0" />
-          </div>
-          <div>
-            <Label>Duration</Label>
-            <Input value={draft.duration || ''} onChange={(e) => setDraft(prev => ({ ...prev, duration: e.target.value }))} placeholder="e.g. 45 minutes" />
-          </div>
-          <div>
-            <Label>Results</Label>
-            <Input value={draft.results || ''} onChange={(e) => setDraft(prev => ({ ...prev, results: e.target.value }))} placeholder="e.g. 6-12 months" />
-          </div>
-          <div className="md:col-span-2">
-            <Label>Image URL</Label>
-            <Input value={draft.image || ''} onChange={(e) => setDraft(prev => ({ ...prev, image: e.target.value }))} placeholder="https://..." />
-          </div>
-          <div>
-            <Label>Sessions</Label>
-            <Input value={draft.sessions || ''} onChange={(e) => setDraft(prev => ({ ...prev, sessions: e.target.value }))} placeholder="e.g. 6-8 sessions" />
-          </div>
-          <div>
-            <Label>Includes</Label>
-            <Input value={draft.includes || ''} onChange={(e) => setDraft(prev => ({ ...prev, includes: e.target.value }))} placeholder="e.g. Post-care kit" />
-          </div>
-          <div>
-            <Label>Original Price</Label>
-            <Input value={draft.originalPrice || ''} onChange={(e) => setDraft(prev => ({ ...prev, originalPrice: e.target.value }))} placeholder="₱0" />
-          </div>
-          <div>
-            <Label>Badge</Label>
-            <Input value={draft.badge || ''} onChange={(e) => setDraft(prev => ({ ...prev, badge: e.target.value }))} placeholder="e.g. PROMO" />
-          </div>
-          <div className="md:col-span-2">
-            <Label>Pricing Notes</Label>
-            <Input value={draft.pricing || ''} onChange={(e) => setDraft(prev => ({ ...prev, pricing: e.target.value }))} placeholder="e.g. per thread/cc" />
-          </div>
-          <div className="md:col-span-2">
-            <Label>Description</Label>
-            <Textarea value={draft.description} onChange={(e) => setDraft(prev => ({ ...prev, description: e.target.value }))} placeholder="Describe the service" />
-          </div>
-          <div className="md:col-span-2 space-y-2">
-            <Label>Benefits</Label>
-            {(draft.benefits || []).map((b, idx) => (
-              <div key={idx} className="flex gap-2">
-                <Input value={b} onChange={(e) => setDraft(prev => ({ ...prev, benefits: (prev.benefits || []).map((x, i) => i === idx ? e.target.value : x) }))} placeholder={`Benefit ${idx + 1}`} />
-                <Button variant="outline" onClick={() => setDraft(prev => ({ ...prev, benefits: (prev.benefits || []).filter((_, i) => i !== idx) }))}>Remove</Button>
-              </div>
-            ))}
-            <Button variant="secondary" onClick={() => setDraft(prev => ({ ...prev, benefits: [...(prev.benefits || []), ''] }))}>Add Benefit</Button>
-          </div>
-          <div className="md:col-span-2 space-y-2">
-            <Label>FAQs</Label>
-            {(draft.faqs || []).map((f, idx) => (
-              <div key={idx} className="grid md:grid-cols-2 gap-2">
-                <Input value={f?.q || ''} onChange={(e) => setDraft(prev => ({ ...prev, faqs: (prev.faqs || []).map((x, i) => i === idx ? { ...x, q: e.target.value } : x) }))} placeholder={`Question ${idx + 1}`} />
-                <Textarea value={f?.a || ''} onChange={(e) => setDraft(prev => ({ ...prev, faqs: (prev.faqs || []).map((x, i) => i === idx ? { ...x, a: e.target.value } : x) }))} placeholder="Answer" />
-                <div className="md:col-span-2 flex justify-end">
-                  <Button variant="outline" onClick={() => setDraft(prev => ({ ...prev, faqs: (prev.faqs || []).filter((_, i) => i !== idx) }))}>Remove FAQ</Button>
-                </div>
-              </div>
-            ))}
-            <Button variant="secondary" onClick={() => setDraft(prev => ({ ...prev, faqs: [...(prev.faqs || []), { q: '', a: '' }] }))}>Add FAQ</Button>
-          </div>
-        </div>
-        <div className="flex items-center justify-end gap-2 mt-4">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button
-            variant="brand"
-            onClick={async () => {
-              if (!target) return
-              try {
-                const res = await fetch('/api/services', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'updateService', categoryId: selectedCategory, originalName: target.name, service: draft }) })
-                if (!res.ok) throw new Error('Failed')
-                onOpenChange(false)
-                onSaved()
-              } catch { }
-            }}
-          >
-            Save Changes
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  )
-})
+import { ServiceEditModal, type ServiceEditData } from "@/components/admin/modals/service-edit-modal"
+import { CategoryEditModal, type CategoryEditData } from "@/components/admin/modals/category-edit-modal"
+import { PortfolioEditDialog } from "@/components/admin/modals/portfolio-edit-dialog"
 
-const CategoryEditDialog = memo(function CategoryEditDialog({ open, onOpenChange, target, onSaved }: { open: boolean; onOpenChange: (v: boolean) => void; target: { id: string; category: string; description?: string; image?: string; color?: string } | null; onSaved: () => void }) {
-  const [draft, setDraft] = useState<{ category?: string; description?: string; image?: string; color?: string }>({})
-  useEffect(() => {
-    if (open) {
-      setDraft(target ? { category: target.category, description: target.description || '', image: target.image || '', color: target.color || '' } : {})
-    }
-  }, [open, target])
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl">
-        <DialogHeader>
-          <DialogTitle>Edit Category</DialogTitle>
-        </DialogHeader>
-        <div className="grid md:grid-cols-2 gap-4">
-          <div>
-            <Label>Category Name</Label>
-            <Input value={draft.category || ''} onChange={(e) => setDraft(prev => ({ ...prev, category: e.target.value }))} placeholder="Category name" />
-          </div>
-          <div>
-            <Label>Color</Label>
-            <Input value={draft.color || ''} onChange={(e) => setDraft(prev => ({ ...prev, color: e.target.value }))} placeholder="#hex or theme color" />
-          </div>
-          <div className="md:col-span-2">
-            <Label>Description</Label>
-            <Textarea value={draft.description || ''} onChange={(e) => setDraft(prev => ({ ...prev, description: e.target.value }))} placeholder="Describe the category" />
-          </div>
-          <div className="md:col-span-2">
-            <Label>Image URL</Label>
-            <Input value={draft.image || ''} onChange={(e) => setDraft(prev => ({ ...prev, image: e.target.value }))} placeholder="https://..." />
-          </div>
-        </div>
-        <div className="flex items-center justify-end gap-2 mt-4">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button
-            variant="brand"
-            onClick={async () => {
-              if (!target) return
-              try {
-                const res = await fetch('/api/services', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'updateCategory', id: target.id, ...draft }) })
-                if (!res.ok) throw new Error('Failed')
-                onOpenChange(false)
-                onSaved()
-              } catch { }
-            }}
-          >
-            Save Changes
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  )
-})
-
-const PortfolioEditDialog = memo(function PortfolioEditDialog({ open, onOpenChange, target, onSaved }: { open: boolean; onOpenChange: (v: boolean) => void; target: PortfolioItem | null; onSaved: () => void }) {
-  const [draft, setDraft] = useState<Partial<PortfolioItem>>({})
-  const [inlineAdd, setInlineAdd] = useState<{ beforeImage: string; afterImage: string }>({ beforeImage: '', afterImage: '' })
-  const inlineBeforeRef = React.useRef<HTMLInputElement | null>(null)
-  const inlineAfterRef = React.useRef<HTMLInputElement | null>(null)
-  const { uploadToApi } = useFileUpload()
-  useEffect(() => {
-    if (open) {
-      setDraft(target || {})
-    }
-  }, [open, target])
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Edit Portfolio Item</DialogTitle>
-        </DialogHeader>
-        {target && (
-          <div className="space-y-4">
-            <div className="grid md:grid-cols-2 gap-4">
-              <AnimatedInput id="epf-title" label="Title" value={draft.title || ''} onChange={(e) => setDraft(prev => ({ ...prev, title: e.target.value }))} required />
-              <AnimatedSelect value={draft.category || ''} onValueChange={(v) => setDraft(prev => ({ ...prev, category: v }))} placeholder="Select category" options={categoryOptions.map(c => ({ value: c, label: c }))} label="Category" />
-              <AnimatedSelect value={draft.treatment || ''} onValueChange={(v) => setDraft(prev => ({ ...prev, treatment: v }))} placeholder="Select treatment" options={procedureOptions.map(p => ({ value: p, label: p }))} label="Treatment" />
-              <div className="space-y-2 md:col-span-2">
-                <Label className="text-sm font-medium text-gray-700">Description</Label>
-                <Textarea value={draft.description || ''} onChange={(e) => setDraft(prev => ({ ...prev, description: e.target.value }))} rows={3} />
-              </div>
-              <AnimatedInput id="epf-before" label="Before Image URL" value={draft.beforeImage || ''} onChange={(e) => setDraft(prev => ({ ...prev, beforeImage: e.target.value }))} required />
-              <AnimatedInput id="epf-after" label="After Image URL" value={draft.afterImage || ''} onChange={(e) => setDraft(prev => ({ ...prev, afterImage: e.target.value }))} required />
-              <AnimatedInput id="epf-duration" label="Duration" value={draft.duration || ''} onChange={(e) => setDraft(prev => ({ ...prev, duration: e.target.value }))} />
-              <AnimatedInput id="epf-results" label="Results" value={draft.results || ''} onChange={(e) => setDraft(prev => ({ ...prev, results: e.target.value }))} />
-            </div>
-            <div className="grid gap-4">
-              <div className="grid md:grid-cols-2 gap-4">
-                <AnimatedInput id="inline-before" label="Add Result • Before Image URL" value={inlineAdd.beforeImage} onChange={(e) => setInlineAdd(prev => ({ ...prev, beforeImage: e.target.value }))} required />
-                <AnimatedInput id="inline-after" label="Add Result • After Image URL" value={inlineAdd.afterImage} onChange={(e) => setInlineAdd(prev => ({ ...prev, afterImage: e.target.value }))} required />
-                <div className="flex gap-2">
-                  <Button variant="outline" onClick={() => inlineBeforeRef.current?.click()}>Upload Before</Button>
-                  <input ref={inlineBeforeRef} type="file" accept="image/*" className="hidden" onChange={async (e) => { const input = e.currentTarget; const f = input.files?.[0]; input.value = ''; if (f) { const url = await uploadToApi(f, 'before'); setInlineAdd(prev => ({ ...prev, beforeImage: url })) } }} />
-                  <Button variant="outline" onClick={() => inlineAfterRef.current?.click()}>Upload After</Button>
-                  <input ref={inlineAfterRef} type="file" accept="image/*" className="hidden" onChange={async (e) => { const input = e.currentTarget; const f = input.files?.[0]; input.value = ''; if (f) { const url = await uploadToApi(f, 'after'); setInlineAdd(prev => ({ ...prev, afterImage: url })) } }} />
-                </div>
-                <div className="md:col-span-2 flex justify-end">
-                  <Button
-                    variant="secondary"
-                    onClick={async () => {
-                      if (!target) return
-                      const b = String(inlineAdd.beforeImage || '')
-                      const a = String(inlineAdd.afterImage || '')
-                      if (!b || !a) return
-                      const payload = {
-                        title: target.title,
-                        category: target.category,
-                        beforeImage: b,
-                        afterImage: a,
-                        description: target.description,
-                        treatment: target.treatment,
-                        duration: target.duration,
-                        results: target.results,
-                        extraResults: []
-                      }
-                      const res = await fetch('/api/portfolio', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-                      if (res.ok) {
-                        setInlineAdd({ beforeImage: '', afterImage: '' })
-                        onSaved()
-                      }
-                    }}
-                  >
-                    Add Result
-                  </Button>
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-end gap-3">
-              <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-              <Button
-                variant="brand"
-                onClick={async () => {
-                  if (!target) return
-                  try {
-                    const payload = {
-                      title: String(draft.title || target.title),
-                      category: String(draft.category || target.category),
-                      treatment: String(draft.treatment || target.treatment),
-                      description: String(draft.description || target.description),
-                      beforeImage: String(draft.beforeImage || target.beforeImage),
-                      afterImage: String(draft.afterImage || target.afterImage),
-                      duration: String(draft.duration || target.duration),
-                      results: String(draft.results || target.results),
-                    }
-                    const res = await fetch(`/api/portfolio/${target.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-                    if (!res.ok) throw new Error('Failed')
-                    onOpenChange(false)
-                    onSaved()
-                  } catch { }
-                }}
-              >
-                Save Changes
-              </Button>
-            </div>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
-  )
-})
 import { DashboardTab } from "@/components/admin/tabs/dashboard-tab"
 import { AppointmentsTab } from "@/components/admin/tabs/appointments-tab"
 import { ClientsTab } from "@/components/admin/tabs/clients-tab"
 import { PaymentsTab } from "@/components/admin/tabs/payments-tab"
+import { InfluencersTab } from "@/components/admin/tabs/influencers-tab"
+import { MedicalRecordsTab } from "@/components/admin/tabs/medical-records-tab"
 import { useAdminData } from "@/lib/hooks/use-admin-data"
 import { useFileUpload } from "@/lib/hooks/use-file-upload"
 import { useAdminCommunication } from "@/lib/hooks/use-admin-communication"
@@ -2496,7 +2239,7 @@ export default function AdminDashboard() {
                                 </div>
                               </div>
                             </div>
-                            <ServiceEditDialog open={isServiceEditOpen} onOpenChange={(v) => { setIsServiceEditOpen(v); if (!v) setServiceEditTarget(null) }} target={serviceEditTarget} selectedCategory={contentSelectedCategory} onSaved={async () => { try { const r = await fetch('/api/services'); const jr = await r.json(); if (jr?.ok) setContentServices(jr.data.map((c: any) => ({ id: c.id, category: c.category, description: c.description, image: c.image, color: c.color, services: c.services }))); showNotification('success', 'Service updated') } catch { } }} />
+                            <ServiceEditModal open={isServiceEditOpen} onOpenChange={(v) => { setIsServiceEditOpen(v); if (!v) setServiceEditTarget(null) }} target={serviceEditTarget} selectedCategory={contentSelectedCategory} onSaved={async () => { try { const r = await fetch('/api/services'); const jr = await r.json(); if (jr?.ok) setContentServices(jr.data.map((c: any) => ({ id: c.id, category: c.category, description: c.description, image: c.image, color: c.color, services: c.services }))); showNotification('success', 'Service updated') } catch { } }} />
                             <div className="rounded-2xl border bg-white/70 p-4">
                               <Table>
                                 <TableHeader>
@@ -2931,6 +2674,8 @@ export default function AdminDashboard() {
                               onOpenChange={(v) => { setEditPortfolioItem(v ? editPortfolioItem : null) }}
                               target={editPortfolioItem}
                               onSaved={async () => { try { const r = await fetch('/api/portfolio'); const jr = await r.json(); if (jr?.ok && Array.isArray(jr.data)) setContentPortfolioItems(jr.data); showNotification('success', 'Changes saved') } catch { } }}
+                              categoryOptions={categoryOptions}
+                              procedureOptions={procedureOptions}
                             />
                           </CardContent>
                         </Card>
@@ -2945,7 +2690,7 @@ export default function AdminDashboard() {
                             </CardTitle>
                           </CardHeader>
                           <CardContent className="space-y-6">
-                            <CategoryEditDialog open={isCategoryEditOpen} onOpenChange={(v) => { setIsCategoryEditOpen(v); if (!v) setCategoryEditTarget(null) }} target={categoryEditTarget} onSaved={async () => { try { const r = await fetch('/api/services'); const jr = await r.json(); if (jr?.ok) { const cats = jr.data.map((c: any) => ({ id: c.id, category: c.category, description: c.description, image: c.image, color: c.color, services: c.services })); setContentServices(cats); if (!contentSelectedCategory && cats.length) setContentSelectedCategory(cats[0].id) } showNotification('success', 'Category updated') } catch { } }} />
+                            <CategoryEditModal open={isCategoryEditOpen} onOpenChange={(v) => { setIsCategoryEditOpen(v); if (!v) setCategoryEditTarget(null) }} target={categoryEditTarget} onSaved={async () => { try { const r = await fetch('/api/services'); const jr = await r.json(); if (jr?.ok) { const cats = jr.data.map((c: any) => ({ id: c.id, category: c.category, description: c.description, image: c.image, color: c.color, services: c.services })); setContentServices(cats); if (!contentSelectedCategory && cats.length) setContentSelectedCategory(cats[0].id) } showNotification('success', 'Category updated') } catch { } }} />
                             <div className="rounded-2xl border bg-white/70 p-4 space-y-4">
                               <div className="grid md:grid-cols-4 gap-3 items-end">
                                 <div>
@@ -3089,154 +2834,14 @@ export default function AdminDashboard() {
                 {/* Electronic Medical Records - Premium Animated */}
                 <LazyTabContent isActive={activeTab === "medical"}>
                   <TabsContent value="medical" className="space-y-8">
-                    <div className="flex items-center justify-between">
-                      <h2 className="text-2xl font-bold text-gray-900">Electronic Medical Records</h2>
-                      <Button
-                        onClick={() => openMedicalRecordModal()}
-                        className="bg-[#0F2922] hover:bg-[#0F2922]/90 text-white shadow-2xl shadow-[#0F2922]/30 hover:shadow-[#0F2922]/40 transition-all duration-300 hover:scale-105 font-bold px-6 py-3 rounded-2xl"
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        New Record
-                      </Button>
-                    </div>
-
-                    <Card className="bg-white/60 backdrop-blur-sm border border-[#fbc6c5]/20">
-                      <CardContent className="p-4 sm:p-6">
-                        <Table>
-                          <TableHeader className="bg-[#FDFCFB]">
-                            <TableRow className="border-b border-[#E2D1C3]/20 hover:bg-transparent">
-                              <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#8B735B] py-5">Client</TableHead>
-                              <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#8B735B]">Date</TableHead>
-                              <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#8B735B]">Chief Complaint</TableHead>
-                              <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#8B735B]">Treatment Plan</TableHead>
-                              <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#8B735B]">Confidential</TableHead>
-                              <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#8B735B] text-right">Actions</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {medicalRecords.length === 0 && (
-                              <TableRow>
-                                <TableCell colSpan={6} className="py-10 text-center text-gray-400 font-medium">
-                                  No medical records found.
-                                </TableCell>
-                              </TableRow>
-                            )}
-                            {medicalRecords.map((record) => {
-                              const client = clients.find(c => c.id === record.clientId)
-                              const clientName = client ? `${client.firstName} ${client.lastName}` : 'Unknown Client'
-                              return (
-                                <TableRow key={record.id} className="group border-b border-[#E2D1C3]/10 hover:bg-[#FDFCFB] transition-colors cursor-default">
-                                  <TableCell className="py-4">
-                                    <div className="font-bold text-[#1A1A1A] tracking-tight">{privacyMode ? maskName(clientName) : clientName}</div>
-                                    <div className="text-[10px] text-[#8B735B] font-medium tracking-tight uppercase mt-0.5">{client?.email || ''}</div>
-                                  </TableCell>
-                                  <TableCell>
-                                    <div className="text-[11px] font-bold text-[#1A1A1A]">{new Date(record.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
-                                  </TableCell>
-                                  <TableCell className="max-w-xs">
-                                    <div className="text-[11px] font-bold text-[#1A1A1A] uppercase tracking-tight truncate">{record.chiefComplaint}</div>
-                                  </TableCell>
-                                  <TableCell className="max-w-xs">
-                                    <div className="text-[10px] text-[#8B735B]/70 font-bold uppercase tracking-widest truncate">{record.treatmentPlan}</div>
-                                  </TableCell>
-                                  <TableCell>
-                                    {record.isConfidential ? (
-                                      <Badge className="bg-rose-50 text-rose-600 border-rose-100 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border">Confidential</Badge>
-                                    ) : (
-                                      <Badge className="bg-emerald-50 text-emerald-600 border-emerald-100 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border">Standard</Badge>
-                                    )}
-                                  </TableCell>
-                                  <TableCell>
-                                    <div className="flex items-center justify-end gap-1">
-                                      <Button
-                                        size="icon"
-                                        variant="ghost"
-                                        className="h-8 w-8 rounded-lg text-[#8B735B] hover:bg-[#E2D1C3]/20"
-                                        onClick={() => openMedicalRecordModal(record)}
-                                      >
-                                        <Eye className="w-3.5 h-3.5" />
-                                      </Button>
-                                      <Button
-                                        size="icon"
-                                        variant="ghost"
-                                        className="h-8 w-8 rounded-lg text-rose-400 hover:bg-rose-50 hover:text-rose-600"
-                                        onClick={() => setConfirmMedicalRecord(record)}
-                                        aria-label="Delete medical record"
-                                      >
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                      </Button>
-                                    </div>
-                                  </TableCell>
-                                </TableRow>
-                              )
-                            })}
-                          </TableBody>
-                        </Table>
-                      </CardContent>
-                    </Card>
-                    <Dialog open={!!confirmMedicalRecord} onOpenChange={(open) => { if (!open && !confirmMedicalDeleting) setConfirmMedicalRecord(null) }}>
-                      <DialogContent className="max-w-md bg-white/80 backdrop-blur-sm border border-rose-200/60 shadow-2xl">
-                        <DialogHeader>
-                          <DialogTitle className="flex items-center gap-2">
-                            <AlertCircle className="w-5 h-5 text-rose-600" />
-                            Delete Medical Record
-                          </DialogTitle>
-                        </DialogHeader>
-                        {confirmMedicalRecord && (
-                          <div className="space-y-3 text-sm text-gray-700">
-                            <p>Are you sure you want to delete this medical record? This action cannot be undone.</p>
-                            <div className="rounded-lg border bg-white/70 p-3">
-                              <div className="font-medium">
-                                {(() => {
-                                  const c = clients.find(x => x.id === confirmMedicalRecord.clientId)
-                                  return c ? `${c.firstName} ${c.lastName}` : 'Unknown Client'
-                                })()}
-                              </div>
-                              <div className="text-gray-600">{new Date(confirmMedicalRecord.date).toLocaleDateString()}</div>
-                              {confirmMedicalRecord.chiefComplaint && <div className="text-gray-600 truncate">{confirmMedicalRecord.chiefComplaint}</div>}
-                              {confirmMedicalRecord.treatmentPlan && <div className="text-gray-600 truncate">{confirmMedicalRecord.treatmentPlan}</div>}
-                            </div>
-                          </div>
-                        )}
-                        <div className="flex justify-end gap-2 pt-2">
-                          <Button variant="outline" onClick={() => setConfirmMedicalRecord(null)} disabled={confirmMedicalDeleting}>Cancel</Button>
-                          <Button
-                            variant="destructive"
-                            onClick={async () => {
-                              if (!confirmMedicalRecord) return
-                              setConfirmMedicalDeleting(true)
-                              try {
-                                const csrf = typeof document !== 'undefined' ? (document.cookie.match(/(?:^|; )csrf_token=([^;]+)/)?.[1] || '') : ''
-                                const res = await fetch('/api/admin/medical-records', {
-                                  method: 'DELETE',
-                                  headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrf },
-                                  credentials: 'include',
-                                  body: JSON.stringify({ id: confirmMedicalRecord.id })
-                                })
-                                if (res.ok) {
-                                  await refreshMedicalRecords()
-                                  showNotification('success', 'Medical record deleted')
-                                  setConfirmMedicalRecord(null)
-                                } else {
-                                  showNotification('error', 'Failed to delete medical record')
-                                }
-                              } finally {
-                                setConfirmMedicalDeleting(false)
-                              }
-                            }}
-                          >
-                            {confirmMedicalDeleting ? (
-                              <RefreshCw className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <>
-                                <Trash2 className="w-4 h-4 mr-2" />
-                                Delete
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
+                    <MedicalRecordsTab
+                      medicalRecords={medicalRecords}
+                      clients={clients}
+                      privacyMode={privacyMode}
+                      openMedicalRecordModal={openMedicalRecordModal}
+                      refreshMedicalRecords={refreshMedicalRecords}
+                      showNotification={showNotification}
+                    />
                   </TabsContent>
                 </LazyTabContent>
 
@@ -3771,133 +3376,31 @@ export default function AdminDashboard() {
 
                 <LazyTabContent isActive={activeTab === "influencers"}>
                   <TabsContent value="influencers" className="space-y-8">
-                    <div className="flex items-center justify-between">
-                      <h2 className="text-2xl font-bold text-gray-900">Influencers Referral Management</h2>
-                      <div className="flex items-center gap-4">
-                        <div className="relative">
-                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                          <Input placeholder="Search influencers..." value={influencerSearch} onChange={(e) => setInfluencerSearch(e.target.value)} className="pl-10 w-64" />
-                        </div>
-                        {(() => {
-                          const reduceMotion =
-                            isAppointmentModalOpen ||
-                            isPaymentModalOpen ||
-                            isMedicalRecordModalOpen ||
-                            isClientModalOpen ||
-                            isSocialReplyModalOpen ||
-                            isStaffModalOpen ||
-                            isInfluencerModalOpen ||
-                            isReferralModalOpen ||
-                            isStaffTreatmentQuickOpen
-                          const base = "bg-[#0F2922] hover:bg-[#0F2922]/90 text-white font-bold px-6 py-3 rounded-2xl"
-                          const fx = "shadow-2xl shadow-[#0F2922]/30 hover:shadow-[#0F2922]/40 transition-all duration-300 hover:scale-105"
-                          return (
-                            <Button onClick={() => openInfluencerModal()} className={`${base} ${reduceMotion ? "" : fx}`}>
-                              <UserPlus className="w-4 h-4 mr-2" />
-                              Add Influencer
-                            </Button>
-                          )
-                        })()}
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-                      <Select value={influencerPlatformFilter} onValueChange={setInfluencerPlatformFilter}>
-                        <SelectTrigger className="h-9"><SelectValue placeholder="Platform" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Platforms</SelectItem>
-                          <SelectItem value="instagram">Instagram</SelectItem>
-                          <SelectItem value="facebook">Facebook</SelectItem>
-                          <SelectItem value="tiktok">TikTok</SelectItem>
-                          <SelectItem value="youtube">YouTube</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Select value={influencerStatusFilter} onValueChange={setInfluencerStatusFilter}>
-                        <SelectTrigger className="h-9"><SelectValue placeholder="Status" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Status</SelectItem>
-                          <SelectItem value="active">Active</SelectItem>
-                          <SelectItem value="inactive">Inactive</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Button size="sm" variant="outline" onClick={() => setIsReferralDetailsOpen(true)} className="h-9 w-full">
-                        <Eye className="w-4 h-4 mr-2" />
-                        View All Referrals
-                      </Button>
-                    </div>
-
-                    {(() => {
-                      const q = influencerSearch.toLowerCase()
-                      const filteredInfluencers = influencers
-                        .filter(i => influencerStatusFilter === 'all' ? true : i.status === influencerStatusFilter)
-                        .filter(i => influencerPlatformFilter === 'all' ? true : i.platform === influencerPlatformFilter)
-                        .filter(i => q === '' || i.name.toLowerCase().includes(q) || (i.handle ?? '').toLowerCase().includes(q))
-                      return (
-                        <Card className="bg-white/60 backdrop-blur-sm border border-white/70 shadow-2xl">
-                          <CardContent className="p-0">
-                            <Table>
-                              <TableHeader className="bg-[#FDFCFB]">
-                                <TableRow className="border-b border-[#E2D1C3]/20 hover:bg-transparent">
-                                  <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#8B735B] py-5">Influencer</TableHead>
-                                  <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#8B735B]">Platform</TableHead>
-                                  <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#8B735B]">Status</TableHead>
-                                  <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#8B735B]">Referrals</TableHead>
-                                  <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#8B735B]">Revenue</TableHead>
-                                  <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#8B735B]">Due</TableHead>
-                                  <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#8B735B]">Paid</TableHead>
-                                  <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#8B735B]">Balance</TableHead>
-                                  <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#8B735B] text-right">Actions</TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {filteredInfluencers.map(i => {
-                                  const stats = influencerService.getStats(i.id)
-                                  return (
-                                    <TableRow key={i.id} className="group border-b border-[#E2D1C3]/10 hover:bg-[#FDFCFB] transition-colors cursor-default">
-                                      <TableCell className="py-4">
-                                        <div className="font-bold text-[#1A1A1A] tracking-tight">{i.name}</div>
-                                        {i.handle && <div className="text-[10px] text-[#8B735B] font-medium tracking-tight uppercase mt-0.5">{i.handle}</div>}
-                                      </TableCell>
-                                      <TableCell>
-                                        <div className="text-[11px] font-bold text-[#1A1A1A] uppercase tracking-tight">{i.platform}</div>
-                                      </TableCell>
-                                      <TableCell>
-                                        <Badge className={`text-[10px] font-bold uppercase tracking-widest py-0.5 px-3 rounded-full border shadow-none ${i.status === 'active' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100'}`}>
-                                          {i.status}
-                                        </Badge>
-                                      </TableCell>
-                                      <TableCell className="text-[11px] font-bold text-[#1A1A1A]">{stats.totalReferrals}</TableCell>
-                                      <TableCell className="text-[11px] font-bold text-[#1A1A1A]">₱{stats.totalRevenue.toLocaleString()}</TableCell>
-                                      <TableCell className="text-[11px] font-bold text-[#8B735B]">₱{stats.commissionDue.toLocaleString()}</TableCell>
-                                      <TableCell className="text-[11px] font-bold text-emerald-600">₱{stats.commissionPaid.toLocaleString()}</TableCell>
-                                      <TableCell className="text-[11px] font-bold text-rose-600">₱{stats.commissionRemaining.toLocaleString()}</TableCell>
-                                      <TableCell>
-                                        <div className="flex items-center gap-1 justify-end">
-                                          <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg text-emerald-600 hover:bg-emerald-50" onClick={() => { setSelectedInfluencer(i); setIsReferralModalOpen(true) }}>
-                                            <Plus className="w-3.5 h-3.5" />
-                                          </Button>
-                                          <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg text-[#8B735B] hover:bg-[#E2D1C3]/20" onClick={() => openInfluencerModal(i)}>
-                                            <Edit className="w-3.5 h-3.5" />
-                                          </Button>
-                                          <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg text-rose-400 hover:bg-rose-50 hover:text-rose-600" onClick={async () => {
-                                            if (!confirmTwice(i.name || 'this influencer')) return
-                                            const res = await fetch('/api/admin/influencers', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: i.id }) })
-                                            if (res.ok) { await influencerService.fetchFromSupabase?.(); setInfluencers(influencerService.getAllInfluencers()); showNotification('success', 'Influencer deleted') } else { showNotification('error', 'Failed to delete influencer') }
-                                          }}>
-                                            <Trash2 className="w-3.5 h-3.5" />
-                                          </Button>
-                                        </div>
-                                      </TableCell>
-                                    </TableRow>
-                                  )
-                                })}
-                              </TableBody>
-                            </Table>
-                          </CardContent>
-                        </Card>
-                      )
-                    })()}
+                    <InfluencersTab
+                      influencers={influencers}
+                      setInfluencers={setInfluencers}
+                      openInfluencerModal={openInfluencerModal}
+                      setSelectedInfluencer={setSelectedInfluencer}
+                      setIsReferralModalOpen={setIsReferralModalOpen}
+                      setIsReferralDetailsOpen={setIsReferralDetailsOpen}
+                      confirmTwice={confirmTwice}
+                      showNotification={showNotification}
+                      search={influencerSearch}
+                      setSearch={setInfluencerSearch}
+                      platformFilter={influencerPlatformFilter}
+                      setPlatformFilter={setInfluencerPlatformFilter}
+                      statusFilter={influencerStatusFilter}
+                      setStatusFilter={setInfluencerStatusFilter}
+                      isAppointmentModalOpen={isAppointmentModalOpen}
+                      isPaymentModalOpen={isPaymentModalOpen}
+                      isMedicalRecordModalOpen={isMedicalRecordModalOpen}
+                      isClientModalOpen={isClientModalOpen}
+                      isSocialReplyModalOpen={isSocialReplyModalOpen}
+                      isStaffModalOpen={isStaffModalOpen}
+                      isInfluencerModalOpen={isInfluencerModalOpen}
+                      isReferralModalOpen={isReferralModalOpen}
+                      isStaffTreatmentQuickOpen={isStaffTreatmentQuickOpen}
+                    />
                   </TabsContent>
                 </LazyTabContent>
 
@@ -4160,9 +3663,9 @@ export default function AdminDashboard() {
                     <SocialConversationUI socialMediaService={socialMediaService} />
                   </TabsContent>
                 </LazyTabContent>
-              </Tabs>
-            </main>
-          </div>
+              </Tabs >
+            </main >
+          </div >
         </div >
 
         {/* Modals & Dialogs */}
