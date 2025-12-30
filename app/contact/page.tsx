@@ -125,14 +125,14 @@ export default function ContactPage() {
       icon: <Instagram className="w-6 h-6" />,
       name: "Instagram",
       handle: "@skinessentialsbyher",
-      href: "https://instagram.com/skinessentialsbyher",
+      href: "https://www.instagram.com/skin_essentials_by_hers/",
       color: "bg-gradient-to-r from-purple-500 to-pink-500",
     },
     {
       icon: <Facebook className="w-6 h-6" />,
       name: "Facebook",
       handle: "Skin Essentials by HER",
-      href: "https://facebook.com/skinessentialsbyher",
+      href: "https://www.facebook.com/SkinessentialsbyHER",
       color: "bg-blue-600",
     },
     {

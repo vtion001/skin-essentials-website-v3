@@ -89,8 +89,8 @@ export const SharedHeader = ({ showBackButton, backHref }: SharedHeaderProps) =>
             {/* Icons & CTA */}
             <div className="flex items-center gap-8">
               <div className="hidden lg:flex items-center gap-5 text-gray-900">
-                <Link href="https://facebook.com" className="hover:text-brand-tan transition-all hover:scale-110"><Facebook className="w-[1.1rem] h-[1.1rem] stroke-[1.5]" /></Link>
-                <Link href="https://instagram.com" className="hover:text-brand-tan transition-all hover:scale-110"><Instagram className="w-[1.1rem] h-[1.1rem] stroke-[1.5]" /></Link>
+                <Link href="https://www.facebook.com/SkinessentialsbyHER" className="hover:text-brand-tan transition-all hover:scale-110"><Facebook className="w-[1.1rem] h-[1.1rem] stroke-[1.5]" /></Link>
+                <Link href="https://www.instagram.com/skin_essentials_by_hers/" className="hover:text-brand-tan transition-all hover:scale-110"><Instagram className="w-[1.1rem] h-[1.1rem] stroke-[1.5]" /></Link>
               </div>
 
               <div className="flex items-center gap-4">

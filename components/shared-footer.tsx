@@ -58,10 +58,10 @@ export default function SharedFooter() {
             <div className="flex flex-col md:flex-row items-center gap-8">
               <h3 className="text-[10px] tracking-[0.25em] uppercase font-bold text-gray-900">Follow #SkinEssentials</h3>
               <div className="flex items-center gap-4">
-                <Link href="https://www.facebook.com" aria-label="Facebook" className="w-10 h-10 rounded-full bg-black flex items-center justify-center hover:opacity-80 transition-opacity">
+                <Link href="https://www.facebook.com/SkinessentialsbyHER" aria-label="Facebook" className="w-10 h-10 rounded-full bg-black flex items-center justify-center hover:opacity-80 transition-opacity">
                   <Facebook className="w-4 h-4 text-white" />
                 </Link>
-                <Link href="https://www.instagram.com" aria-label="Instagram" className="w-10 h-10 rounded-full bg-black flex items-center justify-center hover:opacity-80 transition-opacity">
+                <Link href="https://www.instagram.com/skin_essentials_by_hers/" aria-label="Instagram" className="w-10 h-10 rounded-full bg-black flex items-center justify-center hover:opacity-80 transition-opacity">
                   <Instagram className="w-4 h-4 text-white" />
                 </Link>
               </div>

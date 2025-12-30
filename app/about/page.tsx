@@ -39,17 +39,7 @@ export default function AboutPage() {
         {
             name: "JC Hers",
             role: "Medical Director & Founder",
-            image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1754329770/820be4e7-a6c7-46d4-b522-c9dc3e39f194.png",
-        },
-        {
-            name: "Maria Santos",
-            role: "Senior Aesthetic Practitioner",
-            image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1758859267/bbecd5de-3bea-4490-8fef-144ca997ed41.png",
-        },
-        {
-            name: "Elena Cruz",
-            role: "Dermatology Specialist",
-            image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1754329770/820be4e7-a6c7-46d4-b522-c9dc3e39f194.png",
+            image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1767092187/da7cey9oa6v95obhtmqt.jpg",
         },
     ]
 

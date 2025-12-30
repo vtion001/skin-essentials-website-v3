@@ -1,0 +1,1517 @@
+# Query: facebook
+# ContextLines: 1
+
+522 results - 47 files
+
+check-tunnel.sh:
+  10  echo "Testing webhook endpoint..."
+  11: response=$(curl -s -w "\nHTTP_CODE:%{http_code}" --max-time 10 "https://skin-essentials-admin.loca.lt/api/webhooks/facebook?hub.mode=subscribe&hub.verify_token=fb_webhook_2024_a7b3c9d2e8f1g4h5i6j7k8l9m0n1o2p3q4r5s6t7u8v9w0x1y2z3&hub.challenge=TEST123" 2>/dev/null || echo "HTTP_CODE:000")
+  12  
+
+cloudflare-access-reference.md:
+  18    ```
+  19:   /api/auth/facebook
+  20:   /api/webhooks/facebook
+  21    /api/auth/instagram
+
+  33  - The Bypass policy MUST be listed before the Require Login policy
+  34: - Facebook/Meta will not follow redirects or login pages
+  35  - These bypass rules ensure OAuth flows work without interruption
+
+  39  - **App Domains**: `admin.skinessentialsbyher.com`
+  40: - **OAuth Redirect URI**: `https://admin.skinessentialsbyher.com/api/auth/facebook`
+  41: - **Webhook Callback**: `https://admin.skinessentialsbyher.com/api/webhooks/facebook`
+  42  
+
+  45    ```
+  46:   https://admin.skinessentialsbyher.com/api/webhooks/facebook?hub.mode=subscribe&hub.verify_token=fb_webhook_2024_a7b3c9d2e8f1g4h5i6j7k8l9m0n1o2p3q4r5s6t7u8v9w0x1y2z3&hub.challenge=TEST123
+  47    ```
+
+  51    - Start: `https://admin.skinessentialsbyher.com/admin`
+  52:   - Connect Facebook → Should redirect back to admin dashboard
+
+cloudflare-tunnel-setup.md:
+  47  NEXT_PUBLIC_BASE_URL=https://admin.skinessentialsbyher.com
+  48: FACEBOOK_REDIRECT_URI=https://admin.skinessentialsbyher.com/api/auth/facebook
+  49  INSTAGRAM_REDIRECT_URI=https://admin.skinessentialsbyher.com/api/auth/instagram
+
+  57  3. Create Bypass policy for these paths:
+  58:    - `/api/auth/facebook`
+  59:    - `/api/webhooks/facebook`
+  60     - `/api/auth/instagram`
+
+  64  ## Meta Developer Updates
+  65: Update your Facebook app settings:
+  66  - App Domains: `admin.skinessentialsbyher.com`
+  67: - OAuth Redirect URI: `https://admin.skinessentialsbyher.com/api/auth/facebook`
+  68: - Webhook URL: `https://admin.skinessentialsbyher.com/api/webhooks/facebook`
+
+enhanced-monitor.sh:
+  109  echo ""
+  110: test_endpoint "$TUNNEL_URL/api/webhooks/facebook?hub.mode=subscribe&hub.verify_token=fb_webhook_2024_a7b3c9d2e8f1g4h5i6j7k8l9m0n1o2p3q4r5s6t7u8v9w0x1y2z3&hub.challenge=TEST123" "Webhook Endpoint" 5
+  111  
+
+final-integration-test.sh:
+  46  echo "2️⃣  API Endpoint Tests:"
+  47: run_test "Webhook Verification" "curl -s '$TUNNEL_URL/api/webhooks/facebook?hub.mode=subscribe&hub.verify_token=$WEBHOOK_TOKEN&hub.challenge=TEST123'" "TEST123"
+  48: run_test "Facebook OAuth Endpoint" "curl -s -f '$TUNNEL_URL/api/auth/facebook' && echo 'OK'" "OK"
+  49  run_test "Instagram OAuth Endpoint" "curl -s -f '$TUNNEL_URL/api/auth/instagram' && echo 'OK'" "OK"
+
+  57  echo "4️⃣  Webhook URL Tests:"
+  58: run_test "Facebook Webhook" "curl -s -f '$TUNNEL_URL/api/webhooks/facebook' && echo 'OK'" "OK"
+  59  run_test "Instagram Deauthorize" "curl -s -f '$TUNNEL_URL/api/webhooks/instagram/deauthorize' && echo 'OK'" "OK"
+
+  71      echo ""
+  72:     echo "✅ Your setup is ready for Facebook/Instagram integration!"
+  73      echo "🌐 Access admin: $TUNNEL_URL/admin"
+
+  76      echo "1. Update Meta Developer settings (see meta-developer-checklist.md)"
+  77:     echo "2. Test Facebook OAuth flow"
+  78      echo "3. Test message synchronization"
+
+meta-developer-checklist.md:
+   10  ### Step 1: Access Your App
+   11: - [ ] Go to https://developers.facebook.com/apps/
+   12  - [ ] Click on **"Skin Essentials by Her"** (App ID: 764719166731391)
+
+   24  
+   25: ### Step 3: Configure Facebook Login
+   26: **Location**: Facebook Login → Settings
+   27  
+
+   29  ```
+   30: https://skin-essentials-admin.loca.lt/api/auth/facebook
+   31: http://localhost:3001/api/auth/facebook
+   32  ```
+
+   40  ```
+   41: https://skin-essentials-admin.loca.lt/api/webhooks/facebook
+   42  ```
+
+   74  ```bash
+   75: curl "https://skin-essentials-admin.loca.lt/api/webhooks/facebook?hub.mode=subscribe&hub.verify_token=fb_webhook_2024_a7b3c9d2e8f1g4h5i6j7k8l9m0n1o2p3q4r5s6t7u8v9w0x1y2z3&hub.challenge=TEST123"
+   76  ```
+
+   82  
+   83: ### Test 3: Facebook OAuth Flow
+   84  - [ ] Go to admin dashboard
+   85: - [ ] Click "Connect Facebook Account"
+   86: - [ ] Complete Facebook authorization
+   87  - [ ] Should redirect back to admin with success
+
+   89  ### Test 4: Page Messaging
+   90: - [ ] Send message to your Facebook page
+   91  - [ ] Check admin "Conversations" tab
+
+  122  # Test webhook manually
+  123: curl "https://skin-essentials-admin.loca.lt/api/webhooks/facebook?hub.mode=subscribe&hub.verify_token=fb_webhook_2024_a7b3c9d2e8f1g4h5i6j7k8l9m0n1o2p3q4r5s6t7u8v9w0x1y2z3&hub.challenge=TEST123"
+  124  
+
+meta-developer-setup-guide.md:
+   10  ### 1. Access Meta Developer Dashboard
+   11: 1. Go to: https://developers.facebook.com/apps/
+   12  2. Select your app: **Skin Essentials by Her** (App ID: 764719166731391)
+
+   22  
+   23: ### 3. Configure Facebook Login
+   24: **Location**: Facebook Login → Settings
+   25  
+
+   27  ```
+   28: https://skin-essentials-admin.loca.lt/api/auth/facebook
+   29: http://localhost:3001/api/auth/facebook
+   30  ```
+
+   36  ```
+   37: https://skin-essentials-admin.loca.lt/api/webhooks/facebook
+   38  ```
+
+   79  ```bash
+   80: curl "https://skin-essentials-admin.loca.lt/api/webhooks/facebook?hub.mode=subscribe&hub.verify_token=fb_webhook_2024_a7b3c9d2e8f1g4h5i6j7k8l9m0n1o2p3q4r5s6t7u8v9w0x1y2z3&hub.challenge=TEST123"
+   81  ```
+
+   87  
+   88: ### ✅ Test Facebook OAuth Flow
+   89  1. Go to admin dashboard
+   90: 2. Click "Connect Facebook Account"
+   91: 3. Complete Facebook authorization
+   92  4. Should redirect back to admin dashboard with success message
+
+   94  ### ✅ Test Page Messaging
+   95: 1. Send message to your Facebook page
+   96  2. Check admin dashboard "Conversations" tab
+
+  123  # Test webhook
+  124: curl "https://skin-essentials-admin.loca.lt/api/webhooks/facebook?hub.mode=subscribe&hub.verify_token=fb_webhook_2024_a7b3c9d2e8f1g4h5i6j7k8l9m0n1o2p3q4r5s6t7u8v9w0x1y2z3&hub.challenge=TEST123"
+  125  
+
+monitor-tunnel.sh:
+  53      # Check webhook endpoint
+  54:     if check_tunnel "https://skin-essentials-admin.loca.lt/api/webhooks/facebook"; then
+  55          echo "$(date): Webhook endpoint is working"
+
+setup-cloudflare-tunnel.sh:
+   92      echo "- Path rules (add each as 'Path starts with'):"
+   93:     echo "  • /api/auth/facebook"
+   94:     echo "  • /api/webhooks/facebook"
+   95      echo "  • /api/auth/instagram"
+
+  101      echo "📋 STEP 7: Meta Developer Settings (Manual)"
+  102:     echo "Go to: https://developers.facebook.com/apps/"
+  103      echo ""
+
+  105      echo "- App Domains: admin.skinessentialsbyher.com"
+  106:     echo "- Facebook Login → Valid OAuth Redirect URIs:"
+  107:     echo "  https://admin.skinessentialsbyher.com/api/auth/facebook"
+  108      echo "- Webhooks → Callback URL:"
+  109:     echo "  https://admin.skinessentialsbyher.com/api/webhooks/facebook"
+  110      echo ""
+
+  120      echo "Test URLs:"
+  121:     echo "- Webhook: https://admin.skinessentialsbyher.com/api/webhooks/facebook?hub.mode=subscribe&hub.verify_token=fb_webhook_2024_a7b3c9d2e8f1g4h5i6j7k8l9m0n1o2p3q4r5s6t7u8v9w0x1y2z3&hub.challenge=TEST123"
+  122:     echo "- OAuth: https://admin.skinessentialsbyher.com/api/auth/facebook"
+  123      
+
+setup-meta-developer.sh:
+  22  echo -n "   Webhook Endpoint: "
+  23: if curl -s -f "$TUNNEL_URL/api/webhooks/facebook" > /dev/null; then
+  24      echo "✅ Accessible"
+
+  29  echo -n "   OAuth Endpoint: "
+  30: if curl -s -f "$TUNNEL_URL/api/auth/facebook" > /dev/null; then
+  31      echo "✅ Accessible"
+
+  38  echo "2️⃣  Webhook Verification Test:"
+  39: response=$(curl -s "$TUNNEL_URL/api/webhooks/facebook?hub.mode=subscribe&hub.verify_token=fb_webhook_2024_a7b3c9d2e8f1g4h5i6j7k8l9m0n1o2p3q4r5s6t7u8v9w0x1y2z3&hub.challenge=TEST123" 2>/dev/null)
+  40  if [[ "$response" == "TEST123" ]]; then
+
+  60  echo ""
+  61: echo "Go to: https://developers.facebook.com/apps/764719166731391/"
+  62  echo ""
+
+  66  echo ""
+  67: echo "2. Facebook Login → Settings → Valid OAuth Redirect URIs:"
+  68: echo "   Add: https://skin-essentials-admin.loca.lt/api/auth/facebook"
+  69: echo "   Add: http://localhost:3001/api/auth/facebook"
+  70  echo ""
+  71  echo "3. Webhooks → Product: Page → Callback URL:"
+  72: echo "   URL: https://skin-essentials-admin.loca.lt/api/webhooks/facebook"
+  73  echo "   Verify Token: fb_webhook_2024_a7b3c9d2e8f1g4h5i6j7k8l9m0n1o2p3q4r5s6t7u8v9w0x1y2z3"
+
+  84  echo "1. Test OAuth: https://skin-essentials-admin.loca.lt/admin"
+  85: echo "2. Click 'Connect Facebook Account'"
+  86  echo "3. Test messaging: Send message to your page"
+
+setup-meta-production-corrected.sh:
+   7  echo ""
+   8: echo "📋 Facebook App Configuration Update Required:"
+   9  echo ""
+  10: echo "1. Go to: https://developers.facebook.com/apps/764719166731391/facebook-login/settings/"
+  11  echo ""
+
+  13  echo "   ✅ Valid OAuth Redirect URIs:"
+  14: echo "      - https://www.skinessentialsbyher.com/api/auth/facebook"
+  15: echo "      - https://www.skinessentialsbyher.com/api/auth/facebook/callback"
+  16  echo ""
+
+  23  echo "📋 Instagram Basic Display API:"
+  24: echo "1. Go to: https://developers.facebook.com/apps/1121558939556493/instagram-basic-display/basic-display/"
+  25  echo ""
+
+  30  echo ""
+  31: echo "📋 Webhook Configuration (Facebook):"
+  32: echo "1. Go to: https://developers.facebook.com/apps/764719166731391/webhooks/"
+  33  echo ""
+  34  echo "2. Update Webhook URL:"
+  35: echo "   ✅ Callback URL: https://www.skinessentialsbyher.com/api/webhooks/facebook"
+  36  echo "   ✅ Verify Token: fb_webhook_2024_a7b3c9d2e8f1g4h5i6j7k8l9m0n1o2p3q4r5s6t7u8v9w0x1y2z3"
+
+  38  echo "📋 Webhook Configuration (Instagram):"
+  39: echo "1. Go to: https://developers.facebook.com/apps/1121558939556493/webhooks/"
+  40  echo ""
+
+  54  echo ""
+  55: echo "✅ After updating all settings, your Facebook and Instagram"
+  56  echo "   integration will work with your production domain!"
+
+simple-monitor.sh:
+  17  echo "2. Testing Webhook Endpoint..."
+  18: response=$(curl -s "https://skin-essentials-admin.loca.lt/api/webhooks/facebook?hub.mode=subscribe&hub.verify_token=fb_webhook_2024_a7b3c9d2e8f1g4h5i6j7k8l9m0n1o2p3q4r5s6t7u8v9w0x1y2z3&hub.challenge=TEST123" 2>/dev/null || echo "FAILED")
+  19  
+
+switch-to-cloudflare.sh:
+  16  echo "   - NEXT_PUBLIC_BASE_URL: https://admin.skinessentialsbyher.com"
+  17: echo "   - FACEBOOK_REDIRECT_URI: https://admin.skinessentialsbyher.com/api/auth/facebook"
+  18  echo "   - INSTAGRAM_REDIRECT_URI: https://admin.skinessentialsbyher.com/api/auth/instagram"
+
+VERCEL_ENV_SETUP.md:
+   4  
+   5: ### Facebook Configuration
+   6: - `FACEBOOK_APP_ID=764719166731391`
+   7: - `FACEBOOK_APP_SECRET=4380d01c39141022d8508d3a68427135`
+   8: - `FACEBOOK_WEBHOOK_VERIFY_TOKEN=fb_webhook_2024_a7b3c9d2e8f1g4h5i6j7k8l9m0n1o2p3q4r5s6t7u8v9w0x1y2z3`
+   9: - `FACEBOOK_REDIRECT_URI=https://www.skinessentialsbyher.com/api/auth/facebook`
+  10  
+
+  37  # Add environment variables
+  38: vercel env add FACEBOOK_WEBHOOK_VERIFY_TOKEN production
+  39  vercel env add INSTAGRAM_WEBHOOK_VERIFY_TOKEN production
+
+  48  # Test webhook verification
+  49: curl -X GET "https://www.skinessentialsbyher.com/api/webhooks/facebook?hub.mode=subscribe&hub.challenge=test_challenge&hub.verify_token=fb_webhook_2024_a7b3c9d2e8f1g4h5i6j7k8l9m0n1o2p3q4r5s6t7u8v9w0x1y2z3"
+  50  
+
+verify-meta-setup.sh:
+  47  echo "1️⃣  Webhook Tests:"
+  48: test_endpoint "$TUNNEL_URL/api/webhooks/facebook?hub.mode=subscribe&hub.verify_token=$WEBHOOK_TOKEN&hub.challenge=TEST123" "Webhook Verification" "TEST123"
+  49  
+
+  58  echo "3️⃣  OAuth Endpoints:"
+  59: test_endpoint "$TUNNEL_URL/api/auth/facebook" "Facebook OAuth" ""
+  60  test_endpoint "$TUNNEL_URL/api/auth/instagram" "Instagram OAuth" ""
+
+  64  echo "4️⃣  Webhook URLs:"
+  65: test_endpoint "$TUNNEL_URL/api/webhooks/facebook" "Facebook Webhook" ""
+  66  test_endpoint "$TUNNEL_URL/api/webhooks/instagram/deauthorize" "Instagram Deauthorize" ""
+
+  72  echo ""
+  73: echo "Go to: https://developers.facebook.com/apps/764719166731391/"
+  74  echo ""
+
+  79  echo ""
+  80: echo "2. Facebook Login → Settings → Valid OAuth Redirect URIs:"
+  81: echo "   - https://skin-essentials-admin.loca.lt/api/auth/facebook"
+  82: echo "   - http://localhost:3001/api/auth/facebook"
+  83  echo ""
+  84  echo "3. Webhooks → Product: Page → Callback URL:"
+  85: echo "   - https://skin-essentials-admin.loca.lt/api/webhooks/facebook"
+  86  echo "   - Verify Token: $WEBHOOK_TOKEN"
+
+WORKING-SETUP.md:
+  15  NEXT_PUBLIC_BASE_URL=https://skin-essentials-admin.loca.lt
+  16: FACEBOOK_REDIRECT_URI=https://skin-essentials-admin.loca.lt/api/auth/facebook
+  17  INSTAGRAM_REDIRECT_URI=https://skin-essentials-admin.loca.lt/api/auth/instagram
+
+  25  ```bash
+  26: curl "https://skin-essentials-admin.loca.lt/api/webhooks/facebook?hub.mode=subscribe&hub.verify_token=fb_webhook_2024_a7b3c9d2e8f1g4h5i6j7k8l9m0n1o2p3q4r5s6t7u8v9w0x1y2z3&hub.challenge=TEST123"
+  27  # Result: TEST123 ✅
+
+  31  
+  32: **Go to**: https://developers.facebook.com/apps/
+  33  
+
+  35  1. **App Domains**: `skin-essentials-admin.loca.lt`
+  36: 2. **Facebook Login → Valid OAuth Redirect URIs**: 
+  37:    - `https://skin-essentials-admin.loca.lt/api/auth/facebook`
+  38  3. **Webhooks → Callback URL**:
+  39:    - `https://skin-essentials-admin.loca.lt/api/webhooks/facebook`
+  40  
+
+  43  1. **Access your admin**: https://skin-essentials-admin.loca.lt/admin
+  44: 2. **Connect Facebook**: Click "Connect Facebook Account"
+  45  3. **Test conversations**: Messages should sync properly
+
+  50  - ✅ **No password prompts**: Direct access
+  51: - ✅ **Working webhooks**: Facebook can reach your endpoints
+  52  - ✅ **Free**: No account required
+
+.data/social-state.json:
+  19        "id": "2",
+  20:       "platform": "facebook",
+  21        "senderId": "user456",
+
+  50        "id": "conv_2",
+  51:       "platform": "facebook",
+  52        "participantId": "user456",
+
+  64        "id": "conn_1758881711450_egscw8ijo",
+  65:       "platform": "facebook",
+  66:       "pageId": "facebook_page_1758881711450",
+  67:       "pageName": "Skin Essentials by HER - Facebook",
+  68        "isConnected": true,
+
+.github/workflows/ci-cd.yml:
+  30            NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+  31:           FACEBOOK_APP_ID: ${{ secrets.FACEBOOK_APP_ID }}
+  32:           FACEBOOK_APP_SECRET: ${{ secrets.FACEBOOK_APP_SECRET }}
+  33:           FACEBOOK_REDIRECT_URI: ${{ secrets.FACEBOOK_REDIRECT_URI }}
+  34:           FACEBOOK_WEBHOOK_VERIFY_TOKEN: ${{ secrets.FACEBOOK_WEBHOOK_VERIFY_TOKEN }}
+  35          run: npm run build
+
+  71            NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+  72:           FACEBOOK_APP_ID: ${{ secrets.FACEBOOK_APP_ID }}
+  73:           FACEBOOK_APP_SECRET: ${{ secrets.FACEBOOK_APP_SECRET }}
+  74:           FACEBOOK_REDIRECT_URI: ${{ secrets.FACEBOOK_REDIRECT_URI }}
+  75:           FACEBOOK_WEBHOOK_VERIFY_TOKEN: ${{ secrets.FACEBOOK_WEBHOOK_VERIFY_TOKEN }}
+  76            SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+app/page.tsx:
+  20    Heart,
+  21:   Facebook,
+  22    Instagram,
+
+app/admin/page.tsx:
+    65    Instagram,
+    66:   Facebook,
+    67    Send,
+
+   102  import { SocialConversationUI } from "@/components/admin/social-conversation-ui"
+   103: import { FacebookStatusIndicator } from "@/components/admin/facebook-status-indicator"
+   104  import { PlatformConnections } from "@/components/admin/platform-connections"
+   105: import { FacebookConnection } from "@/components/admin/facebook-connection"
+   106  import { serviceCategories } from "@/lib/services-data"
+
+  1595                  <div className="scale-90 origin-left">
+  1596:                   <FacebookStatusIndicator />
+  1597                  </div>
+
+  3809                            <SelectItem value="instagram">Instagram</SelectItem>
+  3810:                           <SelectItem value="facebook">Facebook</SelectItem>
+  3811                            <SelectItem value="tiktok">TikTok</SelectItem>
+
+  3968                          referral: 'Referral',
+  3969:                         facebook: 'Facebook',
+  3970                          instagram: 'Instagram',
+
+  5233                        <SelectItem value="referral">Referral</SelectItem>
+  5234:                       <SelectItem value="facebook">Facebook</SelectItem>
+  5235                        <SelectItem value="instagram">Instagram</SelectItem>
+
+  5420                  ) : (
+  5421:                   <Facebook className="w-5 h-5 text-blue-500" />
+  5422                  )}
+
+app/api/auth/facebook/route.ts:
+    1  import { NextRequest, NextResponse } from 'next/server'
+    2: import { facebookAPI } from '@/lib/facebook-api'
+    3  import { socialMediaService } from '@/lib/admin-services'
+
+   16        .getPlatformConnections()
+   17:       .filter((c: any) => c.platform === 'facebook')
+   18      return NextResponse.json({ connections })
+
+   20  
+   21:   console.log('Facebook OAuth callback received:', { code: !!code, error, state: !!state })
+   22  
+   23:   // Handle OAuth errors from Facebook
+   24    if (error) {
+   25:     console.error('Facebook OAuth error:', { error, errorDescription })
+   26      
+   27:     let errorMessage = 'Facebook authentication failed'
+   28      if (error === 'access_denied') {
+   29:       errorMessage = 'You denied access to Facebook. Please grant the required permissions to continue.'
+   30      } else if (errorDescription) {
+
+   41    if (!code) {
+   42:     console.error('No authorization code received from Facebook')
+   43      const fProto1 = request.headers.get('x-forwarded-proto') || 'http'
+
+   45      const o1 = `${fProto1}://${fHost1}`
+   46:     return NextResponse.redirect(new URL(`/admin?error=invalid_request&message=${encodeURIComponent('No authorization code received from Facebook')}`, o1))
+   47    }
+
+   49    if (!state) {
+   50:     console.error('No state parameter received from Facebook')
+   51      const fProto2 = request.headers.get('x-forwarded-proto') || 'http'
+
+   57    try {
+   58:     console.log('Exchanging Facebook authorization code for access token...')
+   59      
+
+   63      const origin = `${forwardedProto}://${forwardedHost}`
+   64:     const callbackRedirectUri = `${origin}/api/auth/facebook`
+   65:     const tokenResult = await facebookAPI.exchangeCodeForToken(code, state, callbackRedirectUri)
+   66      
+   67      if (tokenResult.error) {
+   68:       console.error('Facebook token exchange failed:', tokenResult.error)
+   69        return NextResponse.redirect(new URL(`/admin?error=token_exchange_failed&message=${encodeURIComponent(tokenResult.error)}`, origin))
+
+   73  
+   74:     console.log('Facebook authentication successful for user:', userInfo?.name)
+   75      console.log('Granted permissions:', grantedPermissions)
+
+   79      try {
+   80:       pagesResult = await facebookAPI.getUserPages(accessToken!)
+   81      } catch (error) {
+
+   86  
+   87:     console.log(`Successfully fetched ${pagesResult.length || 0} Facebook pages`)
+   88  
+
+   90       const connectionData = {
+   91:        platform: 'facebook',
+   92         accessToken: accessToken,
+
+   96         connectedAt: new Date().toISOString(),
+   97:        expiresAt: null // Facebook tokens don't expire by default for pages
+   98       }
+
+  102        const pageConnection = {
+  103:         platform: 'facebook' as const,
+  104          pageId: page.id,
+
+  118      
+  119:     console.log('Facebook OAuth completed successfully')
+  120      
+  121      // Create a response that will store the connection data and redirect
+  122:     const response = NextResponse.redirect(new URL('/admin?success=true&platform=facebook', origin))
+  123      
+
+  125      // In production, you should use proper session management and database storage
+  126:     response.cookies.set('facebook_connection_temp', encodeURIComponent(connectionDataForClient), {
+  127        httpOnly: false, // Allow client-side access for this demo
+
+  135    } catch (error) {
+  136:     console.error('Facebook OAuth error:', error)
+  137      
+
+  143        
+  144:       // Handle specific Facebook API errors
+  145        if (error.message.includes('access_denied')) {
+  146          errorCode = 'access_denied'
+  147:         errorMessage = 'User denied access to Facebook account'
+  148        } else if (error.message.includes('invalid_grant')) {
+
+  166      // Log detailed error for debugging
+  167:     console.error('Facebook OAuth detailed error:', {
+  168        errorCode,
+
+  186      if (action === 'get_login_url') {
+  187:       const redirectUri = process.env.FACEBOOK_REDIRECT_URI || `${request.nextUrl.origin}/api/auth/facebook`
+  188:       const loginUrl = facebookAPI.getLoginUrl(redirectUri)
+  189        return NextResponse.json({ loginUrl })
+
+  202    } catch (error) {
+  203:     console.error('Facebook API error:', error)
+  204      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+
+app/api/auth/instagram/route.ts:
+   2  import { instagramAPI } from '@/lib/instagram-api'
+   3: import { facebookAPI } from '@/lib/facebook-api'
+   4  import { socialMediaService } from '@/lib/admin-services'
+
+  43  
+  44:     // For Instagram Business accounts, we need to get the connected Facebook pages
+  45:     // This requires the user to also connect their Facebook account
+  46      try {
+  47:       // Get Facebook pages that have Instagram Business accounts
+  48:       const pages = await facebookAPI.getUserPages(accessToken)
+  49        
+
+app/api/debug/env-check/route.ts:
+  13          NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
+  14:         FACEBOOK_WEBHOOK_VERIFY_TOKEN: process.env.FACEBOOK_WEBHOOK_VERIFY_TOKEN,
+  15:         HAS_FACEBOOK_TOKEN: !!process.env.FACEBOOK_WEBHOOK_VERIFY_TOKEN,
+  16:         TOKEN_LENGTH: process.env.FACEBOOK_WEBHOOK_VERIFY_TOKEN?.length,
+  17:         TOKEN_PREVIEW: process.env.FACEBOOK_WEBHOOK_VERIFY_TOKEN?.substring(0, 10) + '...'
+  18        },
+
+  20          providedToken: testToken,
+  21:         expectedToken: process.env.FACEBOOK_WEBHOOK_VERIFY_TOKEN,
+  22:         tokensMatch: testToken === process.env.FACEBOOK_WEBHOOK_VERIFY_TOKEN
+  23        }
+
+app/api/facebook/conversations/route.ts:
+   1  import { NextRequest, NextResponse } from 'next/server'
+   2: import { facebookAPI } from '@/lib/facebook-api'
+   3  
+
+  10  
+  11:     const conversations = await facebookAPI.getPageConversations(accessToken, pageId)
+  12      return NextResponse.json({ conversations }, { status: 200 })
+
+app/api/facebook/messages/route.ts:
+   1  import { NextRequest, NextResponse } from 'next/server'
+   2: import { facebookAPI } from '@/lib/facebook-api'
+   3  
+
+  10  
+  11:     const messages = await facebookAPI.getConversationMessages(accessToken, conversationId)
+  12      return NextResponse.json({ messages }, { status: 200 })
+
+app/api/facebook/user/route.ts:
+   1  import { NextRequest, NextResponse } from 'next/server'
+   2: import { facebookAPI } from '@/lib/facebook-api'
+   3  
+
+  10  
+  11:     const result = await facebookAPI.getUserInfo(userId, accessToken)
+  12      if (result.error) {
+
+app/api/test-env/route.ts:
+  1: // Simple test to verify Facebook credentials in Next.js environment
+  2  import { NextResponse } from 'next/server';
+
+  5    return NextResponse.json({
+  6:     facebookAppId: process.env.FACEBOOK_APP_ID || 'not_set',
+  7:     facebookAppSecret: process.env.FACEBOOK_APP_SECRET ? 'set' : 'not_set',
+  8:     facebookRedirectUri: process.env.FACEBOOK_REDIRECT_URI || 'not_set',
+  9      nextPublicBaseUrl: process.env.NEXT_PUBLIC_BASE_URL || 'not_set',
+
+app/api/test-facebook-login/route.ts:
+   1  import { NextResponse } from 'next/server';
+   2: import { facebookAPI } from '@/lib/facebook-api';
+   3  
+
+   5    try {
+   6:     const redirectUri = process.env.FACEBOOK_REDIRECT_URI || 'http://localhost:3002/api/auth/facebook';
+   7:     const loginUrl = facebookAPI.getLoginUrl(redirectUri);
+   8      
+
+  12        redirectUri,
+  13:       appId: process.env.FACEBOOK_APP_ID || 'not_set'
+  14      });
+  15    } catch (error) {
+  16:     console.error('Error generating Facebook login URL:', error);
+  17      return NextResponse.json({ 
+
+app/api/webhooks/facebook/route.ts:
+    1  import { NextRequest, NextResponse } from 'next/server'
+    2: import { facebookAPI } from '@/lib/facebook-api'
+    3  import { socialMediaService } from '@/lib/admin-services'
+
+   13  
+   14:     const expectedToken = (process.env.FACEBOOK_WEBHOOK_VERIFY_TOKEN || 'SEBH_DEV_VERIFY')
+   15      // Verify webhook subscription
+
+   21    } catch (error) {
+   22:     await logError('facebook_webhook_get', error as any)
+   23      return new NextResponse('Internal Server Error', { status: 500 })
+
+   30      const signature = request.headers.get('x-hub-signature-256')
+   31:     console.log('Facebook webhook POST received', {
+   32        object: body?.object,
+
+   41      // Verify webhook signature
+   42:     const isValid = facebookAPI.verifyWebhookSignature(
+   43        JSON.stringify(body),
+
+   45      )
+   46:     console.log('Facebook webhook signature valid:', isValid)
+   47  
+
+   63  
+   64:     console.log('Facebook webhook processed successfully')
+   65      return new NextResponse('OK', { status: 200 })
+   66    } catch (error) {
+   67:     await logError('facebook_webhook_post', error as any)
+   68      return new NextResponse('Internal Server Error', { status: 500 })
+
+   82      const connection = connections.find(
+   83:       conn => conn.platform === 'facebook' && conn.pageId === pageId
+   84      )
+
+  104    } catch (error) {
+  105:     await logError('facebook_process_page_entry', error as any, { entry })
+  106    }
+
+  120          // Get sender info
+  121:         const senderInfo = await facebookAPI.getUserInfo(senderId, connection.accessToken)
+  122          
+
+  129              id: `fb_${senderId}`,
+  130:             platform: 'facebook',
+  131              participantId: senderId,
+
+  157            id: `fb_${event.mid || Date.now()}`,
+  158:           platform: 'facebook' as const,
+  159            senderId: senderId,
+
+  189    } catch (error) {
+  190:     await logError('facebook_process_messaging_event', error as any, { event })
+  191    }
+
+  201    } catch (error) {
+  202:     await logError('facebook_process_change', error as any, { change })
+  203    }
+
+app/contact/page.tsx:
+   15    Instagram,
+   16:   Facebook,
+   17    Calendar,
+
+  131      {
+  132:       icon: <Facebook className="w-6 h-6" />,
+  133:       name: "Facebook",
+  134        handle: "Skin Essentials by HER",
+  135:       href: "https://www.facebook.com/SkinessentialsbyHER",
+  136        color: "bg-blue-600",
+
+app/test-facebook/page.tsx:
+   4  
+   5: export default function TestFacebookLogin() {
+   6    const [loginUrl, setLoginUrl] = useState<string>('');
+
+  14      try {
+  15:       const response = await fetch('/api/auth/facebook', {
+  16          method: 'POST',
+
+  38      <div className="p-8 max-w-2xl mx-auto">
+  39:       <h1 className="text-2xl font-bold mb-6">Test Facebook Login</h1>
+  40        
+
+  46          >
+  47:           {loading ? 'Generating...' : 'Get Facebook Login URL'}
+  48          </button>
+
+  77              >
+  78:               Open Facebook Login
+  79              </a>
+
+app/test-social-media/page.tsx:
+   33  
+   34:       // Test 2: Test Facebook login URL generation via API
+   35:       setStatus('Testing Facebook login URL generation...');
+   36        
+   37:       const response = await fetch('/api/test-facebook-login');
+   38        const data = await response.json();
+
+   40        if (data.success && data.loginUrl) {
+   41:         setStatus('✅ Facebook login URL generated successfully');
+   42          
+
+   44          if (data.appId && data.appId !== 'not_set') {
+   45:           setStatus('✅ Facebook app is properly configured');
+   46          } else {
+   47:           setStatus('⚠️ Facebook app ID not configured');
+   48          }
+
+   51          setStatus('Testing OAuth callback endpoint...');
+   52:         const oauthResponse = await fetch('/api/auth/facebook');
+   53          
+
+   60        } else {
+   61:         setStatus(`❌ Facebook login URL generation failed: ${data.error}`);
+   62        }
+
+   68  
+   69:   const testFacebookConnection = async () => {
+   70      setLoading(true);
+   71      try {
+   72:       // Open Facebook login in a new window
+   73:       const response = await fetch('/api/test-facebook-login');
+   74        const data = await response.json();
+
+   76        if (data.success && data.loginUrl) {
+   77:         window.open(data.loginUrl, 'facebook-login', 'width=600,height=600');
+   78:         setStatus('🔄 Facebook login window opened. Check if connection succeeds.');
+   79        } else {
+   80:         setStatus('❌ Failed to get Facebook login URL');
+   81        }
+
+   99          <button
+  100:           onClick={testFacebookConnection}
+  101            disabled={loading}
+
+  103          >
+  104:           {loading ? 'Testing...' : 'Test Facebook Connection'}
+  105          </button>
+
+  109            <ol className="list-decimal list-inside text-sm text-yellow-700 space-y-1">
+  110:             <li>Click &quot;Test Facebook Connection&quot; to open the login window</li>
+  111:             <li>Log in to your Facebook account</li>
+  112              <li>Grant the requested permissions</li>
+
+  120            <ul className="list-disc list-inside text-sm text-blue-700 space-y-1">
+  121:             <li>Facebook login window should open successfully</li>
+  122:             <li>You should see your Facebook pages after authorization</li>
+  123              <li>Messages from your pages should appear in the admin dashboard</li>
+
+components/booking-modal.tsx:
+  257                                <SelectItem value="instagram">Instagram</SelectItem>
+  258:                               <SelectItem value="facebook">Facebook</SelectItem>
+  259                                <SelectItem value="tiktok">TikTok</SelectItem>
+
+components/shared-footer.tsx:
+   5  import { usePathname } from 'next/navigation'
+   6: import { Facebook, Instagram, Phone, MapPin, Clock } from 'lucide-react'
+   7  
+
+  60                <div className="flex items-center gap-4">
+  61:                 <Link href="https://www.facebook.com" aria-label="Facebook" className="w-10 h-10 rounded-full bg-black flex items-center justify-center hover:opacity-80 transition-opacity">
+  62:                   <Facebook className="w-4 h-4 text-white" />
+  63                  </Link>
+
+components/shared-header.tsx:
+   9    X,
+  10:   Facebook,
+  11    Instagram,
+
+  91                <div className="hidden lg:flex items-center gap-5 text-gray-900">
+  92:                 <Link href="https://facebook.com" className="hover:text-brand-tan transition-all hover:scale-110"><Facebook className="w-[1.1rem] h-[1.1rem] stroke-[1.5]" /></Link>
+  93                  <Link href="https://instagram.com" className="hover:text-brand-tan transition-all hover:scale-110"><Instagram className="w-[1.1rem] h-[1.1rem] stroke-[1.5]" /></Link>
+
+components/structured-data.tsx:
+  191        "sameAs": [
+  192:         "https://www.facebook.com/SkinessentialsbyHER",
+  193          "https://www.instagram.com/skin_essentials_by_hers/"
+
+components/admin/facebook-connection.tsx:
+   14    AlertTriangle, 
+   15:   Facebook, 
+   16    Shield, 
+
+   25  import { 
+   26:   FACEBOOK_PERMISSIONS, 
+   27    REQUIRED_PERMISSIONS, 
+
+   29    PERMISSION_DESCRIPTIONS,
+   30:   facebookAPI 
+   31: } from '@/lib/facebook-api'
+   32  import { socialMediaService } from '@/lib/admin-services'
+   33  
+   34: interface FacebookConnectionProps {
+   35    onConnectionChange?: (connected: boolean) => void
+
+   58    switch (permission) {
+   59:     case FACEBOOK_PERMISSIONS.PUBLIC_PROFILE:
+   60        return <Users className="h-4 w-4" />
+   61:     case FACEBOOK_PERMISSIONS.EMAIL:
+   62        return <Shield className="h-4 w-4" />
+   63:     case FACEBOOK_PERMISSIONS.PAGES_MESSAGING:
+   64        return <MessageSquare className="h-4 w-4" />
+   65:     case FACEBOOK_PERMISSIONS.PAGES_MANAGE_METADATA:
+   66        return <Settings className="h-4 w-4" />
+   67:     case FACEBOOK_PERMISSIONS.PAGES_READ_ENGAGEMENT:
+   68        return <Eye className="h-4 w-4" />
+   69:     case FACEBOOK_PERMISSIONS.PAGES_MANAGE_POSTS:
+   70        return <Edit className="h-4 w-4" />
+
+   75  
+   76: export function FacebookConnection({ onConnectionChange }: FacebookConnectionProps) {
+   77    const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({
+
+  109    const handleOAuthCallback = async () => {
+  110:     // Check if we're returning from Facebook OAuth
+  111      const urlParams = new URLSearchParams(window.location.search)
+
+  119        const cookies = document.cookie.split(';')
+  120:       const connectionCookie = cookies.find(c => c.trim().startsWith('facebook_connection_temp='))
+  121        if (connectionCookie) {
+
+  126  
+  127:         localStorage.setItem('facebook_connection', JSON.stringify(data))
+  128:         document.cookie = 'facebook_connection_temp=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
+  129  
+
+  134              socialMediaService.addPlatformConnection({
+  135:               platform: 'facebook',
+  136                pageId: page.id,
+
+  143              try {
+  144:               const subscribed = await facebookAPI.subscribeToWebhooks(page.access_token, page.id)
+  145                if (subscribed) {
+  146                  const conns = socialMediaService.getPlatformConnections()
+  147:                 const conn = conns.find((c: any) => c.platform === 'facebook' && c.pageId === page.id)
+  148                  if (conn) {
+
+  174  
+  175:     if (success === 'true' && platform === 'facebook') {
+  176        // OAuth was successful, check for connection data in cookies
+
+  178        const connectionCookie = cookies.find(cookie => 
+  179:         cookie.trim().startsWith('facebook_connection_temp=')
+  180        )
+
+  189            // Store in localStorage for persistent access
+  190:           localStorage.setItem('facebook_connection', JSON.stringify(connectionData))
+  191            
+  192            // Clear the temporary cookie
+  193:           document.cookie = 'facebook_connection_temp=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
+  194            
+
+  199                socialMediaService.addPlatformConnection({
+  200:                 platform: 'facebook',
+  201                  pageId: page.id,
+
+  208                try {
+  209:                 const subscribed = await facebookAPI.subscribeToWebhooks(page.access_token, page.id)
+  210                  if (subscribed) {
+  211                    const conns = socialMediaService.getPlatformConnections()
+  212:                   const conn = conns.find((c: any) => c.platform === 'facebook' && c.pageId === page.id)
+  213                    if (conn) {
+
+  249          try {
+  250:           const res = await fetch('/api/auth/facebook?connections=true')
+  251            const payload = await res.json()
+
+  280        // OAuth failed - handle specific error codes
+  281:       let errorMessage = 'Facebook connection failed'
+  282        
+
+  288            case 'access_denied':
+  289:             errorMessage = 'Access denied. Please accept the required permissions to connect your Facebook account.'
+  290              break
+
+  306            default:
+  307:             errorMessage = 'Facebook connection failed. Please try again.'
+  308          }
+
+  325        // Check localStorage for stored connection data
+  326:       const storedConnection = localStorage.getItem('facebook_connection')
+  327        if (storedConnection) {
+
+  333            try {
+  334:             const existing = socialMediaService.getPlatformConnections().filter((c: any) => c.platform === 'facebook')
+  335              if (existing.length === 0 && Array.isArray(connectionData.pages)) {
+
+  337                  socialMediaService.addPlatformConnection({
+  338:                   platform: 'facebook',
+  339                    pageId: page.id,
+
+  362            // Invalid connection data, clear it
+  363:           localStorage.removeItem('facebook_connection')
+  364            setConnectionStatus({ isConnected: false })
+
+  376        // Clear potentially corrupted data
+  377:       localStorage.removeItem('facebook_connection')
+  378        setConnectionStatus({ 
+
+  388      try {
+  389:       const res = await fetch('/api/auth/facebook', {
+  390          method: 'POST',
+
+  400            isConnected: false,
+  401:           error: 'Failed to get Facebook login URL'
+  402          })
+
+  406      } catch (error) {
+  407:       console.error('Error initiating Facebook connection:', error)
+  408        console.error('[FB_STATUS] connect error')
+
+  410          isConnected: false,
+  411:         error: 'Failed to initiate Facebook connection'
+  412        })
+
+  419        // Clear stored connection data
+  420:       localStorage.removeItem('facebook_connection')
+  421        
+
+  426        
+  427:       // In production, you would also revoke the token on Facebook's side
+  428        // and remove the connection from your database
+  429      } catch (error) {
+  430:       console.error('Error disconnecting Facebook:', error)
+  431        console.error('[FB_STATUS] disconnect error')
+
+  433          ...connectionStatus,
+  434:         error: 'Failed to disconnect Facebook account'
+  435        })
+
+  485            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900">
+  486:             <Facebook className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+  487            </div>
+
+  489              <CardTitle className="flex items-center gap-2">
+  490:               Facebook Connection
+  491                {connectionStatus.isConnected && (
+
+  497              <CardDescription>
+  498:               Connect your Facebook account to manage pages and messages
+  499              </CardDescription>
+
+  557                  <AlertDescription>
+  558:                   You&rsquo;ll be redirected to Facebook to authorize the required permissions. 
+  559                    Your data is handled securely and only used for the specified purposes.
+
+  575                    <>
+  576:                     <Facebook className="mr-2 h-4 w-4" />
+  577:                     Connect Facebook Account
+  578                    </>
+
+  658                        const conns = socialMediaService.getPlatformConnections()
+  659:                       const conn = conns.find((c: any) => c.platform === 'facebook' && c.pageId === p.id)
+  660                        return matches && !!conn?.isConnected
+
+  663                        const conns = socialMediaService.getPlatformConnections()
+  664:                       const conn = conns.find((c: any) => c.platform === 'facebook' && c.pageId === page.id)
+  665                        const visible = !!conn?.isConnected
+  666:                       const avatarUrl = `https://graph.facebook.com/${page.id}/picture?type=large`
+  667                        return (
+
+  703                                    const cs = socialMediaService.getPlatformConnections()
+  704:                                   const c = cs.find((x: any) => x.platform === 'facebook' && x.pageId === page.id)
+  705                                    if (c) {
+
+  718                                  onClick={async () => {
+  719:                                   await socialMediaService.syncMessagesFromPlatform('facebook')
+  720                                  }}
+
+  730                                  onClick={() => {
+  731:                                   const url = `https://facebook.com/${page.id}`
+  732                                    window.open(url, '_blank', 'noopener,noreferrer')
+
+  774                  <AlertDescription>
+  775:                   Disconnecting will remove access to your Facebook pages and stop message synchronization.
+  776                  </AlertDescription>
+
+  783                >
+  784:                 Disconnect Facebook Account
+  785                </Button>
+
+components/admin/facebook-status-indicator.tsx:
+    4  import { Badge } from '@/components/ui/badge'
+    5: import { Facebook, CheckCircle, AlertTriangle } from 'lucide-react'
+    6  import { socialMediaService } from '@/lib/admin-services'
+    7: import { facebookAPI } from '@/lib/facebook-api'
+    8  
+    9: export function FacebookStatusIndicator() {
+   10    const [status, setStatus] = useState<'checking' | 'connected' | 'disconnected'>('checking')
+   11:   const [message, setMessage] = useState('Checking Facebook connection…')
+   12    const timer = useRef<NodeJS.Timeout | null>(null)
+
+   17          console.log('[FB_STATUS] checking connections')
+   18:         let connections = socialMediaService.getPlatformConnections().filter(c => c.platform === 'facebook')
+   19          if (connections.length === 0) {
+   20            try {
+   21:             const stored = localStorage.getItem('facebook_connection')
+   22              if (stored) {
+
+   26                  socialMediaService.addPlatformConnection({
+   27:                   platform: 'facebook',
+   28                    pageId: page.id,
+
+   35                })
+   36:               connections = socialMediaService.getPlatformConnections().filter(c => c.platform === 'facebook')
+   37                console.log('[FB_STATUS] rebuilt connections from localStorage', pages.length)
+
+   44            setStatus('disconnected')
+   45:           setMessage('Not connected to Facebook')
+   46            console.log('[FB_STATUS] no connections found')
+
+   51            setStatus('disconnected')
+   52:           setMessage('Facebook disconnected')
+   53            console.log('[FB_STATUS] connections exist but marked disconnected')
+
+   58            try {
+   59:             const stored = localStorage.getItem('facebook_connection')
+   60              const userToken = stored ? JSON.parse(stored).accessToken : ''
+   61              if (userToken) {
+   62:               const pageTokenRes = await facebookAPI.getPageAccessToken(userToken, active.pageId)
+   63                if (pageTokenRes.accessToken) {
+
+   78          console.log('[FB_STATUS] validating access token')
+   79:         const validation = await facebookAPI.validateAccessToken(active.accessToken)
+   80          if (validation.isValid) {
+   81            setStatus('connected')
+   82:           setMessage('Facebook connected')
+   83            console.log('[FB_STATUS] token valid')
+
+  100      const onStorage = (e: StorageEvent) => {
+  101:       if (e.key === 'social_connections_data' || e.key === 'facebook_connection') {
+  102          console.log('[FB_STATUS] storage change detected, rechecking')
+
+  116        <Badge title={message} className="bg-gray-200 text-gray-800">
+  117:         <Facebook className="w-4 h-4 mr-1" />
+  118          Checking…
+
+  126          <CheckCircle className="w-4 h-4 mr-1" />
+  127:         Facebook Connected
+  128        </Badge>
+
+  134        <AlertTriangle className="w-4 h-4 mr-1" />
+  135:       Facebook Disconnected
+  136      </Badge>
+
+components/admin/platform-connections.tsx:
+    8  import { 
+    9:   Facebook, 
+   10    Instagram, 
+
+   37  
+   38:   const handleConnectPlatform = async (platform: "facebook" | "instagram") => {
+   39      setIsConnecting(platform)
+
+   48          pageId: `${platform}_page_${Date.now()}`,
+   49:         pageName: platform === "facebook" ? "Skin Essentials by HER - Facebook" : "Skin Essentials by HER - Instagram",
+   50          accessToken: `demo_token_${Date.now()}`,
+
+   78    const getPlatformIcon = (platform: string) => {
+   79:     return platform === "facebook" ? 
+   80:       <Facebook className="h-5 w-5 text-blue-600" /> : 
+   81        <Instagram className="h-5 w-5 text-pink-600" />
+
+   84    const getPlatformColor = (platform: string) => {
+   85:     return platform === "facebook" ? "border-blue-200 bg-blue-50" : "border-pink-200 bg-pink-50"
+   86    }
+   87  
+   88:   const facebookConnections = connections.filter(conn => conn.platform === "facebook")
+   89    const instagramConnections = connections.filter(conn => conn.platform === "instagram")
+
+   99  
+  100:       {/* Facebook Section */}
+  101        <Card>
+
+  103            <CardTitle className="flex items-center gap-2">
+  104:             <Facebook className="h-5 w-5 text-blue-600" />
+  105:             Facebook Pages
+  106            </CardTitle>
+
+  109            <div className="space-y-4">
+  110:             {facebookConnections.length > 0 ? (
+  111:               facebookConnections.map((connection) => (
+  112                  <div
+
+  162                <div className="text-center py-8">
+  163:                 <Facebook className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+  164                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+  165:                   No Facebook pages connected
+  166                  </h3>
+  167                  <p className="text-gray-500 mb-4">
+  168:                   Connect your Facebook page to manage messages and conversations
+  169                  </p>
+
+  173              <Button
+  174:               onClick={() => handleConnectPlatform("facebook")}
+  175:               disabled={isConnecting === "facebook"}
+  176                className="w-full"
+  177              >
+  178:               {isConnecting === "facebook" ? (
+  179                  "Connecting..."
+
+  182                    <Plus className="h-4 w-4 mr-2" />
+  183:                   Connect Facebook Page
+  184                  </>
+
+  292              <div>
+  293:               <h4 className="font-medium mb-2">Facebook Page Setup:</h4>
+  294                <ul className="text-sm text-gray-600 space-y-1 ml-4">
+  295:                 <li>• Ensure you have admin access to the Facebook page</li>
+  296                  <li>• The page must have messaging enabled</li>
+
+  303                  <li>• Account must be converted to a business account</li>
+  304:                 <li>• Must be connected to a Facebook page</li>
+  305                  <li>• Direct messaging must be enabled</li>
+
+components/admin/social-conversation-ui.tsx:
+   11    Send, 
+   12:   Facebook, 
+   13    Instagram, 
+
+   25  import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog"
+   26: import { FacebookConnection } from "@/components/admin/facebook-connection"
+   27  
+
+   38    const [platformConnections, setPlatformConnections] = useState<SocialPlatformConnection[]>([])
+   39:   const [activeTab, setActiveTab] = useState<"all" | "facebook" | "instagram">("all")
+   40    const [searchQuery, setSearchQuery] = useState("")
+
+   77          e.key === 'social_connections_data' ||
+   78:         e.key === 'facebook_connection' ||
+   79          e.key === 'social_conversations_data' ||
+
+  112      }
+  113:     const pollMs = activeTab === 'facebook' ? 2000 : getPollMs()
+  114      autoTimer.current = setInterval(async () => {
+
+  118          refreshing.current = true
+  119:         if (activeTab === 'facebook' || activeTab === 'all') {
+  120:           await socialMediaService.syncMessagesFromPlatform('facebook')
+  121          }
+
+  137        if (convoTimer.current) clearInterval(convoTimer.current)
+  138:       const intervalMs = selectedConversation.platform === 'facebook' ? 1000 : 3000
+  139        convoTimer.current = setInterval(async () => {
+
+  176  
+  177:   const connectFacebook = async () => {
+  178      try {
+  179:       const res = await fetch('/api/auth/facebook', {
+  180          method: 'POST',
+
+  285      try {
+  286:       if (activeTab === "facebook" || activeTab === "all") {
+  287:         await socialMediaService.syncMessagesFromPlatform("facebook")
+  288        }
+
+  328    const getPlatformIcon = (platform: string) => {
+  329:     return platform === "facebook" ? <Facebook className="h-4 w-4" /> : <Instagram className="h-4 w-4" />
+  330    }
+
+  332    const getPlatformColor = (platform: string) => {
+  333:     return platform === "facebook" ? "bg-blue-500" : "bg-pink-500"
+  334    }
+
+  374          <div className="h-10 w-10 rounded-full bg-gray-100 grid place-items-center">
+  375:           <Facebook className="h-5 w-5 text-blue-600" />
+  376          </div>
+
+  394                </Button>
+  395:               {platformConnections.filter((c) => c.platform === 'facebook').length === 0 && (
+  396:                 <Button variant="outline" size="sm" onClick={connectFacebook}>
+  397:                   <Facebook className="h-4 w-4 mr-1" /> Connect
+  398                  </Button>
+
+  410                    </DialogHeader>
+  411:                   <FacebookConnection />
+  412                  </DialogContent>
+
+  430                <TabsTrigger value="all">All</TabsTrigger>
+  431:               <TabsTrigger value="facebook">
+  432:                 <Facebook className="h-4 w-4" />
+  433                </TabsTrigger>
+
+components/admin/modals/influencer-modal.tsx:
+  65                    <SelectItem value="instagram">Instagram</SelectItem>
+  66:                   <SelectItem value="facebook">Facebook</SelectItem>
+  67                    <SelectItem value="tiktok">TikTok</SelectItem>
+
+components/admin/tabs/clients-tab.tsx:
+  130              <SelectItem value="website">Website</SelectItem>
+  131:             <SelectItem value="facebook">Facebook</SelectItem>
+  132              <SelectItem value="instagram">Instagram</SelectItem>
+
+docs/facebook-meta-setup.md:
+   1: # Facebook Meta Developer Setup
+   2  
+   3  ## App Credentials
+   4: - Create a Meta App in developers.facebook.com and note `App ID` and `App Secret`.
+   5: - Add to environment: `FACEBOOK_APP_ID`, `FACEBOOK_APP_SECRET`.
+   6  
+
+  12  ## OAuth and Callback URLs
+  13: - OAuth redirect: set to `FACEBOOK_REDIRECT_URI`.
+  14: - Use `GET /api/auth/facebook` to start login and `POST /api/auth/facebook/route.ts` callback.
+  15: - Configure Webhook callback URL: `/api/webhooks/facebook`.
+  16: - Verify token: set `FACEBOOK_WEBHOOK_VERIFY_TOKEN`.
+  17  
+
+  27  ## Environment Variables
+  28: - `FACEBOOK_APP_ID`
+  29: - `FACEBOOK_APP_SECRET`
+  30: - `FACEBOOK_REDIRECT_URI`
+  31: - `FACEBOOK_WEBHOOK_VERIFY_TOKEN`
+  32  - `NEXT_PUBLIC_BASE_URL` must match deployed domain.
+
+  34  ## Operational Notes
+  35: - After connecting a page, call `facebookAPI.subscribeToWebhooks` for the page.
+  36  - Monitor Webhook delivery; errors are written to `error_logs`.
+
+docs/production-setup.md:
+  4  - Supabase: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DB_URL`.
+  5: - Facebook: `FACEBOOK_APP_ID`, `FACEBOOK_APP_SECRET`, `FACEBOOK_REDIRECT_URI`, `FACEBOOK_WEBHOOK_VERIFY_TOKEN`.
+  6  - Optional: `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` for deployments.
+
+lib/admin-services.ts:
+     2  
+     3: import { facebookAPI, type FacebookPage, type FacebookConversation, type FacebookMessage } from './facebook-api'
+     4  import { instagramAPI, type InstagramUser, type InstagramConversation, type InstagramMessage } from './instagram-api'
+
+    80    }
+    81:   source: 'website' | 'referral' | 'facebook' | 'instagram' | 'tiktok' | 'walk_in' | 'social_media'
+    82    status: 'active' | 'inactive' | 'blocked'
+
+   109    id: string
+   110:   platform: 'instagram' | 'facebook'
+   111    senderId: string
+
+   128    id: string
+   129:   platform: 'instagram' | 'facebook'
+   130    participantId: string
+
+   144    id: string
+   145:   platform: 'instagram' | 'facebook'
+   146    pageId: string
+
+   663        if (s === 'referral') return 'referral'
+   664:       if (s === 'facebook') return 'facebook'
+   665        if (s === 'instagram') return 'instagram'
+
+  1014          id: "2",
+  1015:         platform: "facebook",
+  1016          senderId: "user456",
+
+  1048          id: "conv_2",
+  1049:         platform: "facebook",
+  1050          participantId: "user456",
+
+  1098  
+  1099:   getConversationsByPlatform(platform: "facebook" | "instagram"): SocialConversation[] {
+  1100      return this.getAllConversations().filter(conv => conv.platform === platform)
+
+  1221    // API Integration Methods
+  1222:   async syncMessagesFromPlatform(platform: "facebook" | "instagram"): Promise<boolean> {
+  1223      try {
+
+  1235        for (const connection of connections) {
+  1236:         if (platform === 'facebook') {
+  1237:           await this.syncFacebookMessages(connection)
+  1238          } else if (platform === 'instagram') {
+
+  1250  
+  1251:   private async refreshFacebookTokenIfNeeded(connection: SocialPlatformConnection): Promise<boolean> {
+  1252      try {
+  1253:       const tokenValidation = await facebookAPI.validateAccessToken(connection.accessToken)
+  1254        if (tokenValidation.isValid) return true
+  1255  
+  1256:       const stored = typeof window !== 'undefined' ? localStorage.getItem('facebook_connection') : null
+  1257        const userToken = stored ? (JSON.parse(stored).accessToken || '') : ''
+  1258        if (userToken) {
+  1259:         const pageTokenRes = await facebookAPI.getPageAccessToken(userToken, connection.pageId)
+  1260          if (pageTokenRes.accessToken) {
+
+  1267        if (tokenValidation.error?.includes('expired')) {
+  1268:         const refreshResult = await facebookAPI.refreshLongLivedToken(connection.accessToken)
+  1269          if (refreshResult.accessToken) {
+
+  1282  
+  1283:   private async syncFacebookMessages(connection: SocialPlatformConnection): Promise<void> {
+  1284      try {
+  1285:       console.log(`Starting Facebook message sync for page: ${connection.pageName} (${connection.pageId})`);
+  1286  
+  1287        // Validate and refresh token if needed
+  1288:       const tokenIsValid = await this.refreshFacebookTokenIfNeeded(connection);
+  1289        if (!tokenIsValid) {
+  1290:         throw new Error(`Invalid Facebook access token for page ${connection.pageName}. Please reconnect the page.`);
+  1291        }
+
+  1294  
+  1295:       const conversations = await facebookAPI.getPageConversations(connection.accessToken, connection.pageId)
+  1296        console.log(`Retrieved ${conversations.length} conversations for page: ${connection.pageName}`);
+
+  1298        for (const fbConversation of conversations) {
+  1299:         // Convert Facebook conversation to our format
+  1300          const existingConversation = this.conversations.find(c =>
+  1301:           c.id === fbConversation.id && c.platform === 'facebook'
+  1302          )
+
+  1308              id: fbConversation.id,
+  1309:             platform: 'facebook',
+  1310              participantId: participant?.id || '',
+
+  1321            if (newConversation.participantId) {
+  1322:             const ui = await facebookAPI.getUserInfo(newConversation.participantId, connection.accessToken)
+  1323              newConversation.participantProfilePicture = ui.user?.picture?.data?.url
+
+  1330            // Fetch messages for this conversation
+  1331:           const fbMessages = await facebookAPI.getConversationMessages(connection.accessToken, fbConversation.id)
+  1332            console.log(`Retrieved ${fbMessages.length} messages for conversation: ${fbConversation.id}`);
+
+  1339                  id: fbMessage.id,
+  1340:                 platform: 'facebook',
+  1341                  senderId: fbMessage.from.id,
+
+  1353                if (newMessage.senderId) {
+  1354:                 const uiMsg = await facebookAPI.getUserInfo(newMessage.senderId, connection.accessToken)
+  1355                  newMessage.senderProfilePicture = uiMsg.user?.picture?.data?.url
+
+  1359            }
+  1360:           const c = this.conversations.find(c => c.id === fbConversation.id && c.platform === 'facebook')
+  1361            if (c) {
+
+  1376        connection.lastSyncTimestamp = new Date().toISOString()
+  1377:       console.log(`Facebook message sync completed successfully for page: ${connection.pageName}`);
+  1378      } catch (error) {
+  1379:       console.error(`Error syncing Facebook messages for page ${connection.pageName}:`, {
+  1380          error: error instanceof Error ? error.message : 'Unknown error',
+
+  1499  
+  1500:   async sendMessageViaPlatform(conversationId: string, message: string, platform: "facebook" | "instagram"): Promise<boolean> {
+  1501      try {
+
+  1519        let result
+  1520:       if (platform === 'facebook') {
+  1521:         result = await facebookAPI.sendMessage(connection.accessToken, conversation.participantId, message)
+  1522        } else if (platform === 'instagram') {
+
+  1565  
+  1566:   async sendMediaLinkViaPlatform(conversationId: string, mediaUrl: string, platform: "facebook" | "instagram"): Promise<boolean> {
+  1567      try {
+
+  1585        let result
+  1586:       if (platform === 'facebook') {
+  1587:         result = await facebookAPI.sendMessage(connection.accessToken, conversation.participantId, mediaUrl)
+  1588        } else if (platform === 'instagram') {
+
+  1676    handle?: string
+  1677:   platform: 'instagram' | 'facebook' | 'tiktok' | 'youtube' | 'other'
+  1678    email?: string
+
+lib/facebook-api.ts:
+    1  /**
+    2:  * Facebook Graph API Integration Service
+    3:  * Handles authentication, message fetching, and sending for Facebook Pages
+    4   */
+    5  
+    6: export interface FacebookPage {
+    7    id: string;
+
+   13  
+   14: export interface FacebookConversation {
+   15    id: string;
+
+   28  
+   29: export interface FacebookMessage {
+   30    id: string;
+
+   59  
+   60: export interface FacebookWebhookEntry {
+   61    id: string;
+
+   86  
+   87: // Facebook OAuth Configuration
+   88: export interface FacebookOAuthConfig {
+   89    appId: string
+
+   96  
+   97: // Facebook Permission Definitions
+   98: export const FACEBOOK_PERMISSIONS = {
+   99    // Basic permissions
+
+  119  export const REQUIRED_PERMISSIONS = [
+  120:   FACEBOOK_PERMISSIONS.PUBLIC_PROFILE,
+  121:   FACEBOOK_PERMISSIONS.EMAIL,
+  122:   FACEBOOK_PERMISSIONS.PAGES_SHOW_LIST,
+  123:   FACEBOOK_PERMISSIONS.PAGES_READ_ENGAGEMENT,
+  124:   FACEBOOK_PERMISSIONS.PAGES_MANAGE_METADATA,
+  125:   FACEBOOK_PERMISSIONS.PAGES_MESSAGING
+  126  ]
+
+  128  export const OPTIONAL_PERMISSIONS = [
+  129:   FACEBOOK_PERMISSIONS.PAGES_MANAGE_POSTS,
+  130:   FACEBOOK_PERMISSIONS.BUSINESS_MANAGEMENT,
+  131:   FACEBOOK_PERMISSIONS.PAGES_READ_USER_CONTENT
+  132  ]
+
+  135  export const PERMISSION_DESCRIPTIONS = {
+  136:   [FACEBOOK_PERMISSIONS.PUBLIC_PROFILE]: {
+  137      title: 'Public Profile',
+
+  140    },
+  141:   [FACEBOOK_PERMISSIONS.EMAIL]: {
+  142      title: 'Email Address',
+
+  145    },
+  146:   [FACEBOOK_PERMISSIONS.PAGES_SHOW_LIST]: {
+  147      title: 'Page List Access',
+
+  150    },
+  151:   [FACEBOOK_PERMISSIONS.PAGES_READ_ENGAGEMENT]: {
+  152      title: 'Page Engagement',
+
+  155    },
+  156:   [FACEBOOK_PERMISSIONS.PAGES_MANAGE_METADATA]: {
+  157      title: 'Page Metadata',
+
+  160    },
+  161:   [FACEBOOK_PERMISSIONS.PAGES_MESSAGING]: {
+  162      title: 'Page Messaging',
+
+  165    },
+  166:   [FACEBOOK_PERMISSIONS.PAGES_MANAGE_POSTS]: {
+  167      title: 'Manage Posts',
+
+  170    },
+  171:   [FACEBOOK_PERMISSIONS.BUSINESS_MANAGEMENT]: {
+  172      title: 'Business Management',
+
+  175    },
+  176:   [FACEBOOK_PERMISSIONS.PAGES_READ_USER_CONTENT]: {
+  177      title: 'User Content',
+
+  182  
+  183: class FacebookAPIService {
+  184:   private readonly baseUrl = 'https://graph.facebook.com/v18.0';
+  185    private readonly appId: string;
+
+  190      // In production, these should come from environment variables
+  191:     this.appId = process.env.FACEBOOK_APP_ID || 'your_app_id';
+  192:     this.appSecret = process.env.FACEBOOK_APP_SECRET || 'your_app_secret';
+  193:     this.redirectUri = process.env.FACEBOOK_REDIRECT_URI || `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/facebook/callback`;
+  194      
+  195      if (!this.appId || !this.appSecret) {
+  196:       console.warn('Facebook API credentials not configured. Please set FACEBOOK_APP_ID and FACEBOOK_APP_SECRET environment variables.');
+  197      }
+
+  305        
+  306:       console.error(`Facebook API Error in ${context}:`, {
+  307          type: errorType,
+
+  316        if (errorType === 'OAuthException' || errorCode === 190) {
+  317:         throw new Error(`Facebook API Error: Invalid OAuth access token - ${errorMessage}`);
+  318        }
+  319        
+  320:       throw new Error(`Facebook API Error: ${errorMessage} (Type: ${errorType}, Code: ${errorCode})`);
+  321      }
+  322      
+  323:     throw new Error(`Facebook API Error: Unexpected response format in ${context}`);
+  324    }
+
+  326    /**
+  327:    * Generate secure Facebook login URL for OAuth flow with comprehensive permissions
+  328     */
+
+  353  
+  354:     console.log(`Generated Facebook OAuth URL with permissions: ${permissions.join(', ')}`)
+  355:     return `https://www.facebook.com/v18.0/dialog/oauth?${params.toString()}`
+  356    }
+
+  383    /**
+  384:    * Generate Facebook Login URL for page access (legacy method)
+  385     */
+
+  426        if (data.error) {
+  427:         console.error('Facebook token exchange error:', data.error)
+  428:         return { error: `Facebook authentication failed: ${data.error.message}` }
+  429        }
+
+  454  
+  455:       console.log('Facebook authentication successful with permissions:', grantedPermissions)
+  456  
+
+  490    /**
+  491:    * Get user's Facebook pages
+  492     */
+  493:   async getUserPages(userAccessToken: string): Promise<FacebookPage[]> {
+  494      try {
+
+  516    /**
+  517:    * Get conversations for a Facebook page
+  518     */
+  519:   async getPageConversations(pageAccessToken: string, pageId: string): Promise<FacebookConversation[]> {
+  520      try {
+
+  522        if (!isServer) {
+  523:         const resp = await fetch('/api/facebook/conversations', {
+  524            method: 'POST',
+
+  555     */
+  556:   async getConversationMessages(pageAccessToken: string, conversationId: string): Promise<FacebookMessage[]> {
+  557      try {
+
+  559        if (!isServer) {
+  560:         const resp = await fetch('/api/facebook/messages', {
+  561            method: 'POST',
+
+  597        if (!isServer && accessToken) {
+  598:         const resp = await fetch('/api/facebook/user', {
+  599            method: 'POST',
+
+  738     */
+  739:   processWebhookData(webhookData: { entry: FacebookWebhookEntry[] }): Array<{
+  740      type: 'message' | 'delivery' | 'read';
+
+  804  
+  805: export const facebookAPI = new FacebookAPIService();
+
+lib/instagram-api.ts:
+   67    private readonly baseUrl = 'https://graph.instagram.com';
+   68:   private readonly graphUrl = 'https://graph.facebook.com/v18.0';
+   69    private readonly appId: string;
+
+   73      // In production, these should come from environment variables
+   74:     this.appId = process.env.INSTAGRAM_APP_ID || process.env.FACEBOOK_APP_ID || 'your_app_id';
+   75:     this.appSecret = process.env.INSTAGRAM_APP_SECRET || process.env.FACEBOOK_APP_SECRET || 'your_app_secret';
+   76    }
+
+  180    /**
+  181:    * Get Instagram Business Account conversations (requires Facebook Graph API)
+  182     */
+
+  254    /**
+  255:    * Get Instagram Business Account ID from Facebook Page
+  256     */
+
+  301    /**
+  302:    * Verify webhook signature (same as Facebook)
+  303     */
