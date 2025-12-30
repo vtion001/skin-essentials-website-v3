@@ -27,6 +27,9 @@ export async function POST(req: NextRequest) {
     }
 
     const admin = supabaseAdminClient()
+    if (!admin) {
+      return NextResponse.json({ success: false, error: "Database client unavailable" }, { status: 500 })
+    }
 
     let clientId: string | null = null
     if (email) {
@@ -38,6 +41,24 @@ export async function POST(req: NextRequest) {
       clientId = existingByPhone?.id ?? null
     }
     if (!clientId) clientId = `client_${Math.random().toString(36).slice(2)}`
+
+    // --- GUARDRAIL: Duplicate Booking Check ---
+    const { data: existingAppt } = await admin
+      .from('appointments')
+      .select('id')
+      .eq('date', date)
+      .eq('time', time)
+      .maybeSingle()
+
+    if (existingAppt) {
+      return NextResponse.json({
+        success: false,
+        error: "This time slot is already booked. Please choose another time or date.",
+        code: "SLOT_TAKEN"
+      }, { status: 409 })
+    }
+    // ------------------------------------------
+
     const appointmentId = `bk_${Date.now()}`
 
     // Upsert client (basic)
@@ -104,12 +125,25 @@ export async function POST(req: NextRequest) {
 
       // Send SMS Confirmation
       if (phone) {
+        const { sendSms } = await import("@/lib/sms-service")
         const msg = `Hi ${name}, your appointment on ${date} at ${time} is confirmed. Reply YES to acknowledge.`
-        await fetch(`${baseUrl}/api/sms`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ to: phone, message: msg })
-        }).catch(() => { })
+        await sendSms(phone, msg).catch(console.error)
+      }
+
+      // Send Viber Admin Notification
+      try {
+        const { notifyNewBookingViber } = await import("@/lib/viber-service")
+        await notifyNewBookingViber({
+          client_name: name,
+          client_email: email,
+          client_phone: phone,
+          service,
+          date,
+          time,
+          price
+        }).catch(err => console.error("Viber notification failed", err))
+      } catch (e) {
+        console.error("Viber import/execution error", e)
       }
 
       // Schedule Reminders (24h, 3h, 1h)

@@ -140,15 +140,14 @@ class AppointmentService {
         return this.appointments.filter((apt) => apt.date === date)
     }
 
-    addAppointment(appointment: Omit<Appointment, 'id' | 'createdAt' | 'updatedAt'>): Appointment {
+    async addAppointment(appointment: Omit<Appointment, 'id' | 'createdAt' | 'updatedAt'>): Promise<{ ok: boolean, data?: Appointment, error?: string }> {
         const newAppointment: Appointment = {
             ...appointment,
             id: Date.now().toString(),
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
         }
-        this.appointments.push(newAppointment)
-        this.saveToStorage()
+
         const row = {
             id: newAppointment.id,
             client_id: newAppointment.clientId,
@@ -165,52 +164,68 @@ class AppointmentService {
             created_at: newAppointment.createdAt,
             updated_at: newAppointment.updatedAt,
         }
-        supabaseInsertAppointment(row).catch(() => { })
-        return newAppointment
+
+        try {
+            const res = await fetch('/api/admin/appointments', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(row),
+            })
+
+            const json = await res.json()
+            if (!res.ok) {
+                return { ok: false, error: json.error || 'Failed to save appointment' }
+            }
+
+            this.appointments.push(newAppointment)
+            this.saveToStorage()
+            return { ok: true, data: newAppointment }
+        } catch (err) {
+            return { ok: false, error: 'Network error' }
+        }
     }
 
-    updateAppointment(id: string, updates: Partial<Appointment>): boolean {
+    async updateAppointment(id: string, updates: Partial<Appointment>): Promise<{ ok: boolean, error?: string }> {
         const index = this.appointments.findIndex((apt) => apt.id === id)
-        if (index === -1) return false
+        if (index === -1) return { ok: false, error: 'Appointment not found' }
 
-        this.appointments[index] = {
-            ...this.appointments[index],
-            ...updates,
-            updatedAt: new Date().toISOString(),
+        const normalized = {
+            client_id: updates?.clientId,
+            client_name: updates?.clientName,
+            client_email: updates?.clientEmail,
+            client_phone: updates?.clientPhone,
+            service: updates?.service,
+            date: updates?.date,
+            time: updates?.time,
+            status: updates?.status,
+            notes: updates?.notes,
+            duration: updates?.duration,
+            price: updates?.price,
+            updated_at: new Date().toISOString(),
         }
-        this.saveToStorage()
-        {
-            const {
-                clientId,
-                clientName,
-                clientEmail,
-                clientPhone,
-                service,
-                date,
-                time,
-                status,
-                notes,
-                duration,
-                price,
-                updatedAt,
-            } = this.appointments[index]
-            const row = {
-                client_id: clientId,
-                client_name: clientName,
-                client_email: clientEmail,
-                client_phone: clientPhone,
-                service,
-                date,
-                time,
-                status,
-                notes,
-                duration,
-                price,
-                updated_at: updatedAt,
+
+        try {
+            const res = await fetch('/api/admin/appointments', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, updates: normalized }),
+            })
+
+            const json = await res.json()
+            if (!res.ok) {
+                return { ok: false, error: json.error || 'Failed to update appointment' }
             }
-            supabaseUpdateAppointment(id, row).catch(() => { })
+
+            this.appointments[index] = {
+                ...this.appointments[index],
+                ...updates,
+                updatedAt: normalized.updated_at,
+            }
+            this.saveToStorage()
+            return { ok: true }
+        } catch (err) {
+            return { ok: false, error: 'Network error' }
         }
-        return true
     }
 
     deleteAppointment(id: string): boolean {

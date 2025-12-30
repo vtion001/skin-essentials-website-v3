@@ -55,12 +55,12 @@ export async function createMessageReminder(phoneNumber: string, message: string
                     await supabase.from('error_logs').insert({
                         context: 'sms_schedule_active',
                         message: message,
-                        details: JSON.stringify({ // Storing as JSON string to fit text column if needed, or if details is jsonb, this works too usually
+                        meta: {
                             provider_id: reminderId,
                             phone: phone,
                             scheduled_at: data.data?.scheduled_at || scheduledDate.toISOString(),
                             full_response: data
-                        })
+                        }
                     })
                 }
             }
@@ -92,15 +92,14 @@ export async function listMessageReminders() {
 
         // Transform back to the shape our UI expects
         const mapped = (data || []).map((row: any) => {
-            let details: any = {}
-            try { details = typeof row.details === 'string' ? JSON.parse(row.details) : row.details } catch { }
+            const meta = row.meta || {}
 
             return {
-                id: details.provider_id || row.id, // Use provider ID if available
+                id: meta.provider_id || row.id, // Use provider ID if available
                 db_id: row.id, // Keep generic DB ID for deletion reference
-                phone_number: details.phone || "Unknown",
+                phone_number: meta.phone || "Unknown",
                 message: row.message,
-                scheduled_at: details.scheduled_at || row.created_at,
+                scheduled_at: meta.scheduled_at || row.created_at,
                 status: 'scheduled',
                 created_at: row.created_at
             }
@@ -134,16 +133,13 @@ export async function deleteMessageReminder(id: string | number) {
             // Find the record where provider_id matches
             const { data: records } = await supabase
                 .from('error_logs')
-                .select('id, details')
+                .select('id, meta')
                 .eq('context', 'sms_schedule_active')
 
             if (records) {
                 const match = records.find((r: any) => {
-                    try {
-                        const d = typeof r.details === 'string' ? JSON.parse(r.details) : r.details
-                        // Compare as strings to be safe
-                        return String(d.provider_id) === String(id)
-                    } catch { return false }
+                    const m = r.meta || {}
+                    return String(m.provider_id) === String(id)
                 })
 
                 if (match) {

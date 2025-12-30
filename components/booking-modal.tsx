@@ -29,6 +29,8 @@ export function BookingModal({ isOpen, onClose, defaultServiceId }: BookingModal
   const [useInfluencer, setUseInfluencer] = useState<boolean>(false)
   const [selectedInfluencerId, setSelectedInfluencerId] = useState<string>("")
   const [referralCode, setReferralCode] = useState<string>("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [bookingError, setBookingError] = useState<string | null>(null)
 
   useEffect(() => {
     if (isOpen) {
@@ -201,14 +203,22 @@ export function BookingModal({ isOpen, onClose, defaultServiceId }: BookingModal
                       </div>
                       <div className="relative group">
                         <label htmlFor="phone" className="text-[10px] tracking-widest font-bold text-gray-400 uppercase block mb-1">Phone Number</label>
-                        <input
-                          id="phone"
-                          type="tel"
-                          value={formData.phone}
-                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                          className="w-full bg-transparent border-b border-gray-200 py-3 text-base sm:text-lg font-light focus:outline-none focus:border-[#d09d80] transition-all placeholder:text-gray-300"
-                          placeholder="+63"
-                        />
+                        <div className="flex items-center border-b border-gray-200 group-focus-within:border-[#d09d80] transition-all">
+                          <span className="text-base sm:text-lg font-light text-gray-400 pr-1">+63</span>
+                          <input
+                            id="phone"
+                            type="tel"
+                            value={formData.phone}
+                            onChange={(e) => {
+                              let val = e.target.value.replace(/\D/g, "");
+                              if (val.startsWith("63")) val = val.slice(2);
+                              if (val.startsWith("0")) val = val.slice(1);
+                              setFormData({ ...formData, phone: val.slice(0, 10) });
+                            }}
+                            className="w-full bg-transparent py-3 text-base sm:text-lg font-light focus:outline-none placeholder:text-gray-300"
+                            placeholder="9XXXXXXXXX"
+                          />
+                        </div>
                       </div>
                       <div className="relative group">
                         <label htmlFor="email" className="text-[10px] tracking-widest font-bold text-gray-400 uppercase block mb-1">Email Address</label>
@@ -228,7 +238,10 @@ export function BookingModal({ isOpen, onClose, defaultServiceId }: BookingModal
                             id="date"
                             type="date"
                             value={formData.date}
-                            onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                            onChange={(e) => {
+                              setFormData({ ...formData, date: e.target.value })
+                              if (bookingError) setBookingError(null)
+                            }}
                             className="w-full bg-transparent border-b border-gray-200 py-3 text-sm focus:outline-none focus:border-[#d09d80] transition-all"
                           />
                         </div>
@@ -238,7 +251,10 @@ export function BookingModal({ isOpen, onClose, defaultServiceId }: BookingModal
                             id="time"
                             type="time"
                             value={formData.time}
-                            onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                            onChange={(e) => {
+                              setFormData({ ...formData, time: e.target.value })
+                              if (bookingError) setBookingError(null)
+                            }}
                             className="w-full bg-transparent border-b border-gray-200 py-3 text-sm focus:outline-none focus:border-[#d09d80] transition-all"
                           />
                         </div>
@@ -337,9 +353,18 @@ export function BookingModal({ isOpen, onClose, defaultServiceId }: BookingModal
                     </div>
 
                     <div className="pt-8">
+                      {bookingError && (
+                        <div className="mb-6 p-4 rounded-2xl bg-rose-50 border border-rose-100 animate-in fade-in slide-in-from-top-2 duration-300">
+                          <p className="text-[10px] font-bold tracking-widest text-rose-600 uppercase mb-1">Booking Conflict</p>
+                          <p className="text-xs text-rose-500 font-medium leading-relaxed uppercase tracking-tight">{bookingError}</p>
+                        </div>
+                      )}
                       <button
                         onClick={async () => {
+                          setIsSubmitting(true)
+                          setBookingError(null)
                           const svc = services.find((s) => s.id === selectedService)
+                          // ... price calculation logic stays same
                           const priceStr = svc?.price ?? "0"
                           const price = /free/i.test(priceStr) ? 0 : parseFloat((priceStr.match(/[\d,.]+/g)?.[0] || "0").replace(/,/g, ""))
                           const durationStr = svc?.duration ?? "60"
@@ -358,7 +383,8 @@ export function BookingModal({ isOpen, onClose, defaultServiceId }: BookingModal
                               method: 'POST',
                               headers: { 'Content-Type': 'application/json' },
                               body: JSON.stringify({
-                                name: formData.name, email: formData.email, phone: formData.phone,
+                                name: formData.name, email: formData.email,
+                                phone: formData.phone ? `+63${formData.phone}` : "",
                                 service: svc?.name || selectedService, date: formData.date, time: formData.time,
                                 notes: formData.message, duration, price: finalPrice, sourcePlatform,
                                 influencerId: selectedInfluencerId || undefined,
@@ -366,13 +392,22 @@ export function BookingModal({ isOpen, onClose, defaultServiceId }: BookingModal
                                 referralCode: referralCode || undefined, discountApplied,
                               })
                             })
-                            if (res.ok) setStep(3)
-                          } catch { }
+                            const data = await res.json()
+                            if (res.ok) {
+                              setStep(3)
+                            } else {
+                              setBookingError(data.error || "Something went wrong. Please try again.")
+                            }
+                          } catch (err) {
+                            setBookingError("Failed to connect to the booking server.")
+                          } finally {
+                            setIsSubmitting(false)
+                          }
                         }}
-                        disabled={!formData.name || !formData.phone || !formData.date || !formData.time || !selectedService || !sourcePlatform}
+                        disabled={!formData.name || !formData.phone || !formData.date || !formData.time || !selectedService || !sourcePlatform || isSubmitting}
                         className="w-full text-[11px] font-bold tracking-[0.2em] text-white bg-gray-900 uppercase px-8 py-4 rounded-full hover:bg-gray-800 transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        Confirm Booking
+                        {isSubmitting ? "Processing..." : "Confirm Booking"}
                       </button>
                       <p className="mt-4 text-[9px] text-center text-gray-400 uppercase tracking-widest">
                         Individual results may vary.
@@ -391,7 +426,7 @@ export function BookingModal({ isOpen, onClose, defaultServiceId }: BookingModal
                 <div className="space-y-4">
                   <h3 className="font-serif text-3xl text-gray-900">Appointment Request Sent.</h3>
                   <p className="text-gray-500 font-light max-w-md mx-auto italic-serif">
-                    Thank you, <span className="text-gray-900 font-medium">{formData.name}</span>. Our specialist team will call you at <span className="text-gray-900 font-medium">{formData.phone}</span> shortly to finalize your transformation session.
+                    Thank you, <span className="text-gray-900 font-medium">{formData.name}</span>. Our specialist team will call you at <span className="text-gray-900 font-medium">+63 {formData.phone}</span> shortly to finalize your transformation session.
                   </p>
                 </div>
                 <div className="flex gap-4 justify-center pt-8">

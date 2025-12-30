@@ -6,6 +6,7 @@ import { createMessageReminder } from "@/lib/iprogsms"
 export async function GET(req: NextRequest) {
   try {
     const admin = supabaseAdminClient()
+    if (!admin) return NextResponse.json({ error: 'DB Client unavailable' }, { status: 500 })
     const { data, error } = await admin
       .from('appointments')
       .select('*')
@@ -21,6 +22,24 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const admin = supabaseAdminClient()
+    if (!admin) return NextResponse.json({ error: 'DB Client unavailable' }, { status: 500 })
+
+    // --- GUARDRAIL: Duplicate Booking Check ---
+    const { data: existingAppt } = await admin
+      .from('appointments')
+      .select('id')
+      .eq('date', body.date)
+      .eq('time', body.time)
+      .maybeSingle()
+
+    if (existingAppt) {
+      return NextResponse.json({
+        ok: false,
+        error: "This time slot is already booked. Please choose another time or date."
+      }, { status: 409 })
+    }
+    // ------------------------------------------
+
     const payload = {
       id: body.id || `apt_${Date.now()}`,
       client_id: body.client_id ?? body.clientId ?? '',
@@ -40,16 +59,17 @@ export async function POST(req: NextRequest) {
     const { data, error } = await admin.from('appointments').insert(payload).select('*').single()
     if (error) return jsonMaybeMasked(req, { ok: false, error: error.message }, { status: 500 })
 
-    // Send SMS Confirmation
     if (payload.client_phone) {
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || ''
+      const { sendSms } = await import("@/lib/sms-service")
       const msg = `Hi ${payload.client_name}, your appointment on ${payload.date} at ${payload.time} is confirmed. Reply YES to acknowledge.`
-      fetch(`${baseUrl}/api/sms`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: payload.client_phone, message: msg })
-      }).catch(err => console.error("Failed to send admin appointment SMS", err))
+      await sendSms(payload.client_phone, msg).catch(err => console.error("Failed to send admin appointment SMS", err))
     }
+
+    // Send Viber Admin Notification
+    try {
+      const { notifyNewBookingViber } = await import("@/lib/viber-service")
+      await notifyNewBookingViber(payload).catch(err => console.error("Viber notification failed", err))
+    } catch (e) { }
 
     // Schedule Reminders (24h, 3h, 1h)
     if (payload.client_phone && payload.date && payload.time) {
@@ -92,6 +112,27 @@ export async function PATCH(req: NextRequest) {
     const { id, updates } = body || {}
     if (!id) return NextResponse.json({ ok: false, error: 'Missing id' }, { status: 400 })
     const admin = supabaseAdminClient()
+    if (!admin) return NextResponse.json({ error: 'DB Client unavailable' }, { status: 500 })
+
+    // --- GUARDRAIL: Duplicate Booking Check for Update ---
+    if (updates?.date || updates?.time) {
+      const { data: existingAppt } = await admin
+        .from('appointments')
+        .select('id, date, time')
+        .eq('date', updates.date || '')
+        .eq('time', updates.time || '')
+        .neq('id', id) // Exclude current appointment
+        .maybeSingle()
+
+      if (existingAppt) {
+        return NextResponse.json({
+          ok: false,
+          error: "This time slot is already booked by another appointment."
+        }, { status: 409 })
+      }
+    }
+    // ----------------------------------------------------
+
     const normalized = {
       client_id: updates?.client_id ?? updates?.clientId,
       client_name: updates?.client_name ?? updates?.clientName,
@@ -126,6 +167,7 @@ export async function DELETE(req: NextRequest) {
     }
     if (!id) return jsonMaybeMasked(req, { ok: false, error: 'Missing id' }, { status: 400 })
     const admin = supabaseAdminClient()
+    if (!admin) return NextResponse.json({ error: 'DB Client unavailable' }, { status: 500 })
     const { error } = await admin.from('appointments').delete().eq('id', id)
     if (error) return jsonMaybeMasked(req, { ok: false, error: error.message }, { status: 500 })
     return jsonMaybeMasked(req, { ok: true })

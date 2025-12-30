@@ -316,6 +316,10 @@ export default function AdminDashboard() {
   const [confirmMedicalRecord, setConfirmMedicalRecord] = useState<MedicalRecord | null>(null)
   const [confirmMedicalDeleting, setConfirmMedicalDeleting] = useState(false)
 
+  // Deletion confirmation (Appointment)
+  const [confirmAppointment, setConfirmAppointment] = useState<Appointment | null>(null)
+  const [confirmAppointmentDeleting, setConfirmAppointmentDeleting] = useState(false)
+
   // Calendar and search states
   const {
     appointments: {
@@ -660,7 +664,7 @@ export default function AdminDashboard() {
   const stats = React.useMemo(() => getDashboardStats(), [appointments, clients, payments, socialMessages])
 
   // Appointment Management
-  const handleAppointmentSubmit = (e: React.FormEvent) => {
+  const handleAppointmentSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
 
@@ -687,10 +691,20 @@ export default function AdminDashboard() {
       }
 
       if (selectedAppointment) {
-        appointmentService.updateAppointment(selectedAppointment.id, payloadBase)
+        const result = await appointmentService.updateAppointment(selectedAppointment.id, payloadBase)
+        if (!result.ok) {
+          showNotification("error", result.error || "Failed to update appointment")
+          setIsLoading(false)
+          return
+        }
         showNotification("success", "Appointment updated successfully!")
       } else {
-        appointmentService.addAppointment(payloadBase as Omit<Appointment, "id" | "createdAt" | "updatedAt">)
+        const result = await appointmentService.addAppointment(payloadBase as Omit<Appointment, "id" | "createdAt" | "updatedAt">)
+        if (!result.ok) {
+          showNotification("error", result.error || "Failed to create appointment")
+          setIsLoading(false)
+          return
+        }
         showNotification("success", "Appointment created successfully!")
       }
 
@@ -702,6 +716,48 @@ export default function AdminDashboard() {
       showNotification("error", "Failed to save appointment")
     } finally {
       setIsLoading(false)
+    }
+  }
+  const handleAppointmentDelete = async () => {
+    if (!confirmAppointment) return
+    setConfirmAppointmentDeleting(true)
+    try {
+      const res = await fetch('/api/admin/appointments', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: confirmAppointment.id })
+      })
+      if (res.ok) {
+        showNotification('success', 'Appointment deleted successfully')
+        await loadAllData()
+        setConfirmAppointment(null)
+      } else {
+        const data = await res.json()
+        showNotification('error', data.error || 'Failed to delete appointment')
+      }
+    } catch (error) {
+      showNotification('error', 'Network error occurred')
+    } finally {
+      setConfirmAppointmentDeleting(false)
+    }
+  }
+
+  const handleViberNotify = async (appointment: Appointment) => {
+    try {
+      showNotification('info', 'Sending Viber notification...')
+      const res = await fetch('/api/admin/viber', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ appointment })
+      })
+      const data = await res.json()
+      if (res.ok) {
+        showNotification('success', 'Viber notification sent!')
+      } else {
+        showNotification('error', data.error || 'Failed to send Viber notification')
+      }
+    } catch (error) {
+      showNotification('error', 'Network error occurred')
     }
   }
 
@@ -1996,11 +2052,10 @@ export default function AdminDashboard() {
                                             <Button size="icon" variant="ghost" onClick={() => openAppointmentModal(a)} className="h-8 w-8 rounded-lg text-[#8B735B] hover:bg-[#E2D1C3]/20">
                                               <Edit className="w-3.5 h-3.5" />
                                             </Button>
-                                            <Button size="icon" variant="ghost" onClick={async () => {
-                                              if (!confirmTwice(a.clientName || 'this appointment')) return
-                                              const res = await fetch('/api/admin/appointments', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: a.id }) })
-                                              if (res.ok) { showNotification('success', 'Appointment deleted'); await loadAllData() } else { showNotification('error', 'Failed to delete appointment') }
-                                            }} className="h-8 w-8 rounded-lg text-rose-400 hover:bg-rose-50 hover:text-rose-600">
+                                            <Button size="icon" variant="ghost" onClick={() => handleViberNotify(a)} className="h-8 w-8 rounded-lg text-[#7360F2] hover:bg-[#7360F2]/10" title="Notify via Viber">
+                                              <MessageSquare className="w-3.5 h-3.5" />
+                                            </Button>
+                                            <Button size="icon" variant="ghost" onClick={() => setConfirmAppointment(a)} className="h-8 w-8 rounded-lg text-rose-400 hover:bg-rose-50 hover:text-rose-600">
                                               <Trash2 className="w-3.5 h-3.5" />
                                             </Button>
                                           </div>
@@ -4484,6 +4539,58 @@ export default function AdminDashboard() {
                 </div>
               </div>
             )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Appointment Deletion Confirmation */}
+        <Dialog open={!!confirmAppointment} onOpenChange={(open) => !open && setConfirmAppointment(null)}>
+          <DialogContent className="max-w-md bg-white/95 backdrop-blur-2xl border border-rose-100 shadow-2xl rounded-[2rem] sm:rounded-[2rem]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-3 text-rose-600 text-xl font-bold tracking-tight pt-2">
+                <div className="p-2 bg-rose-50 rounded-xl">
+                  <AlertCircle className="w-6 h-6" />
+                </div>
+                Confirm Deletion
+              </DialogTitle>
+            </DialogHeader>
+            <div className="py-6">
+              <p className="text-[#1A1A1A]/80 leading-relaxed font-medium">
+                Are you sure you want to delete the appointment for <span className="font-bold text-[#1A1A1A] underline decoration-rose-200 decoration-2 underline-offset-4">{confirmAppointment?.clientName}</span>?
+              </p>
+              <div className="mt-6 p-4 bg-rose-50/50 rounded-2xl border border-rose-100/50 flex items-start gap-4">
+                <div className="p-2 bg-white rounded-xl shadow-sm border border-rose-100/50">
+                  <Trash2 className="w-5 h-5 text-rose-400" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-rose-900 uppercase tracking-widest mb-1.5">Destructive Action</p>
+                  <p className="text-[11px] text-rose-700/80 font-semibold leading-relaxed">
+                    This will permanently remove this record from the system. This process cannot be reversed.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-3 mt-2 pb-2">
+              <Button
+                variant="outline"
+                className="flex-1 h-12 rounded-2xl font-bold uppercase tracking-widest text-[#1A1A1A]/60 border-[#E2D1C3]/20 hover:bg-[#FDFCFB] hover:text-[#1A1A1A] transition-all duration-300"
+                onClick={() => setConfirmAppointment(null)}
+                disabled={confirmAppointmentDeleting}
+              >
+                Keep Record
+              </Button>
+              <Button
+                className="flex-1 h-12 rounded-2xl font-bold uppercase tracking-widest bg-rose-600 hover:bg-rose-700 text-white shadow-xl shadow-rose-600/20 transition-all duration-300 active:scale-[0.98]"
+                onClick={handleAppointmentDelete}
+                disabled={confirmAppointmentDeleting}
+              >
+                {confirmAppointmentDeleting ? (
+                  <div className="flex items-center gap-2">
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Removing...</span>
+                  </div>
+                ) : 'Delete Now'}
+              </Button>
+            </div>
           </DialogContent>
         </Dialog>
       </div >
