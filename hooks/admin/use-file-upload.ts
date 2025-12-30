@@ -1,13 +1,7 @@
-import { useState, useRef } from 'react'
-import { createClient } from '@supabase/supabase-js'
+import { useRef } from 'react'
+import { supabaseBrowserClient } from '@/lib/supabase/client'
 
-// Initialize Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-const supabase = (supabaseUrl && supabaseAnonKey) 
-  ? createClient(supabaseUrl, supabaseAnonKey) 
-  : null
+const supabase = supabaseBrowserClient()
 
 interface UseFileUploadProps {
   bucketName: string

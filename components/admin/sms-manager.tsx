@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { MessageSquare, Settings, Clock, FileText, Loader2 } from "lucide-react"
+import { MessageSquare, Settings, Clock, FileText, Loader2, RefreshCw } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
@@ -69,11 +69,20 @@ export function SmsManager({ smsStatus, refreshSmsStatus, showNotification }: Sm
                                     {smsStatus?.status || (smsStatus?.configured ? 'Active' : 'Not Configured')}
                                 </Badge>
                                 {smsStatus?.balance && (
-                                    <Badge variant="outline" className="text-gray-600">
-                                        Credits: {smsStatus.balance}
+                                    <Badge variant="outline" className="text-[#0F2922] border-[#0F2922]/20 bg-emerald-50/50 flex items-center gap-1.5 px-3 py-1">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                        Credits: <span className="font-bold">{smsStatus.balance}</span>
                                     </Badge>
                                 )}
-                                <Button variant="secondary" onClick={refreshSmsStatus}>Refresh</Button>
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={refreshSmsStatus}
+                                    className="h-8 rounded-xl hover:bg-gray-200 transition-colors"
+                                >
+                                    <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+                                    Refresh
+                                </Button>
                             </div>
                         </div>
                     </div>

@@ -157,3 +157,28 @@ export async function deleteMessageReminder(id: string | number) {
         return { ok: false, error: e }
     }
 }
+
+export async function getSmsCredits() {
+    const iprogToken = process.env.IPROGSMS_API_TOKEN
+    if (!iprogToken) {
+        return { ok: false, error: "IPROGSMS_API_TOKEN is not set" }
+    }
+
+    try {
+        const res = await fetch(`https://www.iprogsms.com/api/v1/account/sms_credits?api_token=${iprogToken}`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        })
+
+        const data = await res.json()
+        if (!res.ok) {
+            return { ok: false, error: data }
+        }
+
+        return { ok: true, balance: data.data?.load_balance ?? 0 }
+    } catch (e) {
+        return { ok: false, error: e }
+    }
+}

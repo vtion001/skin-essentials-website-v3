@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { BarChart3, RefreshCw } from "lucide-react"
 import { format } from "date-fns"
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+import { supabaseBrowserClient } from "@/lib/supabase/client"
 
 export function SmsAnalytics() {
     const [date, setDate] = useState<Date | undefined>(new Date())
@@ -19,9 +19,10 @@ export function SmsAnalytics() {
         last7Days: 0
     })
     const [loading, setLoading] = useState(false)
-    const supabase = createClientComponentClient()
+    const supabase = supabaseBrowserClient()
 
     const fetchStats = async () => {
+        if (!supabase) return
         setLoading(true)
         try {
             // Fetch all logs with context 'sms_log' from 'error_logs'

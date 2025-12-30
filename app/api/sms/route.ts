@@ -13,12 +13,14 @@ function normPhone(p: string) {
 export async function GET() {
   const iprogToken = process.env.IPROGSMS_API_TOKEN
   if (iprogToken) {
+    const { getSmsCredits } = await import("@/lib/iprogsms")
+    const creds = await getSmsCredits()
     return NextResponse.json({
       configured: true,
       provider: "iProgSMS",
       sender: "Default",
       status: "Active",
-      balance: "Unlimited" // iProgSMS doesn't seemingly expose a balance endpoint
+      balance: creds.ok ? String(creds.balance) : "Error"
     })
   }
 
