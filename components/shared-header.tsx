@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { BookingModal } from '@/components/booking-modal'
 
 interface SharedHeaderProps {
   showBackButton?: boolean
@@ -22,6 +23,7 @@ interface SharedHeaderProps {
 export const SharedHeader = ({ showBackButton, backHref }: SharedHeaderProps) => {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isBookingOpen, setIsBookingOpen] = useState(false)
   const pathname = usePathname()
 
   useEffect(() => {
@@ -92,11 +94,14 @@ export const SharedHeader = ({ showBackButton, backHref }: SharedHeaderProps) =>
               </div>
 
               <div className="flex items-center gap-4">
-                <Link href="/contact" className="hidden md:block">
-                  <Button className="bg-brand-gradient hover:shadow-xl hover-lift text-white text-[10px] tracking-[0.1em] font-bold px-6 py-2 rounded-full">
+                <div className="hidden md:block">
+                  <Button
+                    onClick={() => setIsBookingOpen(true)}
+                    className="bg-brand-gradient hover:shadow-xl hover-lift text-white text-[10px] tracking-[0.1em] font-bold px-6 py-2 rounded-full"
+                  >
                     BOOK NOW
                   </Button>
-                </Link>
+                </div>
 
                 {/* Mobile Menu Toggle - Hidden in favor of MobileNav */}
                 <button
@@ -128,13 +133,22 @@ export const SharedHeader = ({ showBackButton, backHref }: SharedHeaderProps) =>
             </Link>
           ))}
           <div className="h-[1px] bg-gray-100 my-4"></div>
-          <Link href="/contact" onClick={() => setIsMobileMenuOpen(false)}>
-            <Button className="bg-brand-gradient w-full py-6 text-lg font-bold">
-              BOOK AN APPOINTMENT
-            </Button>
-          </Link>
+          <Button
+            onClick={() => {
+              setIsMobileMenuOpen(false)
+              setIsBookingOpen(true)
+            }}
+            className="bg-brand-gradient w-full py-6 text-lg font-bold"
+          >
+            BOOK AN APPOINTMENT
+          </Button>
         </nav>
       </div>
+
+      <BookingModal
+        isOpen={isBookingOpen}
+        onClose={() => setIsBookingOpen(false)}
+      />
     </header>
   )
 }

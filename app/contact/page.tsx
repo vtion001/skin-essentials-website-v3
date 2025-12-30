@@ -230,7 +230,7 @@ export default function ContactPage() {
                       <Clock className="w-3 h-3 text-[#d09d80]" /> Hours
                     </h3>
                     <div className="space-y-1">
-                      <p className="text-sm leading-relaxed text-gray-500 font-light">Mon-Sat: 9AM - 7PM</p>
+                      <p className="text-sm leading-relaxed text-gray-500 font-light">Mon-Sat: 9AM - 5PM</p>
                       <p className="text-sm leading-relaxed text-gray-500 font-light">Sun: 10AM - 5PM</p>
                     </div>
                   </div>
@@ -379,13 +379,13 @@ export default function ContactPage() {
 
                       <div className="space-y-1">
                         <p className="text-[10px] font-bold tracking-[0.2em] text-gray-900 uppercase">Email us</p>
-                        <p className="text-gray-500 font-light">hello@skinessentials.ph</p>
+                        <p className="text-gray-500 font-light">ceo.jchers@gmail.com</p>
                       </div>
 
                       <div className="space-y-1">
                         <p className="text-[10px] font-bold tracking-[0.2em] text-gray-900 uppercase">Call us</p>
                         <p className="text-gray-500 font-light">0995-260-3451</p>
-                        <p className="text-[11px] text-gray-400 italic">Monday — Saturday: 9:00 AM to 7:00 PM</p>
+                        <p className="text-[11px] text-gray-400 italic">Monday — Saturday: 9:00 AM to 5:00 PM</p>
                       </div>
                     </div>
                   </div>
