@@ -130,6 +130,8 @@ import { useAdminCommunication } from "@/lib/hooks/use-admin-communication"
 import { useAdminEventSync } from "@/lib/hooks/use-admin-event-sync"
 import { useAdminFilters } from "@/lib/hooks/use-admin-filters"
 import { supabaseBrowserClient } from "@/lib/supabase/client"
+import { AppointmentsTable } from "@/components/admin/appointments/appointments-table"
+import { useAdminAppointments } from "@/lib/hooks/features/use-admin-appointments"
 
 const services = [
   "Thread Lifts - Nose Enhancement",
@@ -172,9 +174,13 @@ export default function AdminDashboard() {
   const [isLoading, setIsLoading] = useState(false)
   const [notification, setNotification] = useState<{ type: "success" | "error" | "info"; message: string } | null>(null)
 
+  const showNotification = (type: "success" | "error" | "info", message: string) => {
+    setNotification({ type, message })
+    setTimeout(() => setNotification(null), 5000)
+  }
+
   // Data states
   const {
-    appointments, setAppointments,
     payments, setPayments,
     medicalRecords, setMedicalRecords,
     clients, setClients,
@@ -183,7 +189,6 @@ export default function AdminDashboard() {
     influencers, setInfluencers,
     refreshData: loadAllData,
     isLoading: isDataLoading,
-    refreshAppointments,
     refreshClients,
     refreshPayments,
     refreshMedicalRecords,
@@ -191,6 +196,16 @@ export default function AdminDashboard() {
     refreshInfluencers,
     refreshSocialMessages
   } = useAdminData()
+
+  // Appointment Management Hook
+  const {
+    appointments,
+    setAppointments,
+    loadAppointments,
+    handleUpdateStatus,
+    handleDelete: handleAppointmentDeleteAction,
+    handleViberNotify
+  } = useAdminAppointments(showNotification)
 
   useEffect(() => {
     if (medicalRecords.length > 0) {
@@ -456,10 +471,6 @@ export default function AdminDashboard() {
     router.push('/admin/login')
   }
 
-  const showNotification = (type: "success" | "error" | "info", message: string) => {
-    setNotification({ type, message })
-    setTimeout(() => setNotification(null), 5000)
-  }
 
   const confirmTwice = (subject: string) => {
     if (typeof window === 'undefined') return false
@@ -607,7 +618,7 @@ export default function AdminDashboard() {
 
     const channel = client
       .channel('admin-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, () => { refreshAppointments() })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, () => { loadAppointments() })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' }, () => { refreshClients() })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'staff' }, () => { refreshStaff() })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'payments' }, () => { refreshPayments() })
@@ -619,7 +630,7 @@ export default function AdminDashboard() {
     return () => {
       client.removeChannel(channel)
     }
-  }, [supabaseRealtimeEnabled, refreshAppointments, refreshClients, refreshStaff, refreshPayments, refreshMedicalRecords, refreshInfluencers])
+  }, [supabaseRealtimeEnabled, loadAppointments, refreshClients, refreshStaff, refreshPayments, refreshMedicalRecords, refreshInfluencers])
 
   // Dashboard Statistics
   const getDashboardStats = () => {
@@ -663,7 +674,18 @@ export default function AdminDashboard() {
 
   const stats = React.useMemo(() => getDashboardStats(), [appointments, clients, payments, socialMessages])
 
-  // Appointment Management
+
+  const handleAppointmentDelete = async () => {
+    if (!confirmAppointment) return
+    setConfirmAppointmentDeleting(true)
+    const success = await handleAppointmentDeleteAction(confirmAppointment.id)
+    if (success) {
+      setConfirmAppointment(null)
+    }
+    setConfirmAppointmentDeleting(false)
+  }
+
+  // Legacy submit handler (to be extracted in next step)
   const handleAppointmentSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
@@ -708,7 +730,7 @@ export default function AdminDashboard() {
         showNotification("success", "Appointment created successfully!")
       }
 
-      setAppointments(appointmentService.getAllAppointments())
+      loadAppointments()
       setIsAppointmentModalOpen(false)
       setAppointmentForm({})
       setSelectedAppointment(null)
@@ -716,62 +738,6 @@ export default function AdminDashboard() {
       showNotification("error", "Failed to save appointment")
     } finally {
       setIsLoading(false)
-    }
-  }
-  const handleAppointmentDelete = async () => {
-    if (!confirmAppointment) return
-    setConfirmAppointmentDeleting(true)
-    try {
-      const res = await fetch('/api/admin/appointments', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: confirmAppointment.id })
-      })
-      if (res.ok) {
-        showNotification('success', 'Appointment deleted successfully')
-        await loadAllData()
-        setConfirmAppointment(null)
-      } else {
-        const data = await res.json()
-        showNotification('error', data.error || 'Failed to delete appointment')
-      }
-    } catch (error) {
-      showNotification('error', 'Network error occurred')
-    } finally {
-      setConfirmAppointmentDeleting(false)
-    }
-  }
-
-  const handleViberNotify = async (appointment: Appointment) => {
-    try {
-      showNotification('info', 'Sending Viber notification...')
-      const res = await fetch('/api/admin/viber', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ appointment })
-      })
-      const data = await res.json()
-      if (res.ok) {
-        showNotification('success', 'Viber notification sent!')
-      } else {
-        showNotification('error', data.error || 'Failed to send Viber notification')
-      }
-    } catch (error) {
-      showNotification('error', 'Network error occurred')
-    }
-  }
-
-  const handleUpdateAppointmentStatus = async (id: string, newStatus: Appointment['status']) => {
-    try {
-      const res = await appointmentService.updateAppointment(id, { status: newStatus })
-      if (res.ok) {
-        setAppointments(appointmentService.getAllAppointments())
-        showNotification('success', `Status updated to ${newStatus}`)
-      } else {
-        showNotification('error', res.error || 'Failed to update status')
-      }
-    } catch (error) {
-      showNotification('error', 'Failed to update status')
     }
   }
 
@@ -2019,81 +1985,15 @@ export default function AdminDashboard() {
 
                           return (
                             <div className="space-y-3">
-                              <div className="rounded-2xl border border-[#E2D1C3]/20 overflow-hidden bg-white">
-                                <Table>
-                                  <TableHeader className="bg-[#FDFCFB]">
-                                    <TableRow className="border-b border-[#E2D1C3]/20 hover:bg-transparent">
-                                      <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#8B735B] py-5">Client</TableHead>
-                                      <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#8B735B]">Service</TableHead>
-                                      <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#8B735B]">Schedule</TableHead>
-                                      <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#8B735B]">Status</TableHead>
-                                      <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#8B735B]">Value</TableHead>
-                                      <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#8B735B] text-right">Actions</TableHead>
-                                    </TableRow>
-                                  </TableHeader>
-                                  <TableBody>
-                                    {pageItems.map(a => (
-                                      <TableRow key={a.id} className="group border-b border-[#E2D1C3]/10 hover:bg-[#FDFCFB] transition-colors cursor-default">
-                                        <TableCell className="py-4">
-                                          <div className="font-bold text-[#1A1A1A] tracking-tight">{privacyMode ? maskName(a.clientName) : a.clientName}</div>
-                                          <div className="text-[10px] text-[#8B735B] font-medium tracking-tight uppercase mt-0.5">
-                                            {privacyMode ? maskEmail(a.clientEmail) : a.clientEmail}
-                                          </div>
-                                        </TableCell>
-                                        <TableCell>
-                                          <div className="text-[11px] font-bold text-[#1A1A1A] uppercase tracking-tight">{a.service}</div>
-                                          <div className="text-[10px] text-[#8B735B]/70 font-bold uppercase tracking-widest">{a.duration} MIN</div>
-                                        </TableCell>
-                                        <TableCell>
-                                          <div className="text-[11px] font-bold text-[#1A1A1A]">{new Date(a.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
-                                          <div className="text-[10px] text-[#8B735B] font-bold">{a.time}</div>
-                                        </TableCell>
-                                        <TableCell>
-                                          <Select
-                                            value={a.status}
-                                            onValueChange={(v) => handleUpdateAppointmentStatus(a.id, v as Appointment['status'])}
-                                          >
-                                            <SelectTrigger className={cn(
-                                              "h-auto py-1 px-3 rounded-full border shadow-none text-[10px] font-bold uppercase tracking-widest transition-all hover:opacity-80 focus:ring-0 w-fit gap-1.5 [&>svg]:w-2.5 [&>svg]:h-2.5 [&>svg]:opacity-50",
-                                              a.status === 'completed' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                                                a.status === 'confirmed' ? 'bg-[#1A1A1A] text-white border-[#1A1A1A]' :
-                                                  a.status === 'scheduled' ? 'bg-[#E2D1C3]/20 text-[#8B735B] border-[#E2D1C3]/30' :
-                                                    'bg-rose-50 text-rose-600 border-rose-100'
-                                            )}>
-                                              <SelectValue>{a.status}</SelectValue>
-                                            </SelectTrigger>
-                                            <SelectContent className="rounded-2xl border-[#E2D1C3]/30 bg-white/95 backdrop-blur-xl shadow-xl p-1">
-                                              <SelectItem value="scheduled" className="rounded-xl text-[10px] font-bold uppercase tracking-widest text-[#8B735B] focus:bg-[#E2D1C3]/10 focus:text-[#8B735B] cursor-pointer">Scheduled</SelectItem>
-                                              <SelectItem value="confirmed" className="rounded-xl text-[10px] font-bold uppercase tracking-widest text-[#1A1A1A] focus:bg-[#1A1A1A]/5 focus:text-[#1A1A1A] cursor-pointer">Confirmed</SelectItem>
-                                              <SelectItem value="completed" className="rounded-xl text-[10px] font-bold uppercase tracking-widest text-emerald-600 focus:bg-emerald-50 focus:text-emerald-600 cursor-pointer">Completed</SelectItem>
-                                              <SelectItem value="cancelled" className="rounded-xl text-[10px] font-bold uppercase tracking-widest text-rose-600 focus:bg-rose-50 focus:text-rose-600 cursor-pointer">Cancelled</SelectItem>
-                                              <SelectItem value="no-show" className="rounded-xl text-[10px] font-bold uppercase tracking-widest text-gray-600 focus:bg-gray-50 focus:text-gray-600 cursor-pointer">No Show</SelectItem>
-                                            </SelectContent>
-                                          </Select>
-                                        </TableCell>
-                                        <TableCell className="font-bold text-[#1A1A1A]">₱{a.price.toLocaleString()}</TableCell>
-                                        <TableCell>
-                                          <div className="flex items-center justify-end gap-1">
-                                            <Button size="icon" variant="ghost" onClick={() => { quickAddClientFromAppointment(a) }} className="h-8 w-8 rounded-lg text-[#8B735B] hover:bg-[#E2D1C3]/20">
-                                              <UserPlus className="w-3.5 h-3.5" />
-                                            </Button>
-                                            <Button size="icon" variant="ghost" onClick={() => openAppointmentModal(a)} className="h-8 w-8 rounded-lg text-[#8B735B] hover:bg-[#E2D1C3]/20">
-                                              <Edit className="w-3.5 h-3.5" />
-                                            </Button>
-                                            <Button size="icon" variant="ghost" onClick={() => handleViberNotify(a)} className="h-8 w-8 rounded-lg text-[#7360F2] hover:bg-[#7360F2]/10" title="Notify via Viber">
-                                              <MessageSquare className="w-3.5 h-3.5" />
-                                            </Button>
-                                            <Button size="icon" variant="ghost" onClick={() => setConfirmAppointment(a)} className="h-8 w-8 rounded-lg text-rose-400 hover:bg-rose-50 hover:text-rose-600">
-                                              <Trash2 className="w-3.5 h-3.5" />
-                                            </Button>
-                                          </div>
-                                        </TableCell>
-                                      </TableRow>
-                                    ))}
-                                  </TableBody>
-                                </Table>
-                              </div>
-
+                              <AppointmentsTable
+                                appointments={pageItems}
+                                isLoading={isLoading}
+                                onEdit={openAppointmentModal}
+                                onDelete={setConfirmAppointment}
+                                onStatusChange={handleUpdateStatus}
+                                onViberNotify={handleViberNotify}
+                                onQuickAddClient={quickAddClientFromAppointment}
+                              />
                               <div className="flex items-center justify-between">
                                 <div className="text-sm text-gray-600">Page {page} of {totalPages}</div>
                                 <div className="flex items-center gap-2">
