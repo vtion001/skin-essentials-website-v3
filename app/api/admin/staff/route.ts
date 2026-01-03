@@ -8,7 +8,7 @@ export async function GET(req: Request) {
   const admin = supabaseAdminClient()
   const { data, error } = await admin.from('staff').select('*').order('created_at', { ascending: false })
   if (error) return jsonMaybeMasked(req, { error: error.message }, { status: 500 })
-  const staff = (data || []).map((s: any) => ({
+  const staff = (data || []).map((s: { id: string; [key: string]: unknown }) => ({
     ...s,
     license_number: aesDecryptFromString(s.license_number) ?? s.license_number,
     notes: aesDecryptFromString(s.notes) ?? s.notes,

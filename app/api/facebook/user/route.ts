@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: result.error }, { status: 500 })
     }
     return NextResponse.json({ user: result.user }, { status: 200 })
-  } catch (err: any) {
+  } catch (err: unknown) {
     return NextResponse.json({ error: err?.message || 'Failed to fetch user info' }, { status: 500 })
   }
 }

@@ -83,7 +83,6 @@ import Image from "next/image"
 import { supabaseAvailable } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
 import {
-  appointmentService,
   paymentService,
   medicalRecordService,
   clientService,
@@ -119,6 +118,7 @@ import { PortfolioEditDialog } from "@/components/admin/modals/portfolio-edit-di
 
 import { DashboardTab } from "@/components/admin/tabs/dashboard-tab"
 import { AppointmentsTab } from "@/components/admin/tabs/appointments-tab"
+import { AppointmentsTable } from "@/components/admin/appointments/appointments-table"
 import { ClientsTab } from "@/components/admin/tabs/clients-tab"
 import { PaymentsTab } from "@/components/admin/tabs/payments-tab"
 import { InfluencersTab } from "@/components/admin/tabs/influencers-tab"
@@ -130,7 +130,7 @@ import { useAdminCommunication } from "@/lib/hooks/use-admin-communication"
 import { useAdminEventSync } from "@/lib/hooks/use-admin-event-sync"
 import { useAdminFilters } from "@/lib/hooks/use-admin-filters"
 import { supabaseBrowserClient } from "@/lib/supabase/client"
-import { AppointmentsTable } from "@/components/admin/appointments/appointments-table"
+import { AppointmentModal } from "@/components/admin/modals/appointment-modal"
 import { useAdminAppointments } from "@/lib/hooks/features/use-admin-appointments"
 
 const services = [
@@ -202,9 +202,16 @@ export default function AdminDashboard() {
     appointments,
     setAppointments,
     loadAppointments,
-    handleUpdateStatus,
+    createAppointment,
+    updateAppointment,
+    handleUpdateStatus: handleUpdateAppointmentStatus,
     handleDelete: handleAppointmentDeleteAction,
-    handleViberNotify
+    handleViberNotify,
+    getAvailableTimeSlots,
+    isModalOpen,
+    editingAppointment,
+    openModal,
+    closeModal
   } = useAdminAppointments(showNotification)
 
   useEffect(() => {
@@ -215,7 +222,6 @@ export default function AdminDashboard() {
   const [typingPending, startTransition] = useTransition()
 
   // Modal states
-  const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false)
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
   const [isMedicalRecordModalOpen, setIsMedicalRecordModalOpen] = useState(false)
   const [isClientModalOpen, setIsClientModalOpen] = useState(false)
@@ -225,7 +231,6 @@ export default function AdminDashboard() {
   const [isReferralModalOpen, setIsReferralModalOpen] = useState(false)
 
   // Selected items
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null)
   const [selectedMedicalRecord, setSelectedMedicalRecord] = useState<MedicalRecord | null>(null)
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
@@ -234,7 +239,6 @@ export default function AdminDashboard() {
   const [selectedInfluencer, setSelectedInfluencer] = useState<Influencer | null>(null)
 
   // Form states
-  const [appointmentForm, setAppointmentForm] = useState<Partial<Appointment>>({})
   const [paymentForm, setPaymentForm] = useState<Partial<Payment>>({})
   const [medicalRecordForm, setMedicalRecordForm] = useState<Partial<MedicalRecord>>({})
   const [chiefComplaintText, setChiefComplaintText] = useState<string>("")
@@ -261,7 +265,7 @@ export default function AdminDashboard() {
   // File upload hook
   const { uploadToSupabase, uploadToApi } = useFileUpload()
 
-  function updateMedicalTreatment(idx: number, key: 'date' | 'procedure' | 'staffName' | 'total' | 'aestheticianId', value: any) {
+  function updateMedicalTreatment(idx: number, key: 'date' | 'procedure' | 'staffName' | 'total' | 'aestheticianId', value: string | number | boolean) {
     setMedicalRecordForm(prev => ({
       ...prev,
       treatments: (prev.treatments || []).map((x, i) => i === idx ? { ...x, [key]: value } : x)
@@ -280,7 +284,7 @@ export default function AdminDashboard() {
   useEffect(() => { if (activeTab === 'sms') refreshSmsStatus() }, [activeTab, refreshSmsStatus])
 
 
-  const [contentServices, setContentServices] = useState<{ id: string; category: string; description?: string; image?: string; color?: string; services: any[] }[]>([])
+  const [contentServices, setContentServices] = useState<{ id: string; category: string; description?: string; image?: string; color?: string; services: Service[] }[]>([])
   const [contentSelectedCategory, setContentSelectedCategory] = useState("")
   const [contentSubTab, setContentSubTab] = useState<string>("services")
   const [newCategoryForm, setNewCategoryForm] = useState<{ category: string; description?: string; image?: string; color?: string }>({ category: "" })
@@ -331,9 +335,6 @@ export default function AdminDashboard() {
   const [confirmMedicalRecord, setConfirmMedicalRecord] = useState<MedicalRecord | null>(null)
   const [confirmMedicalDeleting, setConfirmMedicalDeleting] = useState(false)
 
-  // Deletion confirmation (Appointment)
-  const [confirmAppointment, setConfirmAppointment] = useState<Appointment | null>(null)
-  const [confirmAppointmentDeleting, setConfirmAppointmentDeleting] = useState(false)
 
   // Calendar and search states
   const {
@@ -388,7 +389,6 @@ export default function AdminDashboard() {
 
   const [privacyMode, setPrivacyMode] = useState<boolean>(false)
   const [clientReveal, setClientReveal] = useState<{ name: boolean; email: boolean; phone: boolean; address: boolean }>({ name: false, email: false, phone: false, address: false })
-  const [appointmentReveal, setAppointmentReveal] = useState<{ clientName: boolean; clientEmail: boolean; clientPhone: boolean }>({ clientName: false, clientEmail: false, clientPhone: false })
   const [influencerReveal, setInfluencerReveal] = useState<{ referralCode: boolean; email: boolean; phone: boolean }>({ referralCode: false, email: false, phone: false })
 
   const [isStaffTreatmentQuickOpen, setIsStaffTreatmentQuickOpen] = useState(false)
@@ -453,12 +453,10 @@ export default function AdminDashboard() {
   useAdminEventSync({
     setClientForm,
     setIsClientModalOpen,
-    setAppointmentForm,
-    setIsAppointmentModalOpen,
+    onBookAppointment: (data) => openModal(data),
     setPaymentForm,
     setIsPaymentModalOpen,
     isClientModalOpen,
-    isAppointmentModalOpen,
     isPaymentModalOpen
   })
 
@@ -582,7 +580,7 @@ export default function AdminDashboard() {
       const d = String(today.getDate()).padStart(2, '0')
       const folder = `${clientId}/${y}${m}${d}`
       const ext = file.name.split('.').pop() || 'jpg'
-      const filename = `attachment_${Date.now()}.${ext}`
+      const filename = `attachment_${Date.now()}.jpg`
       const path = `${folder}/${filename}`
 
       const publicUrl = await uploadToSupabase(file, 'medical-attachments', path)
@@ -663,7 +661,7 @@ export default function AdminDashboard() {
           const res = await fetch('/api/services')
           const j = await res.json()
           if (j?.ok && Array.isArray(j?.data)) {
-            const cats = j.data.map((c: any) => ({ id: c.id, category: c.category, description: c.description, image: c.image, color: c.color, services: c.services }))
+            const cats = j.data.map((c: ServiceCategory) => ({ id: c.id, category: c.category, description: c.description, image: c.image, color: c.color, services: c.services }))
             setContentServices(cats)
             if (!contentSelectedCategory && cats.length) setContentSelectedCategory(cats[0].id)
           }
@@ -675,71 +673,6 @@ export default function AdminDashboard() {
   const stats = React.useMemo(() => getDashboardStats(), [appointments, clients, payments, socialMessages])
 
 
-  const handleAppointmentDelete = async () => {
-    if (!confirmAppointment) return
-    setConfirmAppointmentDeleting(true)
-    const success = await handleAppointmentDeleteAction(confirmAppointment.id)
-    if (success) {
-      setConfirmAppointment(null)
-    }
-    setConfirmAppointmentDeleting(false)
-  }
-
-  // Legacy submit handler (to be extracted in next step)
-  const handleAppointmentSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-
-    try {
-      const formEl = e.currentTarget as HTMLFormElement
-      const fd = new FormData(formEl)
-      const clientName = String(fd.get('clientName') || '')
-      const clientEmail = String(fd.get('clientEmail') || '')
-      const clientPhone = String(fd.get('clientPhone') || '')
-      const durationRaw = String(fd.get('duration') || '')
-      const priceRaw = String(fd.get('price') || '')
-      const notes = String(fd.get('notes') || '')
-      const duration = durationRaw ? parseInt(durationRaw) : (appointmentForm.duration || 0)
-      const price = priceRaw ? parseFloat(priceRaw) : (appointmentForm.price || 0)
-
-      const payloadBase = {
-        ...appointmentForm,
-        clientName,
-        clientEmail,
-        clientPhone,
-        duration,
-        price,
-        notes,
-      }
-
-      if (selectedAppointment) {
-        const result = await appointmentService.updateAppointment(selectedAppointment.id, payloadBase)
-        if (!result.ok) {
-          showNotification("error", result.error || "Failed to update appointment")
-          setIsLoading(false)
-          return
-        }
-        showNotification("success", "Appointment updated successfully!")
-      } else {
-        const result = await appointmentService.addAppointment(payloadBase as Omit<Appointment, "id" | "createdAt" | "updatedAt">)
-        if (!result.ok) {
-          showNotification("error", result.error || "Failed to create appointment")
-          setIsLoading(false)
-          return
-        }
-        showNotification("success", "Appointment created successfully!")
-      }
-
-      loadAppointments()
-      setIsAppointmentModalOpen(false)
-      setAppointmentForm({})
-      setSelectedAppointment(null)
-    } catch (error) {
-      showNotification("error", "Failed to save appointment")
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   // Payment Management
   const handlePaymentSubmit = (e: React.FormEvent) => {
@@ -876,7 +809,7 @@ export default function AdminDashboard() {
           }
           setClientDuplicateWarning(null)
           const isEditing = Boolean(selectedClient?.id)
-          const norm = (s: any) => String(s || '').trim().toLowerCase()
+          const norm = (s: unknown) => String(s || '').trim().toLowerCase()
           const email = norm(emailVal)
           const phone = norm(phoneVal)
           const nameKey = `${norm(firstName)} ${norm(lastName)}`.trim()
@@ -947,7 +880,7 @@ export default function AdminDashboard() {
         status: 'active',
         totalSpent: 0,
       }
-      const norm = (s: any) => String(s || '').trim().toLowerCase()
+      const norm = (s: unknown) => String(s || '').trim().toLowerCase()
       const email = norm(payload.email)
       const phone = norm(payload.phone)
       const nameKey = `${norm(payload.firstName)} ${norm(payload.lastName)}`.trim()
@@ -1002,7 +935,7 @@ export default function AdminDashboard() {
     return emailOk && phoneOk
   }
 
-  function buildStaffPayload(selectedStaff: { id: string } | null, staffForm: any, overrides: any) {
+  function buildStaffPayload(selectedStaff: { id: string } | null, staffForm: Record<string, unknown>, overrides: Record<string, unknown>) {
     return selectedStaff
       ? { id: selectedStaff.id, ...staffForm, ...overrides }
       : { ...staffForm, ...overrides }
@@ -1121,21 +1054,6 @@ export default function AdminDashboard() {
           setIsLoading(false)
         }
       })()
-  }
-
-  const openAppointmentModal = (appointment?: Appointment) => {
-    if (appointment) {
-      setSelectedAppointment(appointment)
-      setAppointmentForm(appointment)
-    } else {
-      setSelectedAppointment(null)
-      setAppointmentForm({
-        date: selectedDate.toISOString().split('T')[0],
-        status: 'scheduled',
-        duration: 60,
-      })
-    }
-    setIsAppointmentModalOpen(true)
   }
 
   const openPaymentModal = (payment?: Payment) => {
@@ -1290,7 +1208,7 @@ export default function AdminDashboard() {
     <>
       <div className="min-h-screen bg-[#FDFCFB] text-[#1A1A1A] font-sans selection:bg-[#E2D1C3] selection:text-[#1A1A1A]">
         {/* Subtle background grain or texture */}
-        <div className="fixed inset-0 pointer-events-none opacity-[0.03] z-[100]" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/felt.png")' }} />
+        <div className="fixed inset-0 pointer-events-none opacity-[0.03] z-[100] bg-[url('https://www.transparenttextures.com/patterns/felt.png')]" />
 
         {/* Interactive background elements - refined */}
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
@@ -1800,7 +1718,7 @@ export default function AdminDashboard() {
                     <div className="flex items-center justify-between">
                       <h2 className="text-2xl font-bold text-gray-900">Booking Management</h2>
                       <Button
-                        onClick={() => openAppointmentModal()}
+                        onClick={() => openModal()}
                         className="bg-[#0F2922] hover:bg-[#0F2922]/90 text-white shadow-2xl shadow-[#0F2922]/30 hover:shadow-[#0F2922]/40 transition-all duration-300 hover:scale-105 font-bold px-6 py-3 rounded-2xl"
                       >
                         <Plus className="w-4 h-4 mr-2" />
@@ -1862,7 +1780,7 @@ export default function AdminDashboard() {
                                       </div>
                                     </div>
                                     <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                      <Button size="icon" variant="ghost" onClick={() => openAppointmentModal(appointment)} className="h-9 w-9 rounded-xl hover:bg-[#E2D1C3]/20 text-[#8B735B]">
+                                      <Button size="icon" variant="ghost" onClick={() => openModal(appointment)} className="h-9 w-9 rounded-xl hover:bg-[#E2D1C3]/20 text-[#8B735B]">
                                         <Edit className="w-4 h-4" />
                                       </Button>
                                       <Button size="icon" variant="ghost" onClick={() => { const client = clients.find(c => c.id === appointment.clientId); if (client) openMedicalRecordModal(undefined, client.id) }} className="h-9 w-9 rounded-xl hover:bg-[#E2D1C3]/20 text-[#8B735B]">
@@ -1988,9 +1906,9 @@ export default function AdminDashboard() {
                               <AppointmentsTable
                                 appointments={pageItems}
                                 isLoading={isLoading}
-                                onEdit={openAppointmentModal}
-                                onDelete={setConfirmAppointment}
-                                onStatusChange={handleUpdateStatus}
+                                onEdit={(apt: Appointment) => openModal(apt)}
+                                onDelete={(apt: Appointment) => { if (confirm("Are you sure?")) handleAppointmentDeleteAction(apt.id) }}
+                                onStatusChange={handleUpdateAppointmentStatus}
                                 onViberNotify={handleViberNotify}
                                 onQuickAddClient={quickAddClientFromAppointment}
                               />
@@ -2207,7 +2125,7 @@ export default function AdminDashboard() {
                                         if (j?.ok) {
                                           const r = await fetch('/api/services')
                                           const jr = await r.json()
-                                          if (jr?.ok) setContentServices(jr.data.map((c: any) => ({ id: c.id, category: c.category, description: c.description, image: c.image, color: c.color, services: c.services })))
+                                          if (jr?.ok) setContentServices(jr.data.map((c: ServiceCategory) => ({ id: c.id, category: c.category, description: c.description, image: c.image, color: c.color, services: c.services })))
                                           setNewServiceForm({ name: '', price: '', description: '', duration: '', results: '', image: '' })
                                           showNotification('success', 'Service added')
                                         } else showNotification('error', 'Failed to add service')
@@ -2221,7 +2139,7 @@ export default function AdminDashboard() {
                                 </div>
                               </div>
                             </div>
-                            <ServiceEditModal open={isServiceEditOpen} onOpenChange={(v) => { setIsServiceEditOpen(v); if (!v) setServiceEditTarget(null) }} target={serviceEditTarget} selectedCategory={contentSelectedCategory} onSaved={async () => { try { const r = await fetch('/api/services'); const jr = await r.json(); if (jr?.ok) setContentServices(jr.data.map((c: any) => ({ id: c.id, category: c.category, description: c.description, image: c.image, color: c.color, services: c.services }))); showNotification('success', 'Service updated') } catch { } }} />
+                            <ServiceEditModal open={isServiceEditOpen} onOpenChange={(v) => { setIsServiceEditOpen(v); if (!v) setServiceEditTarget(null) }} target={serviceEditTarget} selectedCategory={contentSelectedCategory} onSaved={async () => { try { const r = await fetch('/api/services'); const jr = await r.json(); if (jr?.ok) setContentServices(jr.data.map((c: ServiceCategory) => ({ id: c.id, category: c.category, description: c.description, image: c.image, color: c.color, services: c.services }))); showNotification('success', 'Service updated') } catch { } }} />
                             <div className="rounded-2xl border bg-white/70 p-4">
                               <Table>
                                 <TableHeader>
@@ -2272,7 +2190,7 @@ export default function AdminDashboard() {
                                               if (j?.ok) {
                                                 const r = await fetch('/api/services')
                                                 const jr = await r.json()
-                                                if (jr?.ok) setContentServices(jr.data.map((c: any) => ({ id: c.id, category: c.category, services: c.services })))
+                                                if (jr?.ok) setContentServices(jr.data.map((c: ServiceCategory) => ({ id: c.id, category: c.category, services: c.services })))
                                                 showNotification('success', 'Service removed')
                                               } else showNotification('error', 'Failed')
                                             } catch { showNotification('error', 'Failed') }
@@ -2672,7 +2590,7 @@ export default function AdminDashboard() {
                             </CardTitle>
                           </CardHeader>
                           <CardContent className="space-y-6">
-                            <CategoryEditModal open={isCategoryEditOpen} onOpenChange={(v) => { setIsCategoryEditOpen(v); if (!v) setCategoryEditTarget(null) }} target={categoryEditTarget} onSaved={async () => { try { const r = await fetch('/api/services'); const jr = await r.json(); if (jr?.ok) { const cats = jr.data.map((c: any) => ({ id: c.id, category: c.category, description: c.description, image: c.image, color: c.color, services: c.services })); setContentServices(cats); if (!contentSelectedCategory && cats.length) setContentSelectedCategory(cats[0].id) } showNotification('success', 'Category updated') } catch { } }} />
+                            <CategoryEditModal open={isCategoryEditOpen} onOpenChange={(v) => { setIsCategoryEditOpen(v); if (!v) setCategoryEditTarget(null) }} target={categoryEditTarget} onSaved={async () => { try { const r = await fetch('/api/services'); const jr = await r.json(); if (jr?.ok) { const cats = jr.data.map((c: ServiceCategory) => ({ id: c.id, category: c.category, description: c.description, image: c.image, color: c.color, services: c.services })); setContentServices(cats); if (!contentSelectedCategory && cats.length) setContentSelectedCategory(cats[0].id) } showNotification('success', 'Category updated') } catch { } }} />
                             <div className="rounded-2xl border bg-white/70 p-4 space-y-4">
                               <div className="grid md:grid-cols-4 gap-3 items-end">
                                 <div>
@@ -2702,7 +2620,7 @@ export default function AdminDashboard() {
                                           const r = await fetch('/api/services')
                                           const jr = await r.json()
                                           if (jr?.ok) {
-                                            const cats = jr.data.map((c: any) => ({ id: c.id, category: c.category, description: c.description, image: c.image, color: c.color, services: c.services }))
+                                            const cats = jr.data.map((c: ServiceCategory) => ({ id: c.id, category: c.category, description: c.description, image: c.image, color: c.color, services: c.services }))
                                             setContentServices(cats)
                                             const createdId = newCategoryForm.category.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
                                             setContentSelectedCategory(createdId)
@@ -2758,7 +2676,7 @@ export default function AdminDashboard() {
                                                     const r = await fetch('/api/services')
                                                     const jr = await r.json()
                                                     if (jr?.ok) {
-                                                      const cats = jr.data.map((x: any) => ({ id: x.id, category: x.category, description: x.description, image: x.image, color: x.color, services: x.services }))
+                                                      const cats = jr.data.map((x: ServiceCategory) => ({ id: x.id, category: x.category, description: x.description, image: x.image, color: x.color, services: x.services }))
                                                       setContentServices(cats)
                                                       if (contentSelectedCategory === c.id) setContentSelectedCategory(cats[0]?.id || '')
                                                     }
@@ -2891,7 +2809,6 @@ export default function AdminDashboard() {
                       setPlatformFilter={setInfluencerPlatformFilter}
                       statusFilter={influencerStatusFilter}
                       setStatusFilter={setInfluencerStatusFilter}
-                      isAppointmentModalOpen={isAppointmentModalOpen}
                       isPaymentModalOpen={isPaymentModalOpen}
                       isMedicalRecordModalOpen={isMedicalRecordModalOpen}
                       isClientModalOpen={isClientModalOpen}
@@ -3169,186 +3086,14 @@ export default function AdminDashboard() {
         </div >
 
         {/* Modals & Dialogs */}
-        < Dialog open={isAppointmentModalOpen} onOpenChange={setIsAppointmentModalOpen} modal={false} >
-          <DialogContent className="max-w-2xl pointer-events-auto">
-            <DialogHeader>
-              <DialogTitle>
-                {selectedAppointment ? 'Edit Appointment' : 'New Appointment'}
-              </DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleAppointmentSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="clientName">Client Name</Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      id="clientName"
-                      name="clientName"
-                      autoFocus
-                      defaultValue={selectedAppointment ? (selectedAppointment.clientName || '') : (appointmentForm.clientName || '')}
-                      required
-                      type="text"
-                      autoComplete="off"
-                      onKeyDown={(e) => e.stopPropagation()}
-                      onInput={(e) => e.stopPropagation()}
-                    />
-                    <Button type="button" variant="outline" className="h-9 px-2" onClick={() => setAppointmentReveal(prev => ({ ...prev, clientName: !prev.clientName }))}>{appointmentReveal.clientName ? 'Hide' : 'Reveal'}</Button>
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="clientEmail">Client Email</Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      id="clientEmail"
-                      type="email"
-                      name="clientEmail"
-                      defaultValue={selectedAppointment ? (selectedAppointment.clientEmail || '') : (appointmentForm.clientEmail || '')}
-                      required
-                      autoComplete="off"
-                      onKeyDown={(e) => e.stopPropagation()}
-                      onInput={(e) => e.stopPropagation()}
-                    />
-                    <Button type="button" variant="outline" className="h-9 px-2" onClick={() => setAppointmentReveal(prev => ({ ...prev, clientEmail: !prev.clientEmail }))}>{appointmentReveal.clientEmail ? 'Hide' : 'Reveal'}</Button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="clientPhone">Client Phone</Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      id="clientPhone"
-                      name="clientPhone"
-                      defaultValue={selectedAppointment ? (selectedAppointment.clientPhone || '') : (appointmentForm.clientPhone || '')}
-                      required
-                      type="tel"
-                      autoComplete="off"
-                      onKeyDown={(e) => e.stopPropagation()}
-                      onInput={(e) => e.stopPropagation()}
-                    />
-                    <Button type="button" variant="outline" className="h-9 px-2" onClick={() => setAppointmentReveal(prev => ({ ...prev, clientPhone: !prev.clientPhone }))}>{appointmentReveal.clientPhone ? 'Hide' : 'Reveal'}</Button>
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="service">Service</Label>
-                  <Select
-                    value={appointmentForm.service || ''}
-                    onValueChange={(value) => setAppointmentForm(prev => ({ ...prev, service: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select service" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {services.map((service) => (
-                        <SelectItem key={service} value={service}>
-                          {service}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
-                <div>
-                  <Label htmlFor="date">Date</Label>
-                  <Input
-                    id="date"
-                    type="date"
-                    value={appointmentForm.date || ''}
-                    onChange={(e) => startTransition(() => setAppointmentForm(prev => ({ ...prev, date: e.target.value })))}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="time">Time</Label>
-                  <Select
-                    value={appointmentForm.time || ''}
-                    onValueChange={(value) => setAppointmentForm(prev => ({ ...prev, time: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select time" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {appointmentService.getAvailableTimeSlots(appointmentForm.date || '').map((time) => (
-                        <SelectItem key={time} value={time}>
-                          {time}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="duration">Duration (min)</Label>
-                  <Input
-                    id="duration"
-                    type="number"
-                    name="duration"
-                    defaultValue={selectedAppointment ? String(selectedAppointment.duration || '') : String(appointmentForm.duration || '')}
-                    required
-                    onKeyDown={(e) => e.stopPropagation()}
-                    onInput={(e) => e.stopPropagation()}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="price">Price (₱)</Label>
-                  <Input
-                    id="price"
-                    type="number"
-                    name="price"
-                    defaultValue={selectedAppointment ? String(selectedAppointment.price || '') : String(appointmentForm.price || '')}
-                    required
-                    onKeyDown={(e) => e.stopPropagation()}
-                    onInput={(e) => e.stopPropagation()}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="status">Status</Label>
-                  <Select
-                    value={appointmentForm.status || ''}
-                    onValueChange={(value) => setAppointmentForm(prev => ({ ...prev, status: value as any }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="scheduled">Scheduled</SelectItem>
-                      <SelectItem value="confirmed">Confirmed</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
-                      <SelectItem value="no-show">No Show</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="notes">Notes</Label>
-                <Textarea
-                  id="notes"
-                  name="notes"
-                  defaultValue={selectedAppointment ? (selectedAppointment.notes || '') : (appointmentForm.notes || '')}
-                  rows={3}
-                  onKeyDown={(e) => e.stopPropagation()}
-                  onInput={(e) => e.stopPropagation()}
-                />
-              </div>
-
-              <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => setIsAppointmentModalOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading ? 'Saving...' : 'Save Appointment'}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog >
+        <AppointmentModal
+          isOpen={isModalOpen}
+          onClose={closeModal}
+          appointment={editingAppointment}
+          onCreate={createAppointment}
+          onUpdate={updateAppointment}
+          getAvailableTimeSlots={getAvailableTimeSlots}
+        />
 
         {/* Payment Modal */}
         < Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen} >
@@ -4469,59 +4214,7 @@ export default function AdminDashboard() {
             )}
           </DialogContent>
         </Dialog>
-
-        {/* Appointment Deletion Confirmation */}
-        <Dialog open={!!confirmAppointment} onOpenChange={(open) => !open && setConfirmAppointment(null)}>
-          <DialogContent className="max-w-md bg-white/95 backdrop-blur-2xl border border-rose-100 shadow-2xl rounded-[2rem] sm:rounded-[2rem]">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-3 text-rose-600 text-xl font-bold tracking-tight pt-2">
-                <div className="p-2 bg-rose-50 rounded-xl">
-                  <AlertCircle className="w-6 h-6" />
-                </div>
-                Confirm Deletion
-              </DialogTitle>
-            </DialogHeader>
-            <div className="py-6">
-              <p className="text-[#1A1A1A]/80 leading-relaxed font-medium">
-                Are you sure you want to delete the appointment for <span className="font-bold text-[#1A1A1A] underline decoration-rose-200 decoration-2 underline-offset-4">{confirmAppointment?.clientName}</span>?
-              </p>
-              <div className="mt-6 p-4 bg-rose-50/50 rounded-2xl border border-rose-100/50 flex items-start gap-4">
-                <div className="p-2 bg-white rounded-xl shadow-sm border border-rose-100/50">
-                  <Trash2 className="w-5 h-5 text-rose-400" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-rose-900 uppercase tracking-widest mb-1.5">Destructive Action</p>
-                  <p className="text-[11px] text-rose-700/80 font-semibold leading-relaxed">
-                    This will permanently remove this record from the system. This process cannot be reversed.
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="flex gap-3 mt-2 pb-2">
-              <Button
-                variant="outline"
-                className="flex-1 h-12 rounded-2xl font-bold uppercase tracking-widest text-[#1A1A1A]/60 border-[#E2D1C3]/20 hover:bg-[#FDFCFB] hover:text-[#1A1A1A] transition-all duration-300"
-                onClick={() => setConfirmAppointment(null)}
-                disabled={confirmAppointmentDeleting}
-              >
-                Keep Record
-              </Button>
-              <Button
-                className="flex-1 h-12 rounded-2xl font-bold uppercase tracking-widest bg-rose-600 hover:bg-rose-700 text-white shadow-xl shadow-rose-600/20 transition-all duration-300 active:scale-[0.98]"
-                onClick={handleAppointmentDelete}
-                disabled={confirmAppointmentDeleting}
-              >
-                {confirmAppointmentDeleting ? (
-                  <div className="flex items-center gap-2">
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>Removing...</span>
-                  </div>
-                ) : 'Delete Now'}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div >
+      </div>
     </>
   )
 }

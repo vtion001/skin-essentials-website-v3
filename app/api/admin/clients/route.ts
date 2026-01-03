@@ -12,8 +12,8 @@ export async function GET(req: Request) {
       .select('*')
       .order('created_at', { ascending: false })
     if (error) return jsonMaybeMasked(req, { error: error.message }, { status: 500 })
-    const decryptJson = (v: any) => aesDecrypt(v) ?? v
-    const clients = (data || []).map((c: any) => ({
+    const decryptJson = (v: unknown) => aesDecrypt(v) ?? v
+    const clients = (data || []).map((c: { id: string; [key: string]: unknown }) => ({
       ...c,
       email: aesDecryptFromString(c.email) ?? c.email,
       phone: aesDecryptFromString(c.phone) ?? c.phone,
@@ -24,7 +24,7 @@ export async function GET(req: Request) {
       preferences: c.preferences && typeof c.preferences === 'object' ? c.preferences : decryptJson(c.preferences),
     }))
     return jsonMaybeMasked(req, { clients })
-  } catch (e: any) {
+  } catch (e: unknown) {
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })
   }
 }
@@ -33,13 +33,13 @@ export async function POST(req: Request) {
   try {
     const cookieStore = await cookies()
     const cookiesMap = new Map<string, string>()
-    cookieStore.getAll().forEach((c: any) => cookiesMap.set(c.name, c.value))
+    cookieStore.getAll().forEach((c: { name: string; value: string }) => cookiesMap.set(c.name, c.value))
     if (!verifyCsrfToken(req.headers, cookiesMap)) {
       return jsonMaybeMasked(req, { error: 'Invalid CSRF token' }, { status: 403 })
     }
     const raw = await req.json()
     const id = raw.id || `client_${Date.now()}`
-    const toEmergencyContact = (val: any) => {
+    const toEmergencyContact = (val: unknown) => {
       if (!val) return null
       if (typeof val === 'string') return { contact: val }
       return val
@@ -65,7 +65,7 @@ export async function POST(req: Request) {
     const admin = supabaseAdminClient()
 
     // Duplicate prevention: check existing clients by normalized email/phone/name
-    const norm = (v: any) => String(v || '').trim().toLowerCase()
+    const norm = (v: unknown) => String(v || '').trim().toLowerCase()
     const emailNorm = norm(raw.email)
     const phoneNorm = norm(raw.phone)
     const nameKey = `${norm(raw.firstName ?? raw.first_name)} ${norm(raw.lastName ?? raw.last_name)}`.trim()
@@ -103,14 +103,14 @@ export async function PATCH(req: Request) {
   try {
     const cookieStore = await cookies()
     const cookiesMap = new Map<string, string>()
-    cookieStore.getAll().forEach((c: any) => cookiesMap.set(c.name, c.value))
+    cookieStore.getAll().forEach((c: { name: string; value: string }) => cookiesMap.set(c.name, c.value))
     if (!verifyCsrfToken(req.headers, cookiesMap)) {
       return jsonMaybeMasked(req, { error: 'Invalid CSRF token' }, { status: 403 })
     }
     const body = await req.json()
     const { id } = body || {}
     if (!id) return jsonMaybeMasked(req, { error: 'Missing id' }, { status: 400 })
-    const toEmergencyContactUpd = (val: any) => {
+    const toEmergencyContactUpd = (val: unknown) => {
       if (val === undefined) return undefined
       if (!val) return null
       if (typeof val === 'string') return { contact: val }
@@ -137,7 +137,7 @@ export async function PATCH(req: Request) {
     const admin = supabaseAdminClient()
 
     // Duplicate prevention on update
-    const norm = (v: any) => String(v || '').trim().toLowerCase()
+    const norm = (v: unknown) => String(v || '').trim().toLowerCase()
     const emailNorm = body.email !== undefined ? norm(body.email) : undefined
     const phoneNorm = body.phone !== undefined ? norm(body.phone) : undefined
     const nameKey = `${norm(body.firstName ?? body.first_name)} ${norm(body.lastName ?? body.last_name)}`.trim()

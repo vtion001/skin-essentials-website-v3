@@ -9,8 +9,8 @@ export async function GET(req: Request) {
   if (!admin) return jsonMaybeMasked(req, { error: 'Supabase admin client not available' }, { status: 500 })
   const { data, error } = await admin.from('medical_records').select('*').order('created_at', { ascending: false })
   if (error) return jsonMaybeMasked(req, { error: error.message }, { status: 500 })
-  const records = (data || []).map((r: any) => {
-    const decrypt = (val: any) => aesDecrypt(val) ?? val
+  const records = (data || []).map((r: { id: string; [key: string]: unknown }) => {
+    const decrypt = (val: unknown) => aesDecrypt(val) ?? val
     return {
       ...r,
       medical_history: decrypt(r.medical_history),

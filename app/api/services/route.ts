@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { jsonOk, jsonError } from '@/lib/api-response'
+import { ServiceCategory, ServiceCategoryRow, ServiceFAQ, Service } from "@/lib/types/api.types"
 import { ServiceSchema } from '@/lib/validation'
 import { supabaseAdminClient } from '@/lib/supabase-admin'
 import { serviceCategories as defaultServiceCategories } from '@/lib/services-data'
@@ -59,7 +60,7 @@ export async function GET() {
     const catIns = await admin.from('service_categories').insert(catPayloads).select('id')
     if (catIns.error) return jsonError(catIns.error.message, 500)
     // Insert services for each category
-    const svcPayloads: any[] = []
+    const svcPayloads: unknown[] = []
     for (const c of defaultServiceCategories) {
       for (const s of c.services) {
         svcPayloads.push({
@@ -91,13 +92,13 @@ export async function GET() {
       .select('id, category, description, image, color, services:services(id, name, price, description, duration, results, sessions, includes, benefits, faqs, original_price, badge, pricing, image)')
       .order('category', { ascending: true })
     if (seeded.error) return jsonError(seeded.error.message, 500)
-    const seededCategories: ServiceCategory[] = (seeded.data || []).map((c: any) => ({
+    const seededCategories: ServiceCategory[] = (seeded.data || []).map((c: ServiceCategoryRow) => ({
       id: c.id,
       category: c.category,
       description: c.description || '',
       image: c.image || '',
       color: c.color || '',
-      services: Array.isArray(c.services) ? c.services.map((s: any) => ({
+      services: Array.isArray(c.services) ? c.services.map((s: Service) => ({
         name: String(s.name || ''),
         price: String(s.price || ''),
         description: String(s.description || ''),
@@ -106,7 +107,7 @@ export async function GET() {
         sessions: s.sessions || undefined,
         includes: s.includes || undefined,
         benefits: Array.isArray(s.benefits) ? s.benefits.map(String) : undefined,
-        faqs: Array.isArray(s.faqs) ? s.faqs.map((f: any) => ({ q: String(f.q || ''), a: String(f.a || '') })) : undefined,
+        faqs: Array.isArray(s.faqs) ? s.faqs.map((f: ServiceFAQ) => ({ q: String(f.q || ''), a: String(f.a || '') })) : undefined,
         originalPrice: s.original_price || undefined,
         badge: s.badge || undefined,
         pricing: s.pricing || undefined,
@@ -115,13 +116,13 @@ export async function GET() {
     }))
     return jsonOk(seededCategories)
   }
-  const categories: ServiceCategory[] = (data || []).map((c: any) => ({
+  const categories: ServiceCategory[] = (data || []).map((c: ServiceCategoryRow) => ({
     id: c.id,
     category: c.category,
     description: c.description || '',
     image: c.image || '',
     color: c.color || '',
-    services: Array.isArray(c.services) ? c.services.map((s: any) => ({
+    services: Array.isArray(c.services) ? c.services.map((s: Service) => ({
       name: String(s.name || ''),
       price: String(s.price || ''),
       description: String(s.description || ''),
@@ -130,7 +131,7 @@ export async function GET() {
       sessions: s.sessions || undefined,
       includes: s.includes || undefined,
       benefits: Array.isArray(s.benefits) ? s.benefits.map(String) : undefined,
-      faqs: Array.isArray(s.faqs) ? s.faqs.map((f: any) => ({ q: String(f.q || ''), a: String(f.a || '') })) : undefined,
+      faqs: Array.isArray(s.faqs) ? s.faqs.map((f: ServiceFAQ) => ({ q: String(f.q || ''), a: String(f.a || '') })) : undefined,
       originalPrice: s.original_price || undefined,
       badge: s.badge || undefined,
       pricing: s.pricing || undefined,
@@ -193,7 +194,7 @@ export async function POST(req: NextRequest) {
       const service = body.service as Service
       const admin = supabaseAdminClient()
       if (!admin) return jsonError('Supabase admin client not initialized', 500)
-      const updates: any = {
+      const updates: Partial<Record<string, unknown>> = {
         name: service.name !== undefined ? String(service.name) : undefined,
         price: service.price !== undefined ? String(service.price) : undefined,
         description: service.description !== undefined ? String(service.description) : undefined,
@@ -233,7 +234,7 @@ export async function POST(req: NextRequest) {
     if (action === 'updateCategory') {
       const id = String(body.id || '')
       if (!id) return jsonError('Missing id', 400)
-      const updates: any = {
+      const updates: Partial<Record<string, unknown>> = {
         category: body.category !== undefined ? String(body.category) : undefined,
         description: body.description !== undefined ? String(body.description) : undefined,
         image: body.image !== undefined ? String(body.image) : undefined,

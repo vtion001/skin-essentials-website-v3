@@ -42,7 +42,6 @@ interface InfluencersTabProps {
     setStatusFilter: (v: string) => void
 
     // Modal states for animation reduction
-    isAppointmentModalOpen: boolean
     isPaymentModalOpen: boolean
     isMedicalRecordModalOpen: boolean
     isClientModalOpen: boolean
@@ -68,7 +67,6 @@ export function InfluencersTab({
     setPlatformFilter,
     statusFilter,
     setStatusFilter,
-    isAppointmentModalOpen,
     isPaymentModalOpen,
     isMedicalRecordModalOpen,
     isClientModalOpen,
@@ -79,7 +77,6 @@ export function InfluencersTab({
     isStaffTreatmentQuickOpen,
 }: InfluencersTabProps) {
     const reduceMotion =
-        isAppointmentModalOpen ||
         isPaymentModalOpen ||
         isMedicalRecordModalOpen ||
         isClientModalOpen ||
@@ -135,8 +132,8 @@ export function InfluencersTab({
                     <Button
                         onClick={() => openInfluencerModal()}
                         className={`bg-[#0F2922] hover:bg-[#0F2922]/90 text-white font-bold px-6 py-3 rounded-2xl ${reduceMotion
-                                ? ""
-                                : "shadow-2xl shadow-[#0F2922]/30 hover:shadow-[#0F2922]/40 transition-all duration-300 hover:scale-105"
+                            ? ""
+                            : "shadow-2xl shadow-[#0F2922]/30 hover:shadow-[#0F2922]/40 transition-all duration-300 hover:scale-105"
                             }`}
                     >
                         <UserPlus className="w-4 h-4 mr-2" />
@@ -238,8 +235,8 @@ export function InfluencersTab({
                                         <TableCell>
                                             <Badge
                                                 className={`text-[10px] font-bold uppercase tracking-widest py-0.5 px-3 rounded-full border shadow-none ${inf.status === "active"
-                                                        ? "bg-emerald-50 text-emerald-600 border-emerald-100"
-                                                        : "bg-rose-50 text-rose-600 border-rose-100"
+                                                    ? "bg-emerald-50 text-emerald-600 border-emerald-100"
+                                                    : "bg-rose-50 text-rose-600 border-rose-100"
                                                     }`}
                                             >
                                                 {inf.status}

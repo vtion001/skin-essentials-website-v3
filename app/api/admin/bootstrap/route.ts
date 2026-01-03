@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     let userId = createRes.data.user?.id
     if (createRes.error && createRes.error.message?.toLowerCase().includes('already')) {
       const list = await supabase.auth.admin.listUsers()
-      const existing = list.data.users?.find((u: any) => (u.email || '').toLowerCase() === email.toLowerCase())
+      const existing = list.data.users?.find((u: { email?: string }) => (u.email || '').toLowerCase() === email.toLowerCase())
       if (!existing) {
         return NextResponse.json({ ok: false, error: 'User exists but could not be found' }, { status: 500 })
       }
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     }
     await supabase.from('admin_users').upsert({ user_id: userId, email, active: true })
     return NextResponse.json({ ok: true, user_id: userId })
-  } catch (err: any) {
+  } catch (err: unknown) {
     return NextResponse.json({ ok: false, error: err?.message || 'Bootstrap failed' }, { status: 500 })
   }
 }

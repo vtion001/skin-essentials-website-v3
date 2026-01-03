@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { FacebookWebhookEntry, FacebookMessagingEvent, FacebookChange } from '@/lib/types/api.types'
+import { SocialMediaConnection } from '@/lib/types/connection.types'
 import { facebookAPI } from '@/lib/facebook-api'
 import { socialMediaService } from '@/lib/admin-services'
 import { logError } from '@/lib/error-logger'
@@ -19,7 +21,7 @@ export async function GET(request: NextRequest) {
 
     return new NextResponse('Forbidden', { status: 403 })
   } catch (error) {
-    await logError('facebook_webhook_get', error as any)
+    await logError('facebook_webhook_get', error as Error)
     return new NextResponse('Internal Server Error', { status: 500 })
   }
 }
@@ -64,19 +66,19 @@ export async function POST(request: NextRequest) {
     console.log('Facebook webhook processed successfully')
     return new NextResponse('OK', { status: 200 })
   } catch (error) {
-    await logError('facebook_webhook_post', error as any)
+    await logError('facebook_webhook_post', error as Error)
     return new NextResponse('Internal Server Error', { status: 500 })
   }
 }
 
-async function processPageEntry(entry: any) {
+async function processPageEntry(entry: FacebookWebhookEntry) {
   try {
     const pageId = entry.id
     if (typeof entry.time === 'number') {
       const ageMs = Date.now() - entry.time
       if (ageMs > 5 * 60 * 1000) return
     }
-    
+
     // Get the platform connection for this page
     const connections = socialMediaService.getPlatformConnections()
     const connection = connections.find(
@@ -102,11 +104,11 @@ async function processPageEntry(entry: any) {
     }
 
   } catch (error) {
-    await logError('facebook_process_page_entry', error as any, { entry })
+    await logError('facebook_process_page_entry', error as Error, { entry })
   }
 }
 
-async function processMessagingEvent(event: any, connection: any, pageId: string) {
+async function processMessagingEvent(event: FacebookMessagingEvent, connection: SocialMediaConnection, pageId: string) {
   try {
     const { sender, recipient, timestamp, message, delivery, read } = event
 
@@ -114,15 +116,15 @@ async function processMessagingEvent(event: any, connection: any, pageId: string
     if (message) {
       const senderId = sender.id
       const recipientId = recipient.id
-      
+
       // Check if this is a message TO the page (from a user)
       if (recipientId === pageId) {
         // Get sender info
         const senderInfo = await facebookAPI.getUserInfo(senderId, connection.accessToken)
-        
+
         // Find or create conversation
         let conversation = socialMediaService.getConversationById(`fb_${senderId}`)
-        
+
         if (!conversation) {
           // Create new conversation
           conversation = {
@@ -130,14 +132,14 @@ async function processMessagingEvent(event: any, connection: any, pageId: string
             platform: 'facebook',
             participantId: senderId,
             participantName: senderInfo.user?.name || 'Unknown User',
-          participantProfilePicture: senderInfo.user?.profile_pic || '',
+            participantProfilePicture: senderInfo.user?.profile_pic || '',
             lastMessage: message.text || 'Media message',
             lastMessageTimestamp: new Date(timestamp).toISOString(),
             unreadCount: 1,
             isActive: true,
             messages: []
           }
-          
+
           // Add conversation to service
           socialMediaService.addConversation(conversation)
         }
@@ -165,7 +167,7 @@ async function processMessagingEvent(event: any, connection: any, pageId: string
           isReplied: false,
           replyMessage: '',
           replyTimestamp: '',
-          attachments: message.attachments?.map((att: any) => att.payload?.url || '') || [],
+          attachments: message.attachments?.map((att: { payload?: { url?: string } }) => att.payload?.url || '') || [],
           clientId: senderId,
           conversationId: `fb_${senderId}`,
           messageType: messageType,
@@ -187,18 +189,18 @@ async function processMessagingEvent(event: any, connection: any, pageId: string
     }
 
   } catch (error) {
-    await logError('facebook_process_messaging_event', error as any, { event })
+    await logError('facebook_process_messaging_event', error as Error, { event })
   }
 }
 
-async function processChange(change: any, connection: any, pageId: string) {
+async function processChange(change: FacebookChange, connection: SocialMediaConnection, pageId: string) {
   try {
     // Handle different types of changes
-    
+
     // You can add specific handling for different change types here
     // For example: feed updates, page info changes, etc.
-    
+
   } catch (error) {
-    await logError('facebook_process_change', error as any, { change })
+    await logError('facebook_process_change', error as Error, { change })
   }
 }

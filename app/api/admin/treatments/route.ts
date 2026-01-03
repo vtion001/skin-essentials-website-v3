@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { Treatment } from "@/lib/types/api.types"
 import { jsonMaybeMasked } from "@/lib/admin-mask"
 import { supabaseAdminClient } from "@/lib/supabase-admin"
 import { verifyCsrfToken } from "@/lib/utils"
@@ -53,7 +54,7 @@ export async function POST(req: Request) {
     }
 
     // 2. Prepare new rows
-    const needsClientMap = treatments.some((t: any) => t.clientName && !t.clientId)
+    const needsClientMap = treatments.some((t: { clientName?: string; clientId?: string }) => t.clientName && !t.clientId)
     const clientMap = new Map<string, string>()
 
     if (needsClientMap) {
@@ -64,7 +65,7 @@ export async function POST(req: Request) {
         })
     }
 
-    const newRows = treatments.map((t: any) => {
+    const newRows = treatments.map((t: Treatment) => {
         const name = (t.clientName || '').trim().toLowerCase()
         const resolvedClientId = t.clientId || clientMap.get(name) || null
 

@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
   if (listConnections === 'true') {
     const connections = socialMediaService
       .getPlatformConnections()
-      .filter((c: any) => c.platform === 'facebook')
+      .filter((c: { platform: string }) => c.platform === 'facebook')
     return NextResponse.json({ connections })
   }
 

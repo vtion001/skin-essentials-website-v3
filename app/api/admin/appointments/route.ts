@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
       .order('created_at', { ascending: false })
     if (error) return jsonMaybeMasked(req, { error: error.message }, { status: 500 })
     return jsonMaybeMasked(req, { appointments: data || [] })
-  } catch (e: any) {
+  } catch (e: unknown) {
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })
   }
 }
@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
     }
 
     return jsonMaybeMasked(req, { ok: true, appointment: data })
-  } catch (e: any) {
+  } catch (e: unknown) {
     return NextResponse.json({ ok: false, error: 'Invalid request' }, { status: 400 })
   }
 }
@@ -150,7 +150,7 @@ export async function PATCH(req: NextRequest) {
     const { data, error } = await admin.from('appointments').update(normalized).eq('id', id).select('*').single()
     if (error) return jsonMaybeMasked(req, { ok: false, error: error.message }, { status: 500 })
     return jsonMaybeMasked(req, { ok: true, appointment: data })
-  } catch (e: any) {
+  } catch (e: unknown) {
     return NextResponse.json({ ok: false, error: 'Invalid request' }, { status: 400 })
   }
 }
@@ -171,7 +171,7 @@ export async function DELETE(req: NextRequest) {
     const { error } = await admin.from('appointments').delete().eq('id', id)
     if (error) return jsonMaybeMasked(req, { ok: false, error: error.message }, { status: 500 })
     return jsonMaybeMasked(req, { ok: true })
-  } catch (e: any) {
+  } catch (e: unknown) {
     return NextResponse.json({ ok: false, error: 'Invalid request' }, { status: 400 })
   }
 }

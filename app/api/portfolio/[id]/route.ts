@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server"
+import { PortfolioItem } from "@/lib/types/api.types"
 import { jsonOk, jsonError } from "@/lib/api-response"
 import { supabaseAdminClient } from "@/lib/supabase-admin"
 
@@ -37,7 +38,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const { id } = await params
     const admin = supabaseAdminClient()
     if (!admin) return jsonError('Supabase admin client not initialized', 500)
-    const updates: any = {
+    const updates: Partial<PortfolioItem> = {
       title: body.title !== undefined ? String(body.title) : undefined,
       category: body.category !== undefined ? String(body.category) : undefined,
       before_image: body.beforeImage !== undefined ? String(body.beforeImage) : undefined,

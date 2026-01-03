@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { InstagramWebhookEntry, InstagramMessagingEvent, InstagramChange } from '@/lib/types/api.types'
+import { SocialMediaConnection } from '@/lib/types/connection.types'
 import { instagramAPI } from '@/lib/instagram-api'
 import { socialMediaService } from '@/lib/admin-services'
 
@@ -55,15 +57,15 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function processInstagramEntry(entry: any) {
+async function processInstagramEntry(entry: InstagramWebhookEntry) {
   try {
     const instagramAccountId = entry.id
-    
+
     // Get the platform connection for this Instagram account
     const connections = socialMediaService.getPlatformConnections()
     const connection = connections.find(
-      conn => conn.platform === 'instagram' && 
-      (conn.pageId === instagramAccountId || conn.pageId.includes(instagramAccountId))
+      conn => conn.platform === 'instagram' &&
+        (conn.pageId === instagramAccountId || conn.pageId.includes(instagramAccountId))
     )
 
     if (!connection) {
@@ -90,7 +92,7 @@ async function processInstagramEntry(entry: any) {
   }
 }
 
-async function processInstagramMessagingEvent(event: any, connection: any, instagramAccountId: string) {
+async function processInstagramMessagingEvent(event: InstagramMessagingEvent, connection: SocialMediaConnection, instagramAccountId: string) {
   try {
     const { sender, recipient, timestamp, message } = event
 
@@ -98,16 +100,16 @@ async function processInstagramMessagingEvent(event: any, connection: any, insta
     if (message) {
       const senderId = sender.id
       const recipientId = recipient.id
-      
+
       // Check if this is a message TO the Instagram account (from a user)
       if (recipientId === instagramAccountId) {
         // For Instagram, we might need to get user info differently
         // Instagram Basic Display API has limited user info access
         const senderName = `Instagram User ${senderId.slice(-4)}`
-        
+
         // Find or create conversation
         let conversation = socialMediaService.getConversationById(`ig_${senderId}`)
-        
+
         if (!conversation) {
           // Create new conversation
           conversation = {
@@ -122,7 +124,7 @@ async function processInstagramMessagingEvent(event: any, connection: any, insta
             isActive: true,
             messages: []
           }
-          
+
           // Add conversation to service
           socialMediaService.addConversation(conversation)
         }
@@ -150,7 +152,7 @@ async function processInstagramMessagingEvent(event: any, connection: any, insta
           isReplied: false,
           replyMessage: '',
           replyTimestamp: '',
-          attachments: message.attachments?.map((att: any) => att.payload?.url || '') || [],
+          attachments: message.attachments?.map((att: { payload?: { url?: string } }) => att.payload?.url || '') || [],
           clientId: senderId,
           conversationId: `ig_${senderId}`,
           messageType: messageType,
@@ -169,14 +171,14 @@ async function processInstagramMessagingEvent(event: any, connection: any, insta
   }
 }
 
-async function processInstagramChange(change: any, connection: any, instagramAccountId: string) {
+async function processInstagramChange(change: InstagramChange, connection: SocialMediaConnection, instagramAccountId: string) {
   try {
     // Handle different types of changes
     console.log('Instagram change received:', change.field)
-    
+
     // You can add specific handling for different change types here
     // For example: media updates, story updates, etc.
-    
+
   } catch (error) {
     console.error('Error processing Instagram change:', error)
   }

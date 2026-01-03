@@ -1,3 +1,4 @@
+    "css.lint.unknownAtRules": "ignore",
 {
     "security.olympix.detectors.arbitraryAddressSpoofingAttack": true,
     "security.olympix.detectors.arbitraryTransferFrom": true,
@@ -28,8 +29,7 @@
     "security.olympix.detectors.msgValueReuse": true,
     "security.olympix.detectors.abiEncoderArray": true,
     "security.olympix.detectors.blockRandomness": true,
-    "security.olympix.project.analyzeWholeProject": true,
-    "css.lint.unknownAtRules": "ignore",
-    "scss.lint.unknownAtRules": "ignore",
+    "security.olympix.project.analyzeWholeProject": true
+,    "scss.lint.unknownAtRules": "ignore",
     "less.lint.unknownAtRules": "ignore"
 }

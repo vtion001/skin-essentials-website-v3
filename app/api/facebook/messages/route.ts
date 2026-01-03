@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
 
     const messages = await facebookAPI.getConversationMessages(accessToken, conversationId)
     return NextResponse.json({ messages }, { status: 200 })
-  } catch (err: any) {
+  } catch (err: unknown) {
     return NextResponse.json({ error: err?.message || 'Failed to fetch messages' }, { status: 500 })
   }
 }

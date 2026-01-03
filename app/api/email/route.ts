@@ -1,3 +1,4 @@
+import { GmailMessage } from "@/lib/types/api.types"
 import { NextRequest, NextResponse } from "next/server"
 
 async function getAccessToken() {
@@ -50,7 +51,7 @@ async function listRecentMessages() {
     headers: { Authorization: `Bearer ${accessToken}` }
   })
   const json = await list.json()
-  const ids = Array.isArray(json?.messages) ? json.messages.map((m: any) => m.id) : []
+  const ids = Array.isArray(json?.messages) ? json.messages.map((m: { id: string }) => m.id) : []
   const out: { id: string; from: string; to: string; subject: string; snippet: string }[] = []
   for (const id of ids.slice(0, 10)) {
     const r = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}?format=metadata&metadataHeaders=From&metadataHeaders=To&metadataHeaders=Subject`, {
@@ -58,9 +59,9 @@ async function listRecentMessages() {
     })
     const j = await r.json()
     const headers = Array.isArray(j?.payload?.headers) ? j.payload.headers : []
-    const from = headers.find((h: any) => h.name === "From")?.value || ""
-    const to = headers.find((h: any) => h.name === "To")?.value || ""
-    const subject = headers.find((h: any) => h.name === "Subject")?.value || ""
+    const from = headers.find((h: { name: string; value: string }) => h.name === "From")?.value || ""
+    const to = headers.find((h: { name: string; value: string }) => h.name === "To")?.value || ""
+    const subject = headers.find((h: { name: string; value: string }) => h.name === "Subject")?.value || ""
     out.push({ id, from, to, subject, snippet: j?.snippet || "" })
   }
   return out
@@ -103,7 +104,7 @@ export async function POST(req: NextRequest) {
     if (action === "process") {
       const messages = await listRecentMessages()
       const sender = process.env.GOOGLE_SENDER_EMAIL || ""
-      const results: any[] = []
+      const results: GmailMessage[] = []
       for (const m of messages) {
         if (!m.from || !m.snippet) continue
         const match = m.from.match(/<([^>]+)>/) || []

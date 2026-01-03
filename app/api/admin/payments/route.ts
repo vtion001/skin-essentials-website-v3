@@ -7,7 +7,7 @@ export async function GET() {
   const admin = supabaseAdminClient()
   const { data, error } = await admin.from('payments').select('*').order('created_at', { ascending: false })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  const payments = (data || []).map((p: any) => ({
+  const payments = (data || []).map((p: { id: string; [key: string]: unknown }) => ({
     ...p,
     transaction_id: aesDecryptFromString(p.transaction_id) ?? p.transaction_id,
     notes: aesDecryptFromString(p.notes) ?? p.notes,

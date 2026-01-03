@@ -1,12 +1,10 @@
 import { useState, useCallback, useEffect } from "react"
 import {
-  appointmentService,
   clientService,
   medicalRecordService,
   staffService,
   influencerService,
   socialMediaService,
-  type Appointment,
   type Payment,
   type MedicalRecord,
   type Client,
@@ -17,7 +15,6 @@ import {
 
 export function useAdminData() {
   const [isLoading, setIsLoading] = useState(false)
-  const [appointments, setAppointments] = useState<Appointment[]>([])
   const [payments, setPayments] = useState<Payment[]>([])
   const [medicalRecords, setMedicalRecords] = useState<MedicalRecord[]>([])
   const [clients, setClients] = useState<Client[]>([])
@@ -25,14 +22,6 @@ export function useAdminData() {
   const [staff, setStaff] = useState<Staff[]>([])
   const [influencers, setInfluencers] = useState<Influencer[]>([])
 
-  const refreshAppointments = useCallback(async () => {
-    try {
-      await appointmentService.fetchFromSupabase?.()
-      setAppointments(appointmentService.getAllAppointments())
-    } catch (e) {
-      console.error("Failed to refresh appointments", e)
-    }
-  }, [])
 
   const refreshClients = useCallback(async () => {
     try {
@@ -108,7 +97,6 @@ export function useAdminData() {
     setIsLoading(true)
     try {
       await Promise.all([
-        refreshAppointments(),
         refreshClients(),
         refreshPayments(),
         refreshMedicalRecords(),
@@ -119,7 +107,7 @@ export function useAdminData() {
     } finally {
       setIsLoading(false)
     }
-  }, [refreshAppointments, refreshClients, refreshPayments, refreshMedicalRecords, refreshStaff, refreshInfluencers, refreshSocialMessages])
+  }, [refreshClients, refreshPayments, refreshMedicalRecords, refreshStaff, refreshInfluencers, refreshSocialMessages])
 
   useEffect(() => {
     loadAllData()
@@ -127,8 +115,6 @@ export function useAdminData() {
 
   return {
     isLoading,
-    appointments,
-    setAppointments,
     payments,
     setPayments,
     medicalRecords,
@@ -142,7 +128,6 @@ export function useAdminData() {
     influencers,
     setInfluencers,
     refreshData: loadAllData,
-    refreshAppointments,
     refreshClients,
     refreshPayments,
     refreshMedicalRecords,

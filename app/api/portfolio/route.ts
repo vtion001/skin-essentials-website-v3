@@ -1,4 +1,5 @@
 import { jsonOk, jsonError, jsonCreated } from "@/lib/api-response"
+import { PortfolioItem } from "@/lib/types/api.types"
 import { logError } from "@/lib/error-logger"
 import { supabaseAdminClient } from "@/lib/supabase-admin"
 import { defaultPortfolioItems } from "@/lib/portfolio-data"
@@ -66,7 +67,7 @@ export async function GET(request: Request) {
       }
     }
 
-    const items: PortfolioItem[] = (data || []).map((r: any) => ({
+    const items: PortfolioItem[] = (data || []).map((r: PortfolioItem) => ({
       id: String(r.id),
       title: String(r.title || ''),
       category: String(r.category || ''),

@@ -73,7 +73,7 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ ok: true, data: result.data })
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error("SMS API Error:", e)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
