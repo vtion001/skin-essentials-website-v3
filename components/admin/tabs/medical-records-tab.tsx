@@ -124,10 +124,16 @@ export function MedicalRecordsTab({
                                     >
                                         <TableCell className="py-4">
                                             <div className="font-bold text-[#1A1A1A] tracking-tight">
-                                                {privacyMode ? maskName(clientName) : clientName}
+                                                {client?.firstName === "[Unavailable]" ? (
+                                                    <Badge variant="outline" className="text-[9px] bg-red-50 text-red-600 border-red-100 py-0.5 normal-case">Secure Name Locked</Badge>
+                                                ) : (
+                                                    privacyMode ? maskName(clientName) : clientName
+                                                )}
                                             </div>
                                             <div className="text-[10px] text-[#8B735B] font-medium tracking-tight uppercase mt-0.5">
-                                                {client?.email || ""}
+                                                {client?.email === "[Unavailable]" ? (
+                                                    <Badge variant="outline" className="text-[8px] bg-amber-50 text-amber-600 border-amber-100 py-0 normal-case">Secure Email Locked</Badge>
+                                                ) : (client?.email || "")}
                                             </div>
                                         </TableCell>
                                         <TableCell>
@@ -141,13 +147,21 @@ export function MedicalRecordsTab({
                                         </TableCell>
                                         <TableCell className="max-w-xs">
                                             <div className="text-[11px] font-bold text-[#1A1A1A] uppercase tracking-tight truncate">
-                                                {record.chiefComplaint}
+                                                {record.chiefComplaint === "[Unavailable]" ? (
+                                                    <span className="text-amber-600">Locked</span>
+                                                ) : record.chiefComplaint}
                                             </div>
                                         </TableCell>
                                         <TableCell className="max-w-xs">
-                                            <div className="text-[10px] text-[#8B735B]/70 font-bold uppercase tracking-widest truncate">
-                                                {record.treatmentPlan}
-                                            </div>
+                                            {record.decryption_error || record.treatmentPlan === "[Unavailable]" ? (
+                                                <Badge className="bg-amber-50 text-amber-600 border-amber-100 text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border">
+                                                    Record Unavailable - Contact Admin
+                                                </Badge>
+                                            ) : (
+                                                <div className="text-[10px] text-[#8B735B]/70 font-bold uppercase tracking-widest truncate">
+                                                    {record.treatmentPlan}
+                                                </div>
+                                            )}
                                         </TableCell>
                                         <TableCell>
                                             {record.isConfidential ? (

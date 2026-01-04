@@ -5,6 +5,8 @@ import { aesEncrypt, aesDecrypt, aesEncryptToString, aesDecryptFromString, verif
 import { logAudit } from "@/lib/audit-logger"
 import { getAuthUser } from "@/lib/auth-server"
 
+import { DecryptionService } from "@/lib/encryption/decrypt.service"
+
 export async function GET(req: Request) {
   const user = await getAuthUser(req)
   const admin = supabaseAdminClient()
@@ -24,16 +26,51 @@ export async function GET(req: Request) {
 
   if (error) return jsonMaybeMasked(req, { error: error.message }, { status: 500 })
 
-  const records = (data || []).map((r: { id: string;[key: string]: unknown }) => {
-    const decrypt = (val: any) => aesDecrypt(val) ?? val
+  const { DecryptionAccessControl } = await import("@/lib/auth/decryption-access")
+  const canDecrypt = user ? await DecryptionAccessControl.canDecrypt(user, 'medical_record') : false
+
+  const records = (data || []).map((r: any) => {
+    if (!canDecrypt) {
+      return {
+        ...r,
+        medical_history: r.medical_history ? "[Secure Locked]" : null,
+        allergies: r.allergies ? "[Secure Locked]" : null,
+        treatment_plan: r.treatment_plan ? "[Secure Locked]" : null,
+        notes: r.notes ? "[Secure Locked]" : null,
+        chief_complaint: r.chief_complaint ? "[Secure Locked]" : null,
+        decryption_error: true
+      }
+    }
+
+    const decrypted = DecryptionService.decryptObject(r, [
+      'medical_history',
+      'allergies',
+      'current_medications',
+      'treatment_plan',
+      'notes',
+      'attachments',
+      'chief_complaint'
+    ])
+
+    const hasDecryptionError =
+      decrypted.treatment_plan === "[Unavailable]" ||
+      decrypted.notes === "[Unavailable]" ||
+      decrypted.chief_complaint === "[Unavailable]"
+
+    if (hasDecryptionError && user) {
+      logAudit({
+        userId: user.id,
+        action: 'DECRYPTION_FAILED',
+        resource: 'Medical Records',
+        resourceId: r.id,
+        status: 'FAILURE',
+        details: { record_id: r.id }
+      }).catch(err => console.error('Failed to log decryption failure audit:', err))
+    }
+
     return {
-      ...r,
-      medical_history: decrypt(r.medical_history),
-      allergies: decrypt(r.allergies),
-      current_medications: decrypt(r.current_medications),
-      treatment_plan: aesDecryptFromString(r.treatment_plan as string) ?? r.treatment_plan,
-      notes: aesDecryptFromString(r.notes as string) ?? r.notes,
-      attachments: decrypt(r.attachments),
+      ...decrypted,
+      decryption_error: hasDecryptionError
     }
   })
   return jsonMaybeMasked(req, { records })

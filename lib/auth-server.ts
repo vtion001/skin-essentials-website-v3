@@ -25,7 +25,16 @@ export async function getAuthUser(req: Request) {
     try {
         const { data: { user }, error } = await supabase.auth.getUser()
         if (error || !user) return null
-        return user
+
+        // Detect our custom MFA cookie
+        const cookieStr = req.headers.get('cookie') || ''
+        const mfaVerified = cookieStr.includes('mfa_ok=1')
+
+        // Inject verified status for our Access Control service
+        return {
+            ...user,
+            mfa_verified: mfaVerified
+        }
     } catch (e) {
         return null
     }

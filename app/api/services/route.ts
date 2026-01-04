@@ -5,32 +5,6 @@ import { ServiceSchema } from '@/lib/validation'
 import { supabaseAdminClient } from '@/lib/supabase-admin'
 import { serviceCategories as defaultServiceCategories } from '@/lib/services-data'
 
-interface ServiceFAQ { q: string; a: string }
-interface Service {
-  name: string
-  price: string
-  description: string
-  duration?: string
-  results?: string
-  sessions?: string
-  includes?: string
-  benefits?: string[]
-  faqs?: ServiceFAQ[]
-  originalPrice?: string
-  badge?: string
-  pricing?: string
-  image?: string
-}
-
-interface ServiceCategory {
-  id: string
-  category: string
-  description: string
-  image?: string
-  color?: string
-  services: Service[]
-}
-
 // The services catalog is stored in Supabase (service_categories + services tables)
 
 export async function GET() {
@@ -98,7 +72,7 @@ export async function GET() {
       description: c.description || '',
       image: c.image || '',
       color: c.color || '',
-      services: Array.isArray(c.services) ? c.services.map((s: Service) => ({
+      services: Array.isArray(c.services) ? c.services.map((s: any) => ({
         name: String(s.name || ''),
         price: String(s.price || ''),
         description: String(s.description || ''),
@@ -122,7 +96,7 @@ export async function GET() {
     description: c.description || '',
     image: c.image || '',
     color: c.color || '',
-    services: Array.isArray(c.services) ? c.services.map((s: Service) => ({
+    services: Array.isArray(c.services) ? c.services.map((s: any) => ({
       name: String(s.name || ''),
       price: String(s.price || ''),
       description: String(s.description || ''),

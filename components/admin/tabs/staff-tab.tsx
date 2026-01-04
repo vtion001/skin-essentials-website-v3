@@ -168,10 +168,10 @@ export function StaffTab({
             Array.isArray(s.treatments)
                 ? s.treatments.map((t: any) => ({
                     staffId: s.id,
-                    staffName: `${s.firstName} ${s.lastName}`.trim(),
+                    staffName: s.firstName === "[Unavailable]" ? "[Secure Locked]" : `${s.firstName} ${s.lastName}`.trim(),
                     date: t.date || "-",
-                    procedure: t.procedure,
-                    clientName: t.clientName || "",
+                    procedure: t.procedure === "[Unavailable]" ? "[Secure Locked]" : t.procedure,
+                    clientName: (t.clientName === "[Unavailable]" || t.client_name === "[Unavailable]") ? "[Secure Locked]" : (t.clientName || t.client_name || ""),
                     total: Number(t.total || 0),
                 }))
                 : []
@@ -316,24 +316,36 @@ export function StaffTab({
                                 {filteredStaff.map((s) => (
                                     <TableRow key={s.id} className="group border-b border-[#E2D1C3]/10 hover:bg-[#FDFCFB] transition-colors cursor-default">
                                         <TableCell className="py-4">
-                                            <div className="font-bold text-[#1A1A1A] tracking-tight">{s.firstName} {s.lastName}</div>
-                                            <div className="text-[10px] text-[#8B735B] font-medium tracking-tight uppercase mt-0.5">{s.email}</div>
+                                            <div className="font-bold text-[#1A1A1A] tracking-tight">
+                                                {s.firstName === "[Unavailable]" ? (
+                                                    <Badge variant="outline" className="text-[10px] bg-red-50 text-red-600 border-red-100 py-0 h-5 normal-case">Secure Name Locked</Badge>
+                                                ) : (
+                                                    `${s.firstName} ${s.lastName}`.trim()
+                                                )}
+                                            </div>
+                                            <div className="text-[10px] text-[#8B735B] font-medium tracking-tight uppercase mt-0.5">
+                                                {s.email === "[Unavailable]" ? (
+                                                    <Badge variant="outline" className="text-[8px] bg-amber-50 text-amber-600 border-amber-100 py-0 h-4 normal-case">Secure Email Locked</Badge>
+                                                ) : (
+                                                    s.email
+                                                )}
+                                            </div>
                                         </TableCell>
                                         <TableCell>
-                                            <div className="text-[11px] font-bold text-[#1A1A1A] uppercase tracking-tight">{s.position.replace("_", " ")}</div>
+                                            <div className="text-[11px] font-bold text-[#1A1A1A] uppercase tracking-tight">{s.position?.replace("_", " ") || "-"}</div>
                                         </TableCell>
                                         <TableCell>
                                             <div className="text-[10px] text-[#8B735B]/70 font-bold uppercase tracking-widest">{s.department ?? "-"}</div>
                                         </TableCell>
                                         <TableCell>
                                             <div className="text-[11px] font-bold text-[#1A1A1A]">
-                                                {privacyMode
-                                                    ? s.licenseNumber
-                                                        ? "••••••••"
-                                                        : "-"
-                                                    : typeof s.licenseNumber === "string" && s.licenseNumber.includes('"iv":')
-                                                        ? "••••••••"
-                                                        : s.licenseNumber || "-"}
+                                                {s.licenseNumber === "[Unavailable]" ? (
+                                                    <Badge variant="outline" className="text-[8px] bg-amber-50 text-amber-600 border-amber-100 py-0 h-4 normal-case">Secure Locked</Badge>
+                                                ) : (
+                                                    privacyMode
+                                                        ? s.licenseNumber ? "••••••••" : "-"
+                                                        : s.licenseNumber || "-"
+                                                )}
                                             </div>
                                         </TableCell>
                                         <TableCell>
@@ -344,8 +356,8 @@ export function StaffTab({
                                         <TableCell>
                                             <Badge
                                                 className={`text-[10px] font-bold uppercase tracking-widest py-0.5 px-3 rounded-full border shadow-none ${s.status === "active"
-                                                        ? "bg-emerald-50 text-emerald-600 border-emerald-100"
-                                                        : "bg-rose-50 text-rose-600 border-rose-100"
+                                                    ? "bg-emerald-50 text-emerald-600 border-emerald-100"
+                                                    : "bg-rose-50 text-rose-600 border-rose-100"
                                                     }`}
                                             >
                                                 {s.status}
@@ -364,11 +376,15 @@ export function StaffTab({
                                                     <TableBody>
                                                         {s.treatments.slice(0, 3).map((t: any, i: number) => (
                                                             <TableRow key={i} className="border-none">
-                                                                <TableCell className="py-1 text-[9px] font-bold text-[#1A1A1A] truncate max-w-[6rem]">{t.procedure}</TableCell>
-                                                                <TableCell className="py-1 text-[9px] text-[#8B735B] truncate max-w-[6rem]">
-                                                                    {privacyMode ? maskName(t.clientName || "") : t.clientName || "-"}
+                                                                <TableCell className="py-1 text-[9px] font-bold text-[#1A1A1A] truncate max-w-[6rem]">
+                                                                    {t.procedure === "[Unavailable]" ? "Locked" : t.procedure}
                                                                 </TableCell>
-                                                                <TableCell className="py-1 text-[9px] font-bold text-[#1A1A1A] text-right">₱{Number(t.total).toLocaleString()}</TableCell>
+                                                                <TableCell className="py-1 text-[9px] text-[#8B735B] truncate max-w-[6rem]">
+                                                                    {t.clientName === "[Unavailable]" || t.client_name === "[Unavailable]"
+                                                                        ? "Locked"
+                                                                        : (privacyMode ? maskName(t.clientName || t.client_name || "") : t.clientName || t.client_name || "-")}
+                                                                </TableCell>
+                                                                <TableCell className="py-1 text-[9px] font-bold text-[#1A1A1A] text-right">₱{Number(t.total || 0).toLocaleString()}</TableCell>
                                                             </TableRow>
                                                         ))}
                                                     </TableBody>
@@ -526,8 +542,8 @@ export function StaffTab({
                                                         </TableCell>
                                                         <TableCell
                                                             className={`text-right text-[10px] font-bold ${((totalsData.paymentsByClient.get(clientName) || 0) - total || 0) < 0
-                                                                    ? "text-rose-600"
-                                                                    : "text-emerald-600"
+                                                                ? "text-rose-600"
+                                                                : "text-emerald-600"
                                                                 }`}
                                                         >
                                                             ₱{((totalsData.paymentsByClient.get(clientName) || 0) - total || 0).toLocaleString()}
@@ -559,10 +575,26 @@ export function StaffTab({
                         <div className="space-y-6">
                             <div className="space-y-1">
                                 <div className="font-semibold text-lg">
-                                    {staffPreviewTarget.firstName} {staffPreviewTarget.lastName}
+                                    {staffPreviewTarget.firstName === "[Unavailable]" ? (
+                                        <Badge variant="outline" className="bg-red-50 text-red-600 border-red-100">Secure Name Locked</Badge>
+                                    ) : (
+                                        `${staffPreviewTarget.firstName} ${staffPreviewTarget.lastName}`.trim()
+                                    )}
                                 </div>
-                                <div className="text-sm text-gray-600">{staffPreviewTarget.email}</div>
-                                <div className="text-sm text-gray-600">{staffPreviewTarget.phone}</div>
+                                <div className="text-sm text-gray-600">
+                                    {staffPreviewTarget.email === "[Unavailable]" ? (
+                                        <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-600 border-amber-100">Secure Email Locked</Badge>
+                                    ) : (
+                                        staffPreviewTarget.email
+                                    )}
+                                </div>
+                                <div className="text-sm text-gray-600">
+                                    {staffPreviewTarget.phone === "[Unavailable]" ? (
+                                        <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-600 border-amber-100">Secure Phone Locked</Badge>
+                                    ) : (
+                                        staffPreviewTarget.phone
+                                    )}
+                                </div>
                             </div>
                             <div className="space-y-3">
                                 <div className="font-medium">Treatment Tracking</div>
@@ -580,11 +612,15 @@ export function StaffTab({
                                             <TableRow key={i} className="group border-b border-[#E2D1C3]/10 hover:bg-[#FDFCFB] transition-colors cursor-default">
                                                 <TableCell className="py-2.5 text-[10px] font-bold text-[#1A1A1A]">{t.date || "-"}</TableCell>
                                                 <TableCell>
-                                                    <div className="text-[10px] font-bold text-[#1A1A1A] uppercase tracking-tight truncate max-w-[18rem]">{t.procedure}</div>
+                                                    <div className="text-[10px] font-bold text-[#1A1A1A] uppercase tracking-tight truncate max-w-[18rem]">
+                                                        {t.procedure === "[Unavailable]" ? "Locked" : t.procedure}
+                                                    </div>
                                                 </TableCell>
                                                 <TableCell>
                                                     <div className="text-[10px] text-[#8B735B] font-bold truncate max-w-[14rem]">
-                                                        {privacyMode ? maskName(t.clientName || "") : t.clientName || "-"}
+                                                        {t.clientName === "[Unavailable]" || t.client_name === "[Unavailable]"
+                                                            ? "Locked"
+                                                            : (privacyMode ? maskName(t.clientName || t.client_name || "") : t.clientName || t.client_name || "-")}
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="text-right text-[10px] font-bold text-[#1A1A1A]">₱{Number(t.total || 0).toLocaleString()}</TableCell>

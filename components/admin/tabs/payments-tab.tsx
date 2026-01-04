@@ -192,8 +192,18 @@ export function PaymentsTab({
                   return (
                     <TableRow key={payment.id} className="group border-b border-[#E2D1C3]/10 hover:bg-[#FDFCFB] transition-colors cursor-default">
                       <TableCell className="py-4">
-                        <div className="font-bold text-[#1A1A1A] tracking-tight">{client ? `${client.firstName} ${client.lastName}` : 'Unknown Client'}</div>
-                        <div className="text-[10px] text-[#8B735B] font-medium tracking-tight uppercase mt-0.5">{client?.email || ''}</div>
+                        <div className="font-bold text-[#1A1A1A] tracking-tight">
+                          {client?.firstName === "[Unavailable]" ? (
+                            <Badge variant="outline" className="text-[9px] bg-red-50 text-red-600 border-red-100 py-0.5 normal-case">Secure Name Locked</Badge>
+                          ) : (
+                            client ? `${client.firstName} ${client.lastName}` : 'Unknown Client'
+                          )}
+                        </div>
+                        <div className="text-[10px] text-[#8B735B] font-medium tracking-tight uppercase mt-0.5">
+                          {client?.email === "[Unavailable]" ? (
+                            <Badge variant="outline" className="text-[8px] bg-amber-50 text-amber-600 border-amber-100 py-0 normal-case">Secure Email Locked</Badge>
+                          ) : (client?.email || '')}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <div className="font-bold text-[#1A1A1A]">₱{payment.amount.toLocaleString()}</div>

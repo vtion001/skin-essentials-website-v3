@@ -32,34 +32,63 @@ export async function POST(request: Request) {
       const msg = error?.message || 'Invalid credentials'
       const normalized = /fetch failed/i.test(msg) ?
         'Cannot reach Supabase. Verify NEXT_PUBLIC_SUPABASE_URL and network connectivity.' : msg
+
+      console.error('Login attempt failed:', { email, error: msg })
+
       try {
         const admin = supabaseAdminClient()
         if (admin) {
-          await admin.from('error_logs').insert({ context: 'admin_login', message: normalized, meta: { email } })
+          await admin.from('error_logs').insert({
+            context: 'admin_login',
+            message: normalized,
+            meta: { email, raw_error: msg }
+          })
         }
-      } catch { }
+      } catch (logErr) {
+        console.error('Failed to log login error:', logErr)
+      }
       return NextResponse.json({ success: false, error: normalized }, { status: 401 })
     }
+
     try {
-      const role = await supabase.from('admin_users').select('active').eq('user_id', data.user!.id).single()
-      if (role.error || !role.data || role.data.active !== true) {
+      const admin = supabaseAdminClient()
+      if (!admin) {
+        throw new Error('Service role client unavailable for authorization check')
+      }
+
+      const { data: roleData, error: roleError } = await admin
+        .from('admin_users')
+        .select('active')
+        .eq('user_id', data.user.id)
+        .single()
+
+      if (roleError || !roleData || roleData.active !== true) {
+        console.warn('Unauthorized login attempt:', { email, userId: data.user.id, error: roleError?.message })
         await supabase.auth.signOut()
+
         try {
-          const admin = supabaseAdminClient()
-          if (admin) {
-            await admin.from('error_logs').insert({ context: 'admin_login', message: 'Not authorized', meta: { email, user_id: data.user?.id } })
-          }
+          await admin.from('error_logs').insert({
+            context: 'admin_login',
+            message: 'Not authorized - No active admin record',
+            meta: { email, user_id: data.user.id, db_error: roleError?.message }
+          })
         } catch { }
         return NextResponse.json({ success: false, error: 'Not authorized' }, { status: 403 })
       }
-    } catch { }
+    } catch (authPanic: any) {
+      console.error('Authorization panic:', authPanic)
+      await supabase.auth.signOut()
+      return NextResponse.json({ success: false, error: 'Authorization service failure' }, { status: 500 })
+    }
+
     const requireMfa = Boolean(process.env.ADMIN_MFA_CODE)
     if (requireMfa) {
       return NextResponse.json({ success: true, mfa_required: true })
     }
     return NextResponse.json({ success: true, user: { id: data.user?.id, email: data.user?.email } })
-  } catch (error) {
-    return NextResponse.json({ success: false, error: "Invalid request payload" }, { status: 400 })
+  } catch (error: any) {
+    console.error('Fatal Login Error:', error)
+    return NextResponse.json({ success: false, error: "Critical server error during login" }, { status: 500 })
   }
 }
 

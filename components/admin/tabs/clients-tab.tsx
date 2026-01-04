@@ -166,18 +166,32 @@ export function ClientsTab({
                 {filteredClients.map((client) => (
                   <TableRow key={client.id} className="group border-b border-[#E2D1C3]/10 hover:bg-[#FDFCFB] transition-colors cursor-default">
                     <TableCell className="py-4">
-                      <div className="font-bold text-[#1A1A1A] tracking-tight">{privacyMode ? maskName(`${client.firstName} ${client.lastName}`) : `${client.firstName} ${client.lastName}`}</div>
+                      <div className="font-bold text-[#1A1A1A] tracking-tight">
+                        {client.firstName === "[Unavailable]" ? (
+                          <Badge variant="outline" className="text-[10px] bg-red-50 text-red-600 border-red-100 py-0.5 normal-case">Secure Name Locked</Badge>
+                        ) : (
+                          privacyMode ? maskName(`${client.firstName} ${client.lastName}`) : `${client.firstName} ${client.lastName}`
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="max-w-[220px]">
-                      <div className="text-[11px] font-bold text-[#1A1A1A] truncate">{privacyMode ? maskEmail(client.email) : client.email}</div>
+                      {client.email === "[Unavailable]" ? (
+                        <Badge variant="outline" className="text-[9px] bg-amber-50 text-amber-600 border-amber-100 py-0.5 normal-case">Secure Email Locked</Badge>
+                      ) : (
+                        <div className="text-[11px] font-bold text-[#1A1A1A] truncate">{privacyMode ? maskEmail(client.email) : client.email}</div>
+                      )}
                     </TableCell>
                     <TableCell className="max-w-[160px]">
-                      <div className="text-[11px] font-bold text-[#1A1A1A] truncate">{privacyMode ? maskPhone(client.phone) : client.phone}</div>
+                      {client.phone === "[Unavailable]" ? (
+                        <Badge variant="outline" className="text-[9px] bg-amber-50 text-amber-600 border-amber-100 py-0.5 normal-case">Secure Phone Locked</Badge>
+                      ) : (
+                        <div className="text-[11px] font-bold text-[#1A1A1A] truncate">{privacyMode ? maskPhone(client.phone) : client.phone}</div>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Badge className={`text-[10px] font-bold uppercase tracking-widest py-0.5 px-3 rounded-full border shadow-none ${client.status === 'active' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                          client.status === 'inactive' ? 'bg-gray-50 text-gray-600 border-gray-100' :
-                            'bg-rose-50 text-rose-600 border-rose-100'
+                        client.status === 'inactive' ? 'bg-gray-50 text-gray-600 border-gray-100' :
+                          'bg-rose-50 text-rose-600 border-rose-100'
                         }`}>
                         {client.status}
                       </Badge>

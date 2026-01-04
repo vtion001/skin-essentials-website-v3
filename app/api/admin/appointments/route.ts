@@ -4,7 +4,8 @@ import { supabaseAdminClient } from "@/lib/supabase-admin"
 import { createMessageReminder } from "@/lib/iprogsms"
 import { logAudit } from "@/lib/audit-logger"
 import { getAuthUser } from "@/lib/auth-server"
-import { aesEncryptToString, aesDecryptFromString } from "@/lib/utils"
+import { aesEncryptToString } from "@/lib/utils"
+import { DecryptionService } from "@/lib/encryption/decrypt.service"
 
 export async function GET(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -28,14 +29,59 @@ export async function GET(req: NextRequest) {
 
     if (error) return jsonMaybeMasked(req, { error: error.message }, { status: 500 })
 
-    const appointments = (data || []).map((a: any) => ({
-      ...a,
-      client_email: aesDecryptFromString(a.client_email) ?? a.client_email,
-      client_phone: aesDecryptFromString(a.client_phone) ?? a.client_phone,
-    }))
+    const { DecryptionAccessControl } = await import("@/lib/auth/decryption-access")
+    const canDecrypt = user ? await DecryptionAccessControl.canDecrypt(user, 'appointment') : false
+
+    const appointments = (data || []).map((a: any) => {
+      if (!canDecrypt) {
+        return {
+          ...a,
+          client_name: a.client_name ? "[Secure Locked]" : null,
+          client_email: a.client_email ? "[Secure Locked]" : null,
+          client_phone: a.client_phone ? "[Secure Locked]" : null,
+          service: a.service ? "[Secure Locked]" : null,
+          decryption_error: true
+        }
+      }
+
+      const decrypted = DecryptionService.decryptObject(a, [
+        'client_name',
+        'client_email',
+        'client_phone',
+        'service'
+      ])
+
+      const hasDecryptionError =
+        decrypted.client_name === "[Unavailable]" ||
+        decrypted.client_email === "[Unavailable]" ||
+        decrypted.client_phone === "[Unavailable]" ||
+        decrypted.service === "[Unavailable]"
+
+      if (hasDecryptionError && user) {
+        logAudit({
+          userId: user.id,
+          action: 'DECRYPTION_FAILED',
+          resource: 'Appointments',
+          resourceId: a.id,
+          status: 'FAILURE',
+          details: {
+            client_name: decrypted.client_name === "[Unavailable]",
+            client_email: decrypted.client_email === "[Unavailable]",
+            client_phone: decrypted.client_phone === "[Unavailable]",
+            service: decrypted.service === "[Unavailable]"
+          }
+        }).catch(() => { })
+      }
+
+      return {
+        ...decrypted,
+        decryption_error: hasDecryptionError
+      }
+    })
 
     return jsonMaybeMasked(req, { appointments })
   } catch (e: unknown) {
+    console.error('Appointments GET error:', e)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })
   }
 }

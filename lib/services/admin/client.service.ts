@@ -152,6 +152,7 @@ class ClientService {
             lastVisit: r.last_visit ? String(r.last_visit) : undefined,
             createdAt: String(r.created_at ?? new Date().toISOString()),
             updatedAt: String(r.updated_at ?? new Date().toISOString()),
+            decryption_error: Boolean(r.decryption_error),
         }))
         this.clients = normalized
         this.saveToStorage()

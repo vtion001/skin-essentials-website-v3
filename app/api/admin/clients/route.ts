@@ -6,6 +6,8 @@ import { cookies } from "next/headers"
 import { logAudit } from "@/lib/audit-logger"
 import { getAuthUser } from "@/lib/auth-server"
 
+import { DecryptionService } from "@/lib/encryption/decrypt.service"
+
 export async function GET(req: Request) {
   const user = await getAuthUser(req)
   try {
@@ -28,19 +30,62 @@ export async function GET(req: Request) {
     }
 
     if (error) return jsonMaybeMasked(req, { error: error.message }, { status: 500 })
-    const decryptJson = (v: any) => aesDecrypt(v) ?? v
-    const clients = (data || []).map((c: { id: string;[key: string]: any }) => ({
-      ...c,
-      email: aesDecryptFromString(c.email) ?? c.email,
-      phone: aesDecryptFromString(c.phone) ?? c.phone,
-      address: aesDecryptFromString(c.address) ?? c.address,
-      emergency_contact: decryptJson(c.emergency_contact),
-      medical_history: Array.isArray(c.medical_history) ? c.medical_history : decryptJson(c.medical_history),
-      allergies: Array.isArray(c.allergies) ? c.allergies : decryptJson(c.allergies),
-      preferences: c.preferences && typeof c.preferences === 'object' ? c.preferences : decryptJson(c.preferences),
-    }))
+
+    const { DecryptionAccessControl } = await import("@/lib/auth/decryption-access")
+    const canDecrypt = user ? await DecryptionAccessControl.canDecrypt(user, 'client') : false
+
+    const clients = (data || []).map((c: any) => {
+      if (!canDecrypt) {
+        return {
+          ...c,
+          first_name: c.first_name ? "[Secure Locked]" : null,
+          last_name: c.last_name ? "[Secure Locked]" : null,
+          email: c.email ? "[Secure Locked]" : null,
+          phone: c.phone ? "[Secure Locked]" : null,
+          address: c.address ? "[Secure Locked]" : null,
+          emergency_contact: c.emergency_contact ? "[Secure Locked]" : null,
+          medical_history: c.medical_history ? "[Secure Locked]" : null,
+          allergies: c.allergies ? "[Secure Locked]" : null,
+          decryption_error: true
+        }
+      }
+
+      const decrypted = DecryptionService.decryptObject(c, [
+        'first_name',
+        'last_name',
+        'email',
+        'phone',
+        'address',
+        'emergency_contact',
+        'medical_history',
+        'allergies',
+        'preferences'
+      ])
+
+      const hasDecryptionError =
+        decrypted.email === "[Unavailable]" ||
+        decrypted.phone === "[Unavailable]" ||
+        decrypted.first_name === "[Unavailable]"
+
+      if (hasDecryptionError && user) {
+        logAudit({
+          userId: user.id,
+          action: 'DECRYPTION_FAILED',
+          resource: 'Clients',
+          resourceId: c.id,
+          status: 'FAILURE',
+          details: { client_id: c.id }
+        }).catch(() => { })
+      }
+
+      return {
+        ...decrypted,
+        decryption_error: hasDecryptionError
+      }
+    })
     return jsonMaybeMasked(req, { clients })
   } catch (e: unknown) {
+    console.error('Clients GET error:', e)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })
   }
 }

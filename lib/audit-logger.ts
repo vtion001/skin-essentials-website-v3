@@ -1,6 +1,6 @@
 import { supabaseAdminClient } from './supabase-admin'
 
-export type AuditAction = 'READ' | 'CREATE' | 'UPDATE' | 'DELETE' | 'LOGIN' | 'EXPORT'
+export type AuditAction = 'READ' | 'CREATE' | 'UPDATE' | 'DELETE' | 'LOGIN' | 'EXPORT' | 'DECRYPTION_FAILED' | 'UNAUTHORIZED_ACCESS'
 
 export interface AuditLogEntry {
     userId: string

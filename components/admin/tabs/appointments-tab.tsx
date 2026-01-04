@@ -188,16 +188,24 @@ export function AppointmentsTab({
                       <div className="flex items-center gap-6">
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-1">
-                            <p className="font-bold text-[#1A1A1A] tracking-tight">{privacyMode ? maskName(appointment.clientName) : appointment.clientName}</p>
+                            <p className="font-bold text-[#1A1A1A] tracking-tight">
+                              {appointment.clientName === "[Unavailable]" ? (
+                                <Badge variant="outline" className="text-[10px] bg-red-50 text-red-600 border-red-100 py-0 h-5 normal-case">Secure Locked</Badge>
+                              ) : (
+                                privacyMode ? maskName(appointment.clientName) : appointment.clientName
+                              )}
+                            </p>
                             <Badge className={`text-[10px] font-bold uppercase tracking-widest py-0.5 px-3 rounded-full border shadow-none ${appointment.status === 'completed' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                                appointment.status === 'confirmed' ? 'bg-blue-50 text-blue-600 border-blue-100' :
-                                  appointment.status === 'scheduled' ? 'bg-amber-50 text-amber-600 border-amber-100' :
-                                    'bg-rose-50 text-rose-600 border-rose-100'
+                              appointment.status === 'confirmed' ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                                appointment.status === 'scheduled' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                                  'bg-rose-50 text-rose-600 border-rose-100'
                               }`}>
                               {appointment.status}
                             </Badge>
                           </div>
-                          <p className="text-[10px] text-[#8B735B] font-bold uppercase tracking-widest mb-2">{appointment.service}</p>
+                          <p className="text-[10px] text-[#8B735B] font-bold uppercase tracking-widest mb-2">
+                            {appointment.service === "[Unavailable]" ? "Service Unavailable" : appointment.service}
+                          </p>
                           <div className="flex items-center gap-4">
                             <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#1A1A1A]/60">
                               <span className="w-1.5 h-1.5 rounded-full bg-[#8B735B]/30" />
@@ -326,8 +334,26 @@ export function AppointmentsTab({
                 {pageItems.map(a => (
                   <TableRow key={a.id} className="group border-b border-[#E2D1C3]/10 hover:bg-[#FDFCFB] transition-colors cursor-default" onClick={() => setSelectedDate(new Date(a.date + 'T00:00:00'))}>
                     <TableCell className="py-4">
-                      <div className="font-bold text-[#1A1A1A] tracking-tight">{privacyMode ? maskName(a.clientName) : a.clientName}</div>
-                      <div className="text-[10px] text-[#8B735B] font-medium tracking-tight uppercase mt-0.5">{privacyMode ? maskEmail(a.clientEmail) : a.clientEmail} • {privacyMode ? maskPhone(a.clientPhone) : a.clientPhone}</div>
+                      <div className="font-bold text-[#1A1A1A] tracking-tight">
+                        {a.clientName === "[Unavailable]" ? (
+                          <Badge variant="outline" className="text-[10px] bg-red-50 text-red-600 border-red-100 py-0 h-5 normal-case">Secure Name Locked</Badge>
+                        ) : (
+                          privacyMode ? maskName(a.clientName) : a.clientName
+                        )}
+                      </div>
+                      <div className="text-[10px] text-[#8B735B] font-medium tracking-tight uppercase mt-0.5">
+                        {a.clientEmail === "[Unavailable]" ? (
+                          <Badge variant="outline" className="text-[8px] bg-amber-50 text-amber-600 border-amber-100 py-0 h-4 normal-case">Secure Email Locked</Badge>
+                        ) : (
+                          privacyMode ? maskEmail(a.clientEmail) : a.clientEmail
+                        )}
+                        {' • '}
+                        {a.clientPhone === "[Unavailable]" ? (
+                          <Badge variant="outline" className="text-[8px] bg-amber-50 text-amber-600 border-amber-100 py-0 h-4 normal-case">Secure Phone Locked</Badge>
+                        ) : (
+                          privacyMode ? maskPhone(a.clientPhone) : a.clientPhone
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="max-w-[12rem]">
                       <div className="text-[11px] font-bold text-[#1A1A1A] uppercase tracking-tight truncate">{a.service}</div>

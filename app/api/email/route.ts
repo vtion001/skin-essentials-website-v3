@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
     if (action === "process") {
       const messages = await listRecentMessages()
       const sender = process.env.GOOGLE_SENDER_EMAIL || ""
-      const results: GmailMessage[] = []
+      const results: { id: string; to: string }[] = []
       for (const m of messages) {
         if (!m.from || !m.snippet) continue
         const match = m.from.match(/<([^>]+)>/) || []

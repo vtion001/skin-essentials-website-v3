@@ -108,6 +108,7 @@ class AppointmentService {
             price: Number(r.price ?? 0),
             createdAt: String(r.created_at ?? r.createdAt ?? new Date().toISOString()),
             updatedAt: String(r.updated_at ?? r.updatedAt ?? new Date().toISOString()),
+            decryption_error: Boolean(r.decryption_error),
         }))
         this.appointments = normalized
         this.saveToStorage()

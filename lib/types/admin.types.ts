@@ -23,6 +23,7 @@ export interface Appointment {
     price: number
     createdAt: string
     updatedAt: string
+    decryption_error?: boolean
 }
 
 export interface Payment {
@@ -38,6 +39,7 @@ export interface Payment {
     notes?: string
     createdAt: string
     updatedAt: string
+    decryption_error?: boolean
 }
 
 export interface MedicalRecord {
@@ -56,6 +58,7 @@ export interface MedicalRecord {
     createdAt: string
     updatedAt: string
     isConfidential: boolean
+    decryption_error?: boolean
     treatments?: { date: string; procedure: string; aestheticianId?: string; staffName?: string; total?: number }[]
 }
 
@@ -86,6 +89,7 @@ export interface Client {
     lastVisit?: string
     createdAt: string
     updatedAt: string
+    decryption_error?: boolean
 }
 
 export interface Staff {
@@ -105,6 +109,7 @@ export interface Staff {
     treatments?: { procedure: string; clientName?: string; total: number; date?: string }[]
     createdAt: string
     updatedAt: string
+    decryption_error?: boolean
 }
 
 export interface SocialMessage {

@@ -12,9 +12,9 @@ export interface FacebookMessagingEvent {
     sender: { id: string }
     recipient: { id: string }
     timestamp: number
-  mid?: string // Message ID at event level
-  delivery?: { mids: string[]; watermark: number }
-  read?: { watermark: number }
+    mid?: string // Message ID at event level
+    delivery?: { mids: string[]; watermark: number }
+    read?: { watermark: number }
     message?: {
         mid: string
         text?: string
@@ -56,7 +56,7 @@ export interface InstagramMessagingEvent {
     sender: { id: string }
     recipient: { id: string }
     timestamp: number
-  mid?: string // Message ID at event level
+    mid?: string // Message ID at event level
     message?: {
         mid: string
         text?: string
@@ -122,8 +122,16 @@ export interface Service {
     name: string
     description: string
     price: string
-    duration: string
+    duration?: string
+    results?: string
+    sessions?: string
+    includes?: string
+    benefits?: string[]
     faqs?: ServiceFAQ[]
+    originalPrice?: string
+    badge?: string
+    pricing?: string
+    image?: string
 }
 
 export interface ServiceCategory {
@@ -165,6 +173,7 @@ export interface Treatment {
     clientId?: string
     clientName?: string
     total?: number
+    notes?: string
 }
 
 export interface TreatmentRow {

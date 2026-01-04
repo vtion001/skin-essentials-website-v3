@@ -70,6 +70,7 @@ export function AuditLogsTab() {
             case 'DELETE': return 'text-red-600';
             case 'READ': return 'text-slate-600';
             case 'LOGIN': return 'text-purple-600';
+            case 'DECRYPTION_FAILED': return 'text-red-700 bg-red-50 px-1.5 py-0.5 rounded-sm border border-red-100';
             default: return 'text-slate-600';
         }
     }
@@ -121,6 +122,7 @@ export function AuditLogsTab() {
                                     <TableHead className="py-4 text-[10px] font-bold uppercase tracking-widest text-[#0F2922]/40">Resource</TableHead>
                                     <TableHead className="py-4 text-[10px] font-bold uppercase tracking-widest text-[#0F2922]/40">ID</TableHead>
                                     <TableHead className="py-4 text-[10px] font-bold uppercase tracking-widest text-[#0F2922]/40">Status</TableHead>
+                                    <TableHead className="py-4 text-[10px] font-bold uppercase tracking-widest text-[#0F2922]/40">Details</TableHead>
                                     <TableHead className="py-4 pr-8 text-[10px] font-bold uppercase tracking-widest text-[#0F2922]/40 text-right">IP Address</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -156,6 +158,17 @@ export function AuditLogsTab() {
                                             </TableCell>
                                             <TableCell className="py-4">
                                                 {getStatusBadge(log.status)}
+                                            </TableCell>
+                                            <TableCell className="py-4">
+                                                {log.details ? (
+                                                    <div className="flex flex-wrap gap-1 max-w-[200px]">
+                                                        {Object.entries(log.details).map(([key, val]) => (
+                                                            <span key={key} className="text-[9px] bg-[#0F2922]/5 px-1.5 py-0.5 rounded-sm text-[#0F2922]/60 truncate">
+                                                                <span className="font-bold">{key}:</span> {String(val)}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                ) : <span className="text-[9px] text-[#0F2922]/30">-</span>}
                                             </TableCell>
                                             <TableCell className="py-4 pr-8 text-right">
                                                 <span className="text-[10px] text-[#0F2922]/40 font-mono">{log.ip_address || "-"}</span>

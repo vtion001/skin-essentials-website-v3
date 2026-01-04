@@ -62,6 +62,7 @@ class StaffService {
             treatments: Array.isArray(r.treatments) ? r.treatments : existingMap.get(String(r.id)) || [],
             createdAt: String(r.created_at ?? new Date().toISOString()),
             updatedAt: String(r.updated_at ?? new Date().toISOString()),
+            decryption_error: Boolean(r.decryption_error),
         }))
         this.staff = normalized
         this.saveToStorage()

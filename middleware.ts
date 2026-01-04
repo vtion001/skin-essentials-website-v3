@@ -41,6 +41,11 @@ export async function middleware(request: NextRequest) {
       return response
     }
 
+    // API login/mfa endpoints must be accessible without existing session
+    if (request.nextUrl.pathname === "/api/admin/login" || request.nextUrl.pathname === "/api/admin/mfa") {
+      return response
+    }
+
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 

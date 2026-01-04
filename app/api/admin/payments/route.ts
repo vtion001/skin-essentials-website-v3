@@ -5,6 +5,8 @@ import { cookies } from "next/headers"
 import { logAudit } from "@/lib/audit-logger"
 import { getAuthUser } from "@/lib/auth-server"
 
+import { DecryptionService } from "@/lib/encryption/decrypt.service"
+
 export async function GET(req: Request) {
   const user = await getAuthUser(req)
   try {
@@ -24,13 +26,36 @@ export async function GET(req: Request) {
     }
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    const payments = (data || []).map((p: { id: string;[key: string]: any }) => ({
-      ...p,
-      transaction_id: aesDecryptFromString(p.transaction_id) ?? p.transaction_id,
-      notes: aesDecryptFromString(p.notes) ?? p.notes,
-    }))
+
+    const payments = (data || []).map((p: any) => {
+      const decrypted = DecryptionService.decryptObject(p, [
+        'transaction_id',
+        'notes'
+      ])
+
+      const hasDecryptionError =
+        decrypted.transaction_id === "[Unavailable]"
+
+      if (hasDecryptionError && user) {
+        logAudit({
+          userId: user.id,
+          action: 'DECRYPTION_FAILED',
+          resource: 'Payments',
+          resourceId: p.id,
+          status: 'FAILURE',
+          details: { field_failure: true }
+        }).catch(() => { })
+      }
+
+      return {
+        ...decrypted,
+        decryption_error: hasDecryptionError
+      }
+    })
+
     return NextResponse.json({ payments })
-  } catch (e) {
+  } catch (e: unknown) {
+    console.error('Payments GET error:', e)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })
   }
 }

@@ -40,6 +40,7 @@ class MedicalRecordService {
             updatedAt: String(r.updated_at || r.updatedAt || new Date().toISOString()),
             isConfidential: Boolean(r.is_confidential ?? r.isConfidential ?? false),
             treatments: Array.isArray(r.treatments) ? r.treatments : [],
+            decryption_error: Boolean(r.decryption_error),
         }))
         this.records = normalized
         this.saveToStorage()

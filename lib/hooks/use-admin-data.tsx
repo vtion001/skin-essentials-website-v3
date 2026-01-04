@@ -53,6 +53,7 @@ export function useAdminData() {
         notes: p.notes ?? '',
         createdAt: String(p.created_at ?? new Date().toISOString()),
         updatedAt: String(p.updated_at ?? new Date().toISOString()),
+        decryption_error: Boolean(p.decryption_error),
       })) as Payment[]
       setPayments(normalized)
     } catch (e) {

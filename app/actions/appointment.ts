@@ -120,7 +120,7 @@ export async function createAppointmentAction(data: Omit<Appointment, 'id' | 'cr
         revalidatePath('/admin')
         return { success: true, data: { ...payload, id: payload.id } }
 
-    } catch (error: unknown) {
+    } catch (error: any) {
         return { success: false, error: error.message || 'Failed to create appointment' }
     }
 }
@@ -180,7 +180,7 @@ export async function updateAppointmentAction(id: string, updates: Partial<Appoi
 
         revalidatePath('/admin')
         return { success: true }
-    } catch (e: unknown) {
+    } catch (e: any) {
         return { success: false, error: e.message }
     }
 }
@@ -195,7 +195,7 @@ export async function deleteAppointmentAction(id: string) {
 
         revalidatePath('/admin')
         return { success: true }
-    } catch (e: unknown) {
+    } catch (e: any) {
         return { success: false, error: e.message }
     }
 }
@@ -212,8 +212,29 @@ export async function getAppointmentsAction() {
 
         if (error) throw new Error(error.message)
 
-        return { success: true, data: data || [] }
-    } catch (e: unknown) {
+        const { DecryptionService } = await import("@/lib/encryption/decrypt.service")
+
+        const decryptedData = (data || []).map((apt: any) => {
+            const dec = DecryptionService.decryptObject(apt, [
+                'client_name',
+                'client_email',
+                'client_phone',
+                'service',
+                'notes'
+            ])
+
+            const hasError =
+                dec.client_name === "[Unavailable]" ||
+                dec.client_email === "[Unavailable]"
+
+            return {
+                ...dec,
+                decryption_error: hasError
+            }
+        })
+
+        return { success: true, data: decryptedData }
+    } catch (e: any) {
         return { success: false, error: e.message }
     }
 }

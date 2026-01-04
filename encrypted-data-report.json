@@ -1,0 +1,183 @@
+{
+  "generatedAt": "2026-01-04T04:43:50.919Z",
+  "totalAffected": 19,
+  "byTable": {
+    "clients": 5,
+    "staff": 4,
+    "payments": 6,
+    "medical_records": 4
+  },
+  "records": [
+    {
+      "table": "clients",
+      "id": "client_qxopdxtd",
+      "field": "email",
+      "encryptedValue": "{\"iv\":\"ZYNnVWnUIzxrFMwl\",\"tag\":\"775KzwB5ehqYiPgFxG...",
+      "format": "JSON",
+      "identifierField": "name",
+      "identifierValue": "client_qxopdxtd"
+    },
+    {
+      "table": "clients",
+      "id": "client_qxopdxtd",
+      "field": "phone",
+      "encryptedValue": "{\"iv\":\"PTcA5cOUu/Tsm4Ob\",\"tag\":\"1UgdfMAdEaWADJhPdQ...",
+      "format": "JSON",
+      "identifierField": "name",
+      "identifierValue": "client_qxopdxtd"
+    },
+    {
+      "table": "clients",
+      "id": "client_1764378859980",
+      "field": "email",
+      "encryptedValue": "{\"iv\":\"OFuHWT15HGBSEb2x\",\"tag\":\"7+7GGlHQfxlYI9QHLQ...",
+      "format": "JSON",
+      "identifierField": "name",
+      "identifierValue": "client_1764378859980"
+    },
+    {
+      "table": "clients",
+      "id": "client_1764378859980",
+      "field": "phone",
+      "encryptedValue": "{\"iv\":\"W4SOP5RkMKrXbWJm\",\"tag\":\"wTdClXCkcjvkBIpIK0...",
+      "format": "JSON",
+      "identifierField": "name",
+      "identifierValue": "client_1764378859980"
+    },
+    {
+      "table": "clients",
+      "id": "client_1764378859980",
+      "field": "address",
+      "encryptedValue": "{\"iv\":\"BvdtFeiHd06cMNzI\",\"tag\":\"Mx0r2xILDQpIkXzSGb...",
+      "format": "JSON",
+      "identifierField": "name",
+      "identifierValue": "client_1764378859980"
+    },
+    {
+      "table": "staff",
+      "id": "staff_1763868459738",
+      "field": "license_number",
+      "encryptedValue": "{\"iv\":\"7Hh8ia20nltG25M1\",\"tag\":\"udC0CAMrtwIN7Ut7UR...",
+      "format": "JSON",
+      "identifierField": "name",
+      "identifierValue": "staff_1763868459738"
+    },
+    {
+      "table": "staff",
+      "id": "staff_1763870821816",
+      "field": "license_number",
+      "encryptedValue": "{\"iv\":\"w5zWkCI3NyrZA7eb\",\"tag\":\"0p8xNisFHJuCtQCY7z...",
+      "format": "JSON",
+      "identifierField": "name",
+      "identifierValue": "staff_1763870821816"
+    },
+    {
+      "table": "staff",
+      "id": "staff_1763869493246",
+      "field": "license_number",
+      "encryptedValue": "{\"iv\":\"ms1tsl4WesxTFkrz\",\"tag\":\"jIOpV6mwuPJXOPSwm5...",
+      "format": "JSON",
+      "identifierField": "name",
+      "identifierValue": "staff_1763869493246"
+    },
+    {
+      "table": "staff",
+      "id": "staff_1763869968710",
+      "field": "license_number",
+      "encryptedValue": "{\"iv\":\"ZxqotaNjCNwzyVfU\",\"tag\":\"AwkoOIbC3cz3DkdEXB...",
+      "format": "JSON",
+      "identifierField": "name",
+      "identifierValue": "staff_1763869968710"
+    },
+    {
+      "table": "payments",
+      "id": "pay_1763870558306",
+      "field": "notes",
+      "encryptedValue": "{\"iv\":\"L/DNECe9kxhdXfMp\",\"tag\":\"2ihoHsFmSWN6Lxp6vp...",
+      "format": "JSON",
+      "identifierField": "id",
+      "identifierValue": "pay_1763870558306"
+    },
+    {
+      "table": "payments",
+      "id": "pay_1763870558306",
+      "field": "transaction_id",
+      "encryptedValue": "{\"iv\":\"oaL7wnyIrDo8RrEN\",\"tag\":\"0BICvuSwaI+HKakoNV...",
+      "format": "JSON",
+      "identifierField": "id",
+      "identifierValue": "pay_1763870558306"
+    },
+    {
+      "table": "payments",
+      "id": "pay_1764554274685",
+      "field": "notes",
+      "encryptedValue": "{\"iv\":\"2H+dDdRQG9/ZXfJ9\",\"tag\":\"7NzlRgl3S26OuYUOEO...",
+      "format": "JSON",
+      "identifierField": "id",
+      "identifierValue": "pay_1764554274685"
+    },
+    {
+      "table": "payments",
+      "id": "pay_1764554274685",
+      "field": "transaction_id",
+      "encryptedValue": "{\"iv\":\"uXsBA6gOzpmHqPDq\",\"tag\":\"76lsQeVDyJqNIfE8Ig...",
+      "format": "JSON",
+      "identifierField": "id",
+      "identifierValue": "pay_1764554274685"
+    },
+    {
+      "table": "payments",
+      "id": "pay_1764578077971",
+      "field": "notes",
+      "encryptedValue": "{\"iv\":\"7+LdnGMZUJ4SGUV8\",\"tag\":\"JXTBle1O4yErA8bzUX...",
+      "format": "JSON",
+      "identifierField": "id",
+      "identifierValue": "pay_1764578077971"
+    },
+    {
+      "table": "payments",
+      "id": "pay_1764578077971",
+      "field": "transaction_id",
+      "encryptedValue": "{\"iv\":\"bUQrEYbcUJ+PoDum\",\"tag\":\"ma3A4D1ENlV61IgrZQ...",
+      "format": "JSON",
+      "identifierField": "id",
+      "identifierValue": "pay_1764578077971"
+    },
+    {
+      "table": "medical_records",
+      "id": "med_1764378928414",
+      "field": "notes",
+      "encryptedValue": "{\"iv\":\"xF1RZd/TwReY42ee\",\"tag\":\"vw0pzZbbjy9JNrWZ0K...",
+      "format": "JSON",
+      "identifierField": "id",
+      "identifierValue": "med_1764378928414"
+    },
+    {
+      "table": "medical_records",
+      "id": "med_1764378928414",
+      "field": "treatment_plan",
+      "encryptedValue": "{\"iv\":\"gcAA/dKuwXN7pIOG\",\"tag\":\"w9/I5CdOGXYvy8ifub...",
+      "format": "JSON",
+      "identifierField": "id",
+      "identifierValue": "med_1764378928414"
+    },
+    {
+      "table": "medical_records",
+      "id": "med_1763996339370",
+      "field": "notes",
+      "encryptedValue": "{\"iv\":\"7474tgrt2NB+mjfc\",\"tag\":\"a0PpIlvITV/AmUQdbV...",
+      "format": "JSON",
+      "identifierField": "id",
+      "identifierValue": "med_1763996339370"
+    },
+    {
+      "table": "medical_records",
+      "id": "med_1763996339370",
+      "field": "treatment_plan",
+      "encryptedValue": "{\"iv\":\"gsZvR0vP8b0yP6vD\",\"tag\":\"0sGZA/9CW6hB0YiusI...",
+      "format": "JSON",
+      "identifierField": "id",
+      "identifierValue": "med_1763996339370"
+    }
+  ]
+}

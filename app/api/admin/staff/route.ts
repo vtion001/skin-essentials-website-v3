@@ -5,6 +5,8 @@ import { aesEncryptToString, aesDecryptFromString, verifyCsrfToken } from "@/lib
 import { logAudit } from "@/lib/audit-logger"
 import { getAuthUser } from "@/lib/auth-server"
 
+import { DecryptionService } from "@/lib/encryption/decrypt.service"
+
 export async function GET(req: Request) {
   const user = await getAuthUser(req)
   const admin = supabaseAdminClient()
@@ -23,11 +25,67 @@ export async function GET(req: Request) {
   }
 
   if (error) return jsonMaybeMasked(req, { error: error.message }, { status: 500 })
-  const staff = (data || []).map((s: { id: string;[key: string]: any }) => ({
-    ...s,
-    license_number: aesDecryptFromString(s.license_number) ?? s.license_number,
-    notes: aesDecryptFromString(s.notes) ?? s.notes,
-  }))
+
+  // Enforce role-based access control for decryption
+  const { DecryptionAccessControl } = await import("@/lib/auth/decryption-access")
+  const canDecrypt = user ? await DecryptionAccessControl.canDecrypt(user, 'staff') : false
+
+  const staff = (data || []).map((s: any) => {
+    if (!canDecrypt) {
+      return {
+        ...s,
+        first_name: s.first_name ? "[Secure Locked]" : null,
+        last_name: s.last_name ? "[Secure Locked]" : null,
+        email: s.email ? "[Secure Locked]" : null,
+        phone: s.phone ? "[Secure Locked]" : null,
+        license_number: s.license_number ? "[Secure Locked]" : null,
+        decryption_error: true
+      }
+    }
+
+    // Decrypt main fields
+    const decrypted = DecryptionService.decryptObject(s, [
+      'first_name',
+      'last_name',
+      'email',
+      'phone',
+      'license_number',
+      'notes'
+    ])
+
+    // Decrypt nested treatments if they exist
+    if (Array.isArray(decrypted.treatments)) {
+      decrypted.treatments = decrypted.treatments.map((t: any) => {
+        const decT = DecryptionService.decryptObject(t, ['clientName', 'procedure'])
+        return {
+          ...decT,
+          decryption_error: decT.clientName === "[Unavailable]" || decT.procedure === "[Unavailable]"
+        }
+      })
+    }
+
+    const hasDecryptionError =
+      decrypted.first_name === "[Unavailable]" ||
+      decrypted.last_name === "[Unavailable]" ||
+      decrypted.license_number === "[Unavailable]"
+
+    if (hasDecryptionError && user) {
+      logAudit({
+        userId: user.id,
+        action: 'DECRYPTION_FAILED',
+        resource: 'Staff',
+        resourceId: s.id,
+        status: 'FAILURE',
+        details: { field_failure: true }
+      }).catch(() => { })
+    }
+
+    return {
+      ...decrypted,
+      decryption_error: hasDecryptionError
+    }
+  })
+
   return jsonMaybeMasked(req, { staff })
 }
 

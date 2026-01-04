@@ -103,7 +103,7 @@ import { SocialConversationUI } from "@/components/admin/social-conversation-ui"
 import { FacebookStatusIndicator } from "@/components/admin/facebook-status-indicator"
 import { PlatformConnections } from "@/components/admin/platform-connections"
 import { FacebookConnection } from "@/components/admin/facebook-connection"
-import { serviceCategories } from "@/lib/services-data"
+import { serviceCategories, type Service, type ServiceCategory } from "@/lib/services-data"
 import { portfolioService, type PortfolioItem } from "@/lib/portfolio-data"
 import { AnimatedInput } from "@/components/ui/animated-input"
 import { AnimatedSelect } from "@/components/ui/animated-select"
@@ -134,6 +134,7 @@ import { supabaseBrowserClient } from "@/lib/supabase/client"
 import { AppointmentModal } from "@/components/admin/modals/appointment-modal"
 import { useAdminAppointments } from "@/lib/hooks/features/use-admin-appointments"
 import { AuditLogsTab } from "@/components/admin/tabs/audit-logs-tab"
+import { EncryptionErrorBanner } from "@/components/admin/encryption-error-banner"
 
 const services = [
   "Thread Lifts - Nose Enhancement",
@@ -215,6 +216,15 @@ export default function AdminDashboard() {
     openModal,
     closeModal
   } = useAdminAppointments(showNotification)
+
+  const decryptionErrorCount = useMemo(() => {
+    const aptCount = appointments.filter(a => a.decryption_error || a.clientName === "[Unavailable]").length
+    const clientCount = clients.filter(c => c.decryption_error || c.firstName === "[Unavailable]").length
+    const recordCount = medicalRecords.filter(r => r.decryption_error || r.treatmentPlan === "[Unavailable]").length
+    const paymentCount = payments.filter(p => p.decryption_error).length
+    const staffCount = staff.filter(s => s.decryption_error || s.firstName === "[Unavailable]").length
+    return aptCount + clientCount + recordCount + paymentCount + staffCount
+  }, [appointments, clients, medicalRecords, payments, staff])
 
   useEffect(() => {
     if (medicalRecords.length > 0) {
@@ -470,6 +480,30 @@ export default function AdminDashboard() {
     } catch { }
     router.push('/admin/login')
   }
+
+  const handleRunDiagnostics = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/diagnostics/decryption', {
+        method: 'POST',
+        headers: {
+          'X-CSRF-Token': document.cookie.split('; ').find(row => row.startsWith('csrf_token='))?.split('=')[1] || ''
+        }
+      })
+      const data = await res.json()
+
+      if (!res.ok) throw new Error(data.error || 'Failed to run diagnostics')
+
+      // Log recommendations for admin
+      if (data.recommendations?.length > 0) {
+        showNotification('info', `Diagnostics: ${data.recommendations[0]}`)
+        console.log('[Encryption Diagnostics]', data)
+      } else {
+        showNotification('success', 'Diagnostics Complete: No issues detected.')
+      }
+    } catch (err: any) {
+      showNotification('error', `Diagnostic Error: ${err.message}`)
+    }
+  }, [showNotification])
 
 
   const confirmTwice = (subject: string) => {
@@ -1464,6 +1498,11 @@ export default function AdminDashboard() {
             </header>
 
             <main className="px-8 py-10 max-w-screen-2xl mx-auto">
+              <EncryptionErrorBanner
+                errorCount={decryptionErrorCount}
+                onRetry={loadAllData}
+                onRunDiagnostics={handleRunDiagnostics}
+              />
               <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col gap-8 w-full">
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
@@ -1587,7 +1626,7 @@ export default function AdminDashboard() {
                                   fontWeight: 'bold',
                                   boxShadow: '0 10px 30px rgba(0,0,0,0.1)'
                                 }}
-                                formatter={(value: number) => [`₱${value.toLocaleString()}`, 'Revenue']}
+                                formatter={(value: number | undefined) => [value ? `₱${value.toLocaleString()}` : "₱0", "Revenue"]}
                               />
                               <Area type="monotone" dataKey="amount" stroke="#8B715C" strokeWidth={3} fillOpacity={1} fill="url(#colorAmount)" />
                             </AreaChart>
@@ -3091,10 +3130,10 @@ export default function AdminDashboard() {
                     <SocialConversationUI socialMediaService={socialMediaService} />
                   </TabsContent>
                 </LazyTabContent>
-              </Tabs >
-            </main >
-          </div >
-        </div >
+              </Tabs>
+            </main>
+          </div>
+        </div>
 
         {/* Modals & Dialogs */}
         <AppointmentModal
@@ -3107,7 +3146,7 @@ export default function AdminDashboard() {
         />
 
         {/* Payment Modal */}
-        < Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen} >
+        <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>
@@ -3249,7 +3288,7 @@ export default function AdminDashboard() {
               </div>
             </form>
           </DialogContent>
-        </Dialog >
+        </Dialog>
 
         <Dialog open={isCameraDialogOpen} onOpenChange={(v) => { if (!v) closeCamera(); else setIsCameraDialogOpen(true) }}>
           <DialogContent className="max-w-md">
@@ -3543,6 +3582,17 @@ export default function AdminDashboard() {
                 </Badge>
               </DialogTitle>
             </DialogHeader>
+            {selectedMedicalRecord?.decryption_error && (
+              <div className="mx-6 mt-2 bg-amber-50 border border-amber-200 rounded-lg p-3 flex gap-3 items-start animate-in fade-in slide-in-from-top-1">
+                <div className="p-1 bg-amber-100 rounded-md text-amber-600">
+                  <AlertCircle className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="text-[11px] font-bold text-amber-800 uppercase tracking-widest leading-none mb-1">Decryption Error</p>
+                  <p className="text-[10px] text-amber-600 font-medium">Critical treatment data could not be decrypted. Editing this record might save empty values into fields that failed to decrypt.</p>
+                </div>
+              </div>
+            )}
             <form onSubmit={handleMedicalRecordSubmit} className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -3856,6 +3906,17 @@ export default function AdminDashboard() {
                 {selectedClient ? 'Edit Client' : 'Add New Client'}
               </DialogTitle>
             </DialogHeader>
+            {selectedClient?.decryption_error && (
+              <div className="mx-6 mt-2 bg-amber-50 border border-amber-200 rounded-lg p-3 flex gap-3 items-start animate-in fade-in slide-in-from-top-1">
+                <div className="p-1 bg-amber-100 rounded-md text-amber-600">
+                  <AlertCircle className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="text-[11px] font-bold text-amber-800 uppercase tracking-widest leading-none mb-1">Secure Data Locked</p>
+                  <p className="text-[10px] text-amber-600 font-medium">Sensitive contact information could not be decrypted. Please verify the encryption key before attempting to update this client.</p>
+                </div>
+              </div>
+            )}
             {clientDuplicateWarning && (
               <div role="alert" aria-live="polite" className="rounded-md border border-rose-200 bg-rose-50 text-rose-700 p-3 text-sm">
                 {clientDuplicateWarning}
@@ -4018,7 +4079,14 @@ export default function AdminDashboard() {
                   </div>
                   <Switch
                     checked={clientForm.preferences?.marketingConsent || false}
-                    onCheckedChange={(checked) => setClientForm(prev => ({ ...prev, preferences: { ...prev.preferences, marketingConsent: checked } }))}
+                    onCheckedChange={(checked) => setClientForm(prev => ({
+                      ...prev,
+                      preferences: {
+                        communicationMethod: prev.preferences?.communicationMethod ?? 'email',
+                        reminderSettings: prev.preferences?.reminderSettings ?? true,
+                        marketingConsent: checked
+                      }
+                    }))}
                   />
                 </div>
                 <div className="flex items-center justify-between">
@@ -4028,7 +4096,14 @@ export default function AdminDashboard() {
                   </div>
                   <Switch
                     checked={clientForm.preferences?.reminderSettings ?? true}
-                    onCheckedChange={(checked) => setClientForm(prev => ({ ...prev, preferences: { ...prev.preferences, reminderSettings: checked } }))}
+                    onCheckedChange={(checked) => setClientForm(prev => ({
+                      ...prev,
+                      preferences: {
+                        communicationMethod: prev.preferences?.communicationMethod ?? 'email',
+                        marketingConsent: prev.preferences?.marketingConsent ?? false,
+                        reminderSettings: checked
+                      }
+                    }))}
                   />
                 </div>
               </div>
@@ -4249,7 +4324,7 @@ export default function AdminDashboard() {
             )}
           </DialogContent>
         </Dialog>
-      </div>
+      </div >
     </>
   )
 }
