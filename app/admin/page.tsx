@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Calendar } from "@/components/ui/calendar"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 import { motion, AnimatePresence } from "framer-motion"
 import {
@@ -132,6 +133,7 @@ import { useAdminFilters } from "@/lib/hooks/use-admin-filters"
 import { supabaseBrowserClient } from "@/lib/supabase/client"
 import { AppointmentModal } from "@/components/admin/modals/appointment-modal"
 import { useAdminAppointments } from "@/lib/hooks/features/use-admin-appointments"
+import { AuditLogsTab } from "@/components/admin/tabs/audit-logs-tab"
 
 const services = [
   "Thread Lifts - Nose Enhancement",
@@ -839,6 +841,7 @@ export default function AdminDashboard() {
             address: addressVal,
             dateOfBirth: dobVal,
             emergencyContact: emergencyName || emergencyPhone ? { name: emergencyName, phone: emergencyPhone, relationship: 'family' } : clientForm.emergencyContact,
+            preferences: clientForm.preferences,
           }
           const payload = selectedClient ? { id: selectedClient.id, ...clientForm, ...overrides } : { ...clientForm, ...overrides }
           const res = await fetch('/api/admin/clients', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
@@ -1349,6 +1352,7 @@ export default function AdminDashboard() {
                     { key: 'sms', label: 'SMS Gateway', icon: MessageSquare },
                     { key: 'influencers', label: 'Partnerships', icon: TrendingUp },
                     { key: 'analytics', label: 'Performance', icon: BarChart3 },
+                    { key: 'audit-logs', label: 'Audit Trails', icon: Shield },
                   ].map((item) => (
                     <button
                       key={item.key}
@@ -1475,6 +1479,7 @@ export default function AdminDashboard() {
                       { value: 'medical', icon: FileText, label: 'EMR' },
                       { value: 'clients', icon: Users, label: 'Clients' },
                       { value: 'staff', icon: Settings, label: 'Staff' },
+                      { value: 'audit-logs', icon: Shield, label: 'Audit' },
                     ].map((tab) => (
                       <TabsTrigger
                         key={tab.value}
@@ -2791,6 +2796,12 @@ export default function AdminDashboard() {
                   </TabsContent>
                 </LazyTabContent>
 
+                <LazyTabContent isActive={activeTab === "audit-logs"}>
+                  <TabsContent value="audit-logs" className="space-y-8">
+                    <AuditLogsTab />
+                  </TabsContent>
+                </LazyTabContent>
+
 
                 <LazyTabContent isActive={activeTab === "influencers"}>
                   <TabsContent value="influencers" className="space-y-8">
@@ -3996,6 +4007,30 @@ export default function AdminDashboard() {
                   defaultValue={clientForm.emergencyContact ? `${clientForm.emergencyContact.name} (${clientForm.emergencyContact.phone})` : ''}
                   placeholder="Name and phone number (e.g., John Doe (09123456789))"
                 />
+              </div>
+
+              <div className="bg-[#0F2922]/5 p-4 rounded-2xl border border-[#0F2922]/10 space-y-4">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-[#0F2922]/40">Compliance & Communications</p>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label className="text-sm font-medium text-[#0F2922]">Marketing Consent</Label>
+                    <p className="text-[10px] text-[#0F2922]/50">Accept promotional SMS/Viber and Email updates.</p>
+                  </div>
+                  <Switch
+                    checked={clientForm.preferences?.marketingConsent || false}
+                    onCheckedChange={(checked) => setClientForm(prev => ({ ...prev, preferences: { ...prev.preferences, marketingConsent: checked } }))}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label className="text-sm font-medium text-[#0F2922]">Reminder Alerts</Label>
+                    <p className="text-[10px] text-[#0F2922]/50">Enable automated appointment reminders and confirmations.</p>
+                  </div>
+                  <Switch
+                    checked={clientForm.preferences?.reminderSettings ?? true}
+                    onCheckedChange={(checked) => setClientForm(prev => ({ ...prev, preferences: { ...prev.preferences, reminderSettings: checked } }))}
+                  />
+                </div>
               </div>
 
               <div className="flex justify-end gap-2">

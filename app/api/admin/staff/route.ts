@@ -2,13 +2,28 @@ import { NextResponse } from "next/server"
 import { jsonMaybeMasked } from "@/lib/admin-mask"
 import { supabaseAdminClient } from "@/lib/supabase-admin"
 import { aesEncryptToString, aesDecryptFromString, verifyCsrfToken } from "@/lib/utils"
-import { headers } from "next/headers"
+import { logAudit } from "@/lib/audit-logger"
+import { getAuthUser } from "@/lib/auth-server"
 
 export async function GET(req: Request) {
+  const user = await getAuthUser(req)
   const admin = supabaseAdminClient()
+  if (!admin) return jsonMaybeMasked(req, { error: 'Supabase admin client not available' }, { status: 500 })
+
   const { data, error } = await admin.from('staff').select('*').order('created_at', { ascending: false })
+
+  if (user) {
+    await logAudit({
+      userId: user.id,
+      action: 'READ',
+      resource: 'Staff',
+      status: error ? 'FAILURE' : 'SUCCESS',
+      details: error ? { error: error.message } : { count: data?.length }
+    })
+  }
+
   if (error) return jsonMaybeMasked(req, { error: error.message }, { status: 500 })
-  const staff = (data || []).map((s: { id: string; [key: string]: unknown }) => ({
+  const staff = (data || []).map((s: { id: string;[key: string]: any }) => ({
     ...s,
     license_number: aesDecryptFromString(s.license_number) ?? s.license_number,
     notes: aesDecryptFromString(s.notes) ?? s.notes,
@@ -17,6 +32,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  const user = await getAuthUser(req)
   const cookiesMap = new Map<string, string>()
   const cookieHeader = req.headers.get('cookie') || ''
   cookieHeader.split(';').forEach((pair) => {
@@ -45,7 +61,20 @@ export async function POST(req: Request) {
     treatments: Array.isArray(raw.treatments) ? raw.treatments : [],
   }
   const admin = supabaseAdminClient()
+  if (!admin) return jsonMaybeMasked(req, { error: 'Supabase admin client not available' }, { status: 500 })
+
   const { data, error } = await admin.from('staff').insert(payload).select('*').single()
+
+  if (user) {
+    await logAudit({
+      userId: user.id,
+      action: 'CREATE',
+      resource: 'Staff',
+      resourceId: id,
+      status: error ? 'FAILURE' : 'SUCCESS'
+    })
+  }
+
   if (error) return jsonMaybeMasked(req, { error: error.message }, { status: 500 })
   const staff = {
     ...data,
@@ -56,6 +85,7 @@ export async function POST(req: Request) {
 }
 
 export async function PATCH(req: Request) {
+  const user = await getAuthUser(req)
   const cookiesMap = new Map<string, string>()
   const cookieHeader = req.headers.get('cookie') || ''
   cookieHeader.split(';').forEach((pair) => {
@@ -85,7 +115,20 @@ export async function PATCH(req: Request) {
     updated_at: new Date().toISOString(),
   }
   const admin = supabaseAdminClient()
+  if (!admin) return jsonMaybeMasked(req, { error: 'Supabase admin client not available' }, { status: 500 })
+
   const { data, error } = await admin.from('staff').update(updates).eq('id', id).select('*').single()
+
+  if (user) {
+    await logAudit({
+      userId: user.id,
+      action: 'UPDATE',
+      resource: 'Staff',
+      resourceId: id,
+      status: error ? 'FAILURE' : 'SUCCESS'
+    })
+  }
+
   if (error) return jsonMaybeMasked(req, { error: error.message }, { status: 500 })
   const staff = {
     ...data,
@@ -96,11 +139,24 @@ export async function PATCH(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  const user = await getAuthUser(req)
   const body = await req.json()
   const { id } = body || {}
   if (!id) return jsonMaybeMasked(req, { error: 'Missing id' }, { status: 400 })
   const admin = supabaseAdminClient()
+  if (!admin) return jsonMaybeMasked(req, { error: 'Supabase admin client not available' }, { status: 500 })
   const { error } = await admin.from('staff').delete().eq('id', id)
+
+  if (user) {
+    await logAudit({
+      userId: user.id,
+      action: 'DELETE',
+      resource: 'Staff',
+      resourceId: id,
+      status: error ? 'FAILURE' : 'SUCCESS'
+    })
+  }
+
   if (error) return jsonMaybeMasked(req, { error: error.message }, { status: 500 })
   return jsonMaybeMasked(req, { success: true })
 }

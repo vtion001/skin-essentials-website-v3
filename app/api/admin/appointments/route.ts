@@ -2,8 +2,12 @@ import { NextRequest, NextResponse } from "next/server"
 import { jsonMaybeMasked } from "@/lib/admin-mask"
 import { supabaseAdminClient } from "@/lib/supabase-admin"
 import { createMessageReminder } from "@/lib/iprogsms"
+import { logAudit } from "@/lib/audit-logger"
+import { getAuthUser } from "@/lib/auth-server"
+import { aesEncryptToString, aesDecryptFromString } from "@/lib/utils"
 
 export async function GET(req: NextRequest) {
+  const user = await getAuthUser(req)
   try {
     const admin = supabaseAdminClient()
     if (!admin) return NextResponse.json({ error: 'DB Client unavailable' }, { status: 500 })
@@ -11,20 +15,38 @@ export async function GET(req: NextRequest) {
       .from('appointments')
       .select('*')
       .order('created_at', { ascending: false })
+
+    if (user) {
+      await logAudit({
+        userId: user.id,
+        action: 'READ',
+        resource: 'Appointments',
+        status: error ? 'FAILURE' : 'SUCCESS',
+        details: error ? { error: error.message } : { count: data?.length }
+      })
+    }
+
     if (error) return jsonMaybeMasked(req, { error: error.message }, { status: 500 })
-    return jsonMaybeMasked(req, { appointments: data || [] })
+
+    const appointments = (data || []).map((a: any) => ({
+      ...a,
+      client_email: aesDecryptFromString(a.client_email) ?? a.client_email,
+      client_phone: aesDecryptFromString(a.client_phone) ?? a.client_phone,
+    }))
+
+    return jsonMaybeMasked(req, { appointments })
   } catch (e: unknown) {
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })
   }
 }
 
 export async function POST(req: NextRequest) {
+  const user = await getAuthUser(req)
   try {
     const body = await req.json()
     const admin = supabaseAdminClient()
     if (!admin) return NextResponse.json({ error: 'DB Client unavailable' }, { status: 500 })
 
-    // --- GUARDRAIL: Duplicate Booking Check ---
     const { data: existingAppt } = await admin
       .from('appointments')
       .select('id')
@@ -38,14 +60,13 @@ export async function POST(req: NextRequest) {
         error: "This time slot is already booked. Please choose another time or date."
       }, { status: 409 })
     }
-    // ------------------------------------------
 
     const payload = {
       id: body.id || `apt_${Date.now()}`,
       client_id: body.client_id ?? body.clientId ?? '',
       client_name: body.client_name ?? body.clientName ?? '',
-      client_email: body.client_email ?? body.clientEmail ?? '',
-      client_phone: body.client_phone ?? body.clientPhone ?? '',
+      client_email: aesEncryptToString(body.client_email ?? body.clientEmail ?? ''),
+      client_phone: aesEncryptToString(body.client_phone ?? body.clientPhone ?? ''),
       service: body.service,
       date: body.date,
       time: body.time,
@@ -57,45 +78,54 @@ export async function POST(req: NextRequest) {
       updated_at: body.updated_at,
     }
     const { data, error } = await admin.from('appointments').insert(payload).select('*').single()
-    if (error) return jsonMaybeMasked(req, { ok: false, error: error.message }, { status: 500 })
 
-    if (payload.client_phone) {
-      const { sendSms } = await import("@/lib/sms-service")
-      const msg = `Hi ${payload.client_name}, your appointment on ${payload.date} at ${payload.time} is confirmed. Reply YES to acknowledge.`
-      await sendSms(payload.client_phone, msg).catch(err => console.error("Failed to send admin appointment SMS", err))
+    if (user) {
+      await logAudit({
+        userId: user.id,
+        action: 'CREATE',
+        resource: 'Appointments',
+        resourceId: payload.id,
+        status: error ? 'FAILURE' : 'SUCCESS'
+      })
     }
 
-    // Send Viber Admin Notification
+    if (error) return jsonMaybeMasked(req, { ok: false, error: error.message }, { status: 500 })
+
+    const rawPhone = body.client_phone ?? body.clientPhone
+    const clientName = body.client_name ?? body.clientName
+
+    if (rawPhone) {
+      const { sendSms } = await import("@/lib/sms-service")
+      const msg = `Hi ${clientName}, your appointment on ${payload.date} at ${payload.time} is confirmed.`
+      await sendSms(rawPhone, msg).catch(err => console.error("Failed to send admin appointment SMS", err))
+    }
+
     try {
       const { notifyNewBookingViber } = await import("@/lib/viber-service")
-      await notifyNewBookingViber(payload).catch(err => console.error("Viber notification failed", err))
+      await notifyNewBookingViber({ ...payload, client_phone: rawPhone, client_email: body.client_email ?? body.clientEmail }).catch(err => console.error("Viber notification failed", err))
     } catch (e) { }
 
-    // Schedule Reminders (24h, 3h, 1h)
-    if (payload.client_phone && payload.date && payload.time) {
+    if (rawPhone && payload.date && payload.time) {
       try {
         const apptTime = new Date(`${payload.date}T${payload.time}:00`)
         const now = new Date()
 
-        // 24h
         const time24 = new Date(apptTime.getTime() - 24 * 60 * 60 * 1000)
         if (time24 > now) {
-          const msg = `Hello ${payload.client_name}, this is a gentle reminder for your appointment with Skin Essentials on ${payload.date} at ${payload.time}. See you soon!`
-          createMessageReminder(payload.client_phone, msg, time24).catch(console.error)
+          const msg = `Hello ${clientName}, this is a reminder for your appointment on ${payload.date} at ${payload.time}.`
+          createMessageReminder(rawPhone, msg, time24).catch(console.error)
         }
 
-        // 3h
         const time3 = new Date(apptTime.getTime() - 3 * 60 * 60 * 1000)
         if (time3 > now) {
-          const msg = `Hi ${payload.client_name}, seeing you in 3 hours for your ${payload.service || 'appointment'} at Skin Essentials today at ${payload.time}!`
-          createMessageReminder(payload.client_phone, msg, time3).catch(console.error)
+          const msg = `Hi ${clientName}, seeing you in 3 hours at ${payload.time}!`
+          createMessageReminder(rawPhone, msg, time3).catch(console.error)
         }
 
-        // 1h
         const time1 = new Date(apptTime.getTime() - 1 * 60 * 60 * 1000)
         if (time1 > now) {
-          const msg = `Hi ${payload.client_name}, just a quick reminder! Your appointment is in 1 hour (${payload.time}). We're ready for you!`
-          createMessageReminder(payload.client_phone, msg, time1).catch(console.error)
+          const msg = `Hi ${clientName}, your appointment is in 1 hour (${payload.time}).`
+          createMessageReminder(rawPhone, msg, time1).catch(console.error)
         }
       } catch (e) { console.error("Scheduling admin appointment error", e) }
     }
@@ -107,6 +137,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
+  const user = await getAuthUser(req)
   try {
     const body = await req.json()
     const { id, updates } = body || {}
@@ -114,14 +145,13 @@ export async function PATCH(req: NextRequest) {
     const admin = supabaseAdminClient()
     if (!admin) return NextResponse.json({ error: 'DB Client unavailable' }, { status: 500 })
 
-    // --- GUARDRAIL: Duplicate Booking Check for Update ---
     if (updates?.date || updates?.time) {
       const { data: existingAppt } = await admin
         .from('appointments')
         .select('id, date, time')
         .eq('date', updates.date || '')
         .eq('time', updates.time || '')
-        .neq('id', id) // Exclude current appointment
+        .neq('id', id)
         .maybeSingle()
 
       if (existingAppt) {
@@ -131,13 +161,12 @@ export async function PATCH(req: NextRequest) {
         }, { status: 409 })
       }
     }
-    // ----------------------------------------------------
 
     const normalized = {
       client_id: updates?.client_id ?? updates?.clientId,
       client_name: updates?.client_name ?? updates?.clientName,
-      client_email: updates?.client_email ?? updates?.clientEmail,
-      client_phone: updates?.client_phone ?? updates?.clientPhone,
+      client_email: (updates?.client_email ?? updates?.clientEmail) !== undefined ? aesEncryptToString(updates?.client_email ?? updates?.clientEmail) : undefined,
+      client_phone: (updates?.client_phone ?? updates?.clientPhone) !== undefined ? aesEncryptToString(updates?.client_phone ?? updates?.clientPhone) : undefined,
       service: updates?.service,
       date: updates?.date,
       time: updates?.time,
@@ -145,9 +174,20 @@ export async function PATCH(req: NextRequest) {
       notes: updates?.notes,
       duration: updates?.duration,
       price: updates?.price,
-      updated_at: updates?.updated_at,
+      updated_at: updates?.updated_at || new Date().toISOString(),
     }
     const { data, error } = await admin.from('appointments').update(normalized).eq('id', id).select('*').single()
+
+    if (user) {
+      await logAudit({
+        userId: user.id,
+        action: 'UPDATE',
+        resource: 'Appointments',
+        resourceId: id,
+        status: error ? 'FAILURE' : 'SUCCESS'
+      })
+    }
+
     if (error) return jsonMaybeMasked(req, { ok: false, error: error.message }, { status: 500 })
     return jsonMaybeMasked(req, { ok: true, appointment: data })
   } catch (e: unknown) {
@@ -156,6 +196,7 @@ export async function PATCH(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  const user = await getAuthUser(req)
   try {
     const { searchParams } = new URL(req.url)
     let id = searchParams.get('id')
@@ -169,6 +210,17 @@ export async function DELETE(req: NextRequest) {
     const admin = supabaseAdminClient()
     if (!admin) return NextResponse.json({ error: 'DB Client unavailable' }, { status: 500 })
     const { error } = await admin.from('appointments').delete().eq('id', id)
+
+    if (user) {
+      await logAudit({
+        userId: user.id,
+        action: 'DELETE',
+        resource: 'Appointments',
+        resourceId: id,
+        status: error ? 'FAILURE' : 'SUCCESS'
+      })
+    }
+
     if (error) return jsonMaybeMasked(req, { ok: false, error: error.message }, { status: 500 })
     return jsonMaybeMasked(req, { ok: true })
   } catch (e: unknown) {

@@ -29,7 +29,7 @@ function maskName(v: any): any {
   return last ? `${init} ${last}`.trim() : init
 }
 
-const HIDE_KEYS = new Set(["client_id", "referral_code", "influencer_id"]) 
+const HIDE_KEYS = new Set(["client_id", "referral_code", "influencer_id"])
 
 function maskNode(node: any): any {
   if (Array.isArray(node)) return node.map(maskNode)
@@ -54,24 +54,12 @@ export function jsonMasked(payload: any, init?: number | { status?: number }): R
   return NextResponse.json(body, status ? { status } : {})
 }
 
-function shouldRevealFromReq(req: NextRequest | Request | undefined): boolean {
-  if (!req) return false
-  try {
-    const url = new URL(req.url)
-    const revealParam = url.searchParams.get('reveal')
-    if (revealParam === '1') return true
-  } catch {}
-  const headersAny: any = (req as any).headers
-  const hdrGet = typeof headersAny?.get === 'function' ? (k: string) => headersAny.get(k) : () => null
-  const revealHdr = hdrGet('x-reveal') || hdrGet('X-Reveal')
-  if (revealHdr === '1') return true
-  const referer = hdrGet('referer') || hdrGet('referrer')
-  if (referer && referer.includes('/admin')) return true
-  return false
-}
-
 export function jsonMaybeMasked(req: NextRequest | Request | undefined, payload: any, init?: number | { status?: number }): Response {
-  if (shouldRevealFromReq(req)) {
+  // HIPAA: Reveal only if requested via a secure header AND authenticated (middleware handles auth)
+  const hdrGet = (req as any)?.headers?.get ? (k: string) => (req as any).headers.get(k) : () => null
+  const reveal = hdrGet('x-reveal') === '1' || hdrGet('X-Reveal') === '1'
+
+  if (reveal) {
     const status = typeof init === "number" ? init : init?.status
     const body = payload && typeof payload === 'object' ? { ...payload, masked: false } : { data: payload, masked: false }
     return NextResponse.json(body, status ? { status } : {})

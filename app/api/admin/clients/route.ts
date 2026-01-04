@@ -3,17 +3,33 @@ import { jsonMaybeMasked } from "@/lib/admin-mask"
 import { supabaseAdminClient } from "@/lib/supabase-admin"
 import { aesEncrypt, aesDecrypt, aesEncryptToString, aesDecryptFromString, verifyCsrfToken } from "@/lib/utils"
 import { cookies } from "next/headers"
+import { logAudit } from "@/lib/audit-logger"
+import { getAuthUser } from "@/lib/auth-server"
 
 export async function GET(req: Request) {
+  const user = await getAuthUser(req)
   try {
     const admin = supabaseAdminClient()
+    if (!admin) return NextResponse.json({ error: 'DB Client unavailable' }, { status: 500 })
+
     const { data, error } = await admin
       .from('clients')
       .select('*')
       .order('created_at', { ascending: false })
+
+    if (user) {
+      await logAudit({
+        userId: user.id,
+        action: 'READ',
+        resource: 'Clients',
+        status: error ? 'FAILURE' : 'SUCCESS',
+        details: error ? { error: error.message } : { count: data?.length }
+      })
+    }
+
     if (error) return jsonMaybeMasked(req, { error: error.message }, { status: 500 })
-    const decryptJson = (v: unknown) => aesDecrypt(v) ?? v
-    const clients = (data || []).map((c: { id: string; [key: string]: unknown }) => ({
+    const decryptJson = (v: any) => aesDecrypt(v) ?? v
+    const clients = (data || []).map((c: { id: string;[key: string]: any }) => ({
       ...c,
       email: aesDecryptFromString(c.email) ?? c.email,
       phone: aesDecryptFromString(c.phone) ?? c.phone,
@@ -30,6 +46,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  const user = await getAuthUser(req)
   try {
     const cookieStore = await cookies()
     const cookiesMap = new Map<string, string>()
@@ -39,7 +56,7 @@ export async function POST(req: Request) {
     }
     const raw = await req.json()
     const id = raw.id || `client_${Date.now()}`
-    const toEmergencyContact = (val: unknown) => {
+    const toEmergencyContact = (val: any) => {
       if (!val) return null
       if (typeof val === 'string') return { contact: val }
       return val
@@ -63,9 +80,9 @@ export async function POST(req: Request) {
       last_visit: raw.lastVisit ?? raw.last_visit ?? null,
     }
     const admin = supabaseAdminClient()
+    if (!admin) return NextResponse.json({ error: 'DB Client unavailable' }, { status: 500 })
 
-    // Duplicate prevention: check existing clients by normalized email/phone/name
-    const norm = (v: unknown) => String(v || '').trim().toLowerCase()
+    const norm = (v: any) => String(v || '').trim().toLowerCase()
     const emailNorm = norm(raw.email)
     const phoneNorm = norm(raw.phone)
     const nameKey = `${norm(raw.firstName ?? raw.first_name)} ${norm(raw.lastName ?? raw.last_name)}`.trim()
@@ -82,16 +99,27 @@ export async function POST(req: Request) {
       }
     }
     const { data, error } = await admin.from('clients').insert(payload).select('*').single()
+
+    if (user) {
+      await logAudit({
+        userId: user.id,
+        action: 'CREATE',
+        resource: 'Clients',
+        resourceId: id,
+        status: error ? 'FAILURE' : 'SUCCESS'
+      })
+    }
+
     if (error) return jsonMaybeMasked(req, { error: error.message }, { status: 500 })
     const client = {
       ...data,
       email: aesDecryptFromString(data.email) ?? data.email,
       phone: aesDecryptFromString(data.phone) ?? data.phone,
       address: aesDecryptFromString(data.address) ?? data.address,
-      emergency_contact: aesDecrypt(data.emergency_contact),
-      medical_history: aesDecrypt(data.medical_history),
-      allergies: aesDecrypt(data.allergies),
-      preferences: aesDecrypt(data.preferences) ?? data.preferences,
+      emergency_contact: aesDecrypt(data.emergency_contact as any),
+      medical_history: aesDecrypt(data.medical_history as any),
+      allergies: aesDecrypt(data.allergies as any),
+      preferences: aesDecrypt(data.preferences as any) ?? data.preferences,
     }
     return jsonMaybeMasked(req, { client })
   } catch (e) {
@@ -100,6 +128,7 @@ export async function POST(req: Request) {
 }
 
 export async function PATCH(req: Request) {
+  const user = await getAuthUser(req)
   try {
     const cookieStore = await cookies()
     const cookiesMap = new Map<string, string>()
@@ -110,7 +139,7 @@ export async function PATCH(req: Request) {
     const body = await req.json()
     const { id } = body || {}
     if (!id) return jsonMaybeMasked(req, { error: 'Missing id' }, { status: 400 })
-    const toEmergencyContactUpd = (val: unknown) => {
+    const toEmergencyContactUpd = (val: any) => {
       if (val === undefined) return undefined
       if (!val) return null
       if (typeof val === 'string') return { contact: val }
@@ -135,9 +164,9 @@ export async function PATCH(req: Request) {
       updated_at: new Date().toISOString(),
     }
     const admin = supabaseAdminClient()
+    if (!admin) return NextResponse.json({ error: 'DB Client unavailable' }, { status: 500 })
 
-    // Duplicate prevention on update
-    const norm = (v: unknown) => String(v || '').trim().toLowerCase()
+    const norm = (v: any) => String(v || '').trim().toLowerCase()
     const emailNorm = body.email !== undefined ? norm(body.email) : undefined
     const phoneNorm = body.phone !== undefined ? norm(body.phone) : undefined
     const nameKey = `${norm(body.firstName ?? body.first_name)} ${norm(body.lastName ?? body.last_name)}`.trim()
@@ -157,16 +186,27 @@ export async function PATCH(req: Request) {
       }
     }
     const { data, error } = await admin.from('clients').update(updates).eq('id', id).select('*').single()
+
+    if (user) {
+      await logAudit({
+        userId: user.id,
+        action: 'UPDATE',
+        resource: 'Clients',
+        resourceId: id,
+        status: error ? 'FAILURE' : 'SUCCESS'
+      })
+    }
+
     if (error) return jsonMaybeMasked(req, { error: error.message }, { status: 500 })
     const client = {
       ...data,
       email: aesDecryptFromString(data.email) ?? data.email,
       phone: aesDecryptFromString(data.phone) ?? data.phone,
       address: aesDecryptFromString(data.address) ?? data.address,
-      emergency_contact: aesDecrypt(data.emergency_contact),
-      medical_history: aesDecrypt(data.medical_history),
-      allergies: aesDecrypt(data.allergies),
-      preferences: aesDecrypt(data.preferences) ?? data.preferences,
+      emergency_contact: aesDecrypt(data.emergency_contact as any),
+      medical_history: aesDecrypt(data.medical_history as any),
+      allergies: aesDecrypt(data.allergies as any),
+      preferences: aesDecrypt(data.preferences as any) ?? data.preferences,
     }
     return jsonMaybeMasked(req, { client })
   } catch (e) {
@@ -175,12 +215,25 @@ export async function PATCH(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  const user = await getAuthUser(req)
   try {
     const body = await req.json()
     const { id } = body || {}
     if (!id) return jsonMaybeMasked(req, { error: 'Missing id' }, { status: 400 })
     const admin = supabaseAdminClient()
+    if (!admin) return NextResponse.json({ error: 'DB Client unavailable' }, { status: 500 })
     const { error } = await admin.from('clients').delete().eq('id', id)
+
+    if (user) {
+      await logAudit({
+        userId: user.id,
+        action: 'DELETE',
+        resource: 'Clients',
+        resourceId: id,
+        status: error ? 'FAILURE' : 'SUCCESS'
+      })
+    }
+
     if (error) return jsonMaybeMasked(req, { error: error.message }, { status: 500 })
     return jsonMaybeMasked(req, { success: true })
   } catch (e) {

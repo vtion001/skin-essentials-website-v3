@@ -2,19 +2,40 @@ import { NextResponse } from "next/server"
 import { Treatment } from "@/lib/types/api.types"
 import { jsonMaybeMasked } from "@/lib/admin-mask"
 import { supabaseAdminClient } from "@/lib/supabase-admin"
-import { verifyCsrfToken } from "@/lib/utils"
+import { verifyCsrfToken, aesEncryptToString, aesDecryptFromString } from "@/lib/utils"
+import { logAudit } from "@/lib/audit-logger"
+import { getAuthUser } from "@/lib/auth-server"
 
 export async function GET(req: Request) {
+    const user = await getAuthUser(req)
     const admin = supabaseAdminClient()
     if (!admin) return jsonMaybeMasked(req, { error: 'Supabase admin client not available' }, { status: 500 })
 
     const { data, error } = await admin.from('treatments').select('*').order('date', { ascending: false })
+
+    if (user) {
+        await logAudit({
+            userId: user.id,
+            action: 'READ',
+            resource: 'Treatments',
+            status: error ? 'FAILURE' : 'SUCCESS',
+            details: error ? { error: error.message } : { count: data?.length }
+        })
+    }
+
     if (error) return jsonMaybeMasked(req, { error: error.message }, { status: 500 })
 
-    return jsonMaybeMasked(req, { treatments: data || [] })
+    const treatments = (data || []).map((t: any) => ({
+        ...t,
+        procedure: aesDecryptFromString(t.procedure) ?? t.procedure,
+        notes: aesDecryptFromString(t.notes) ?? t.notes,
+    }))
+
+    return jsonMaybeMasked(req, { treatments })
 }
 
 export async function POST(req: Request) {
+    const user = await getAuthUser(req)
     const cookiesMap = new Map<string, string>()
     const cookieHeader = req.headers.get('cookie') || ''
     cookieHeader.split(';').forEach((pair) => {
@@ -28,9 +49,9 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json()
-    const { staffId, medicalRecordId, treatments } = body
+    const { staffId, medicalRecordId, treatments: incomingTreatments } = body
 
-    if ((!staffId && !medicalRecordId) || !Array.isArray(treatments)) {
+    if ((!staffId && !medicalRecordId) || !Array.isArray(incomingTreatments)) {
         return jsonMaybeMasked(req, { error: 'Missing staffId/medicalRecordId or treatments array' }, { status: 400 })
     }
 
@@ -54,7 +75,7 @@ export async function POST(req: Request) {
     }
 
     // 2. Prepare new rows
-    const needsClientMap = treatments.some((t: { clientName?: string; clientId?: string }) => t.clientName && !t.clientId)
+    const needsClientMap = incomingTreatments.some((t: { clientName?: string; clientId?: string }) => t.clientName && !t.clientId)
     const clientMap = new Map<string, string>()
 
     if (needsClientMap) {
@@ -65,7 +86,7 @@ export async function POST(req: Request) {
         })
     }
 
-    const newRows = treatments.map((t: Treatment) => {
+    const newRows = incomingTreatments.map((t: Treatment) => {
         const name = (t.clientName || '').trim().toLowerCase()
         const resolvedClientId = t.clientId || clientMap.get(name) || null
 
@@ -74,15 +95,32 @@ export async function POST(req: Request) {
             staff_id: t.aestheticianId || staffId || null,
             medical_record_id: medicalRecordId || null,
             client_id: resolvedClientId || body.clientId || null,
-            procedure: t.procedure,
+            procedure: aesEncryptToString(t.procedure),
             total: Number(t.total || 0),
             date: t.date || new Date().toISOString().slice(0, 10),
-            notes: t.notes || null
+            notes: aesEncryptToString(t.notes || null)
         }
     })
 
     const { data, error } = await admin.from('treatments').insert(newRows).select('*')
+
+    if (user) {
+        await logAudit({
+            userId: user.id,
+            action: 'CREATE',
+            resource: 'Treatments',
+            status: error ? 'FAILURE' : 'SUCCESS',
+            details: medicalRecordId ? { medicalRecordId } : { staffId }
+        })
+    }
+
     if (error) return jsonMaybeMasked(req, { error: error.message }, { status: 500 })
 
-    return jsonMaybeMasked(req, { success: true, treatments: data })
+    const savedTreatments = (data || []).map((t: any) => ({
+        ...t,
+        procedure: aesDecryptFromString(t.procedure) ?? t.procedure,
+        notes: aesDecryptFromString(t.notes) ?? t.notes,
+    }))
+
+    return jsonMaybeMasked(req, { success: true, treatments: savedTreatments })
 }

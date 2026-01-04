@@ -54,17 +54,16 @@ export function aesDecrypt(blob: { iv: string; tag: string; data: string } | nul
     }
   }
 
-  // 1. Try with configured key
+  // HIPAA: Only decrypt with configured system key. No hardcoded fallbacks allowed.
   const primaryKey = getEncryptionKey()
-  if (primaryKey) {
-    const result = decryptWithKey(primaryKey)
-    if (result) return result
+  if (!primaryKey) {
+    console.error('CRITICAL: Data encryption key is not configured.')
+    return null
   }
 
-  // 2. Try with fallback key (legacy/dev support)
-  const fallbackKey = crypto.createHash('sha256').update('fallback_key').digest()
-  return decryptWithKey(fallbackKey)
+  return decryptWithKey(primaryKey)
 }
+
 
 export function aesEncryptToString(payload: any) {
   const blob = aesEncrypt(payload)
