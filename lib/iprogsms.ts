@@ -178,3 +178,54 @@ export async function getSmsCredits() {
         return { ok: false, error: e }
     }
 }
+
+export async function sendSms(phoneNumber: string, message: string) {
+    const iprogToken = process.env.IPROGSMS_API_TOKEN
+    if (!iprogToken) {
+        return { ok: false, error: "IPROGSMS_API_TOKEN is not set" }
+    }
+
+    let phone = phoneNumber.replace(/[^0-9]/g, "")
+
+    try {
+        const res = await fetch("https://www.iprogsms.com/api/v1/sms_messages", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                api_token: iprogToken,
+                phone_number: phone,
+                message: message
+            })
+        })
+
+        const data = await res.json()
+        
+        // Log to Supabase for audit
+        try {
+            const supabase = supabaseAdminClient()
+            if (supabase) {
+                await supabase.from('error_logs').insert({
+                    context: 'sms_outbound',
+                    message: message,
+                    meta: {
+                        phone: phone,
+                        response: data,
+                        status: res.ok ? 'success' : 'failed'
+                    }
+                })
+            }
+        } catch (e) {
+            console.error("Failed to log SMS to DB", e)
+        }
+
+        if (!res.ok) {
+            return { ok: false, error: data }
+        }
+
+        return { ok: true, data }
+    } catch (e) {
+        return { ok: false, error: e }
+    }
+}

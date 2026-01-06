@@ -31,7 +31,7 @@ export async function logAudit(entry: AuditLogEntry) {
         details: entry.details,
         status: entry.status,
         ip_address: entry.ipAddress,
-        created_at: new Date().toISOString()
+        timestamp: new Date().toISOString()
     }
 
     try {

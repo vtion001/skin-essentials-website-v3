@@ -1300,8 +1300,8 @@ export default function AdminDashboard() {
         </AnimatePresence>
 
         <div className="flex min-h-screen bg-[#FDFCFB]">
-          {/* Main Sidebar - Desktop (Dark Editorial Aesthetic) */}
-          <aside className="hidden lg:flex w-[280px] flex-col bg-[#fbc6c5] text-[#0F2922] fixed h-screen z-50">
+          {/* Main Sidebar - Desktop (Minimalist White & Pink) */}
+          <aside className="hidden lg:flex w-[280px] flex-col bg-white border-r border-stone-100 fixed h-screen z-50">
             {/* Sidebar Header: Brand Logo & Title */}
             <div className="p-8 pb-6">
               <div className="flex items-center justify-center mb-6">
@@ -1334,7 +1334,7 @@ export default function AdminDashboard() {
             {/* Navigation Menu */}
             <div className="flex-1 overflow-y-auto px-4 py-6 scrollbar-none">
               <div className="mb-10">
-                <p className="text-[10px] font-bold tracking-[0.25em] text-[#0F2922]/40 uppercase mb-6 px-4">Menu</p>
+                <p className="text-[10px] font-bold tracking-[0.25em] text-stone-400 uppercase mb-6 px-4">Menu</p>
                 <div className="space-y-1">
                   {[
                     { key: 'dashboard', label: 'Overview', icon: LayoutDashboard },
@@ -1350,18 +1350,18 @@ export default function AdminDashboard() {
                       key={item.key}
                       onClick={() => setActiveTab(item.key)}
                       className={`relative w-full flex items-center gap-4 px-6 py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-300 group ${activeTab === item.key
-                        ? 'text-[#0F2922]'
-                        : 'text-[#0F2922]/60 hover:text-[#0F2922] hover:bg-[#0F2922]/5'
+                        ? 'text-[#d09d80] bg-[#fbc6c5]/10'
+                        : 'text-stone-500 hover:text-stone-900 hover:bg-stone-50'
                         }`}
                     >
                       {activeTab === item.key && (
                         <motion.div
                           layoutId="active-indicator"
-                          className="absolute left-0 w-1.5 h-6 bg-[#0F2922] rounded-r-full"
+                          className="absolute left-0 w-1.5 h-6 bg-[#d09d80] rounded-r-full"
                           transition={{ type: "spring", stiffness: 300, damping: 30 }}
                         />
                       )}
-                      <item.icon className={`w-5 h-5 transition-colors ${activeTab === item.key ? 'text-[#0F2922]' : 'text-[#0F2922]/40 group-hover:text-[#0F2922]'}`} />
+                      <item.icon className={`w-5 h-5 transition-colors ${activeTab === item.key ? 'text-[#d09d80]' : 'text-stone-400 group-hover:text-stone-900'}`} />
                       {item.label}
                       {item.key === 'social' && socialMessages.filter(m => !m.isReplied).length > 0 && (
                         <span className="ml-auto bg-[#0F2922] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md min-w-[20px] text-center">
@@ -1379,7 +1379,7 @@ export default function AdminDashboard() {
               </div>
 
               <div>
-                <p className="text-[10px] font-bold tracking-[0.25em] text-[#0F2922]/40 uppercase mb-6 px-4">General</p>
+                <p className="text-[10px] font-bold tracking-[0.25em] text-stone-400 uppercase mb-6 px-4">General</p>
                 <div className="space-y-1">
                   {[
                     { key: 'email', label: 'Automations', icon: Mail },
@@ -1392,18 +1392,18 @@ export default function AdminDashboard() {
                       key={item.key}
                       onClick={() => setActiveTab(item.key)}
                       className={`relative w-full flex items-center gap-4 px-6 py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-300 group ${activeTab === item.key
-                        ? 'text-[#0F2922]'
-                        : 'text-[#0F2922]/60 hover:text-[#0F2922] hover:bg-[#0F2922]/5'
+                        ? 'text-[#d09d80] bg-[#fbc6c5]/10'
+                        : 'text-stone-500 hover:text-stone-900 hover:bg-stone-50'
                         }`}
                     >
                       {activeTab === item.key && (
                         <motion.div
                           layoutId="active-indicator"
-                          className="absolute left-0 w-1.5 h-6 bg-[#0F2922] rounded-r-full"
+                          className="absolute left-0 w-1.5 h-6 bg-[#d09d80] rounded-r-full"
                           transition={{ type: "spring", stiffness: 300, damping: 30 }}
                         />
                       )}
-                      <item.icon className={`w-5 h-5 transition-colors ${activeTab === item.key ? 'text-[#0F2922]' : 'text-[#0F2922]/40 group-hover:text-[#0F2922]'}`} />
+                      <item.icon className={`w-5 h-5 transition-colors ${activeTab === item.key ? 'text-[#d09d80]' : 'text-stone-400 group-hover:text-stone-900'}`} />
                       {item.label}
                     </button>
                   ))}
@@ -1412,18 +1412,18 @@ export default function AdminDashboard() {
             </div>
 
             {/* Sidebar Footer: Profile Section */}
-            <div className="p-6 border-t border-[#0F2922]/10">
+            <div className="p-6 border-t border-stone-100">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <div>
                     <AdminProfileButton />
                   </div>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 rounded-xl border border-[#0F2922]/10 shadow-xl bg-white/95 backdrop-blur-md">
-                  <DropdownMenuLabel className="text-[#0F2922]">My Account</DropdownMenuLabel>
-                  <DropdownMenuSeparator className="bg-[#0F2922]/10" />
+                <DropdownMenuContent align="end" className="w-56 rounded-xl border border-stone-100 shadow-xl bg-white/95 backdrop-blur-md">
+                  <DropdownMenuLabel className="text-stone-800">My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-stone-100" />
                   <DropdownMenuItem
-                    className="focus:bg-[#0F2922]/5 focus:text-[#0F2922] cursor-pointer rounded-lg"
+                    className="focus:bg-stone-50 focus:text-stone-900 cursor-pointer rounded-lg"
                     onClick={() => showNotification("success", "Profile settings coming soon")}
                   >
                     <Settings className="w-4 h-4 mr-2" />
@@ -1445,21 +1445,21 @@ export default function AdminDashboard() {
           {/* Main Content Area */}
           <div className="flex-1 lg:ml-[280px]">
             {/* Top Navigation Bar - Main Page Header */}
-            <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-[#E2D1C3]/30 px-8 py-5 flex items-center justify-between">
+            <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-stone-100 px-8 py-5 flex items-center justify-between">
               <div className="flex flex-col">
                 <div className="flex items-center gap-3">
-                  <h1 className="text-2xl font-bold tracking-tight text-[#1A1A1A] uppercase">
-                    Admin <span className="text-[#8B735B]">Dashboard.</span>
+                  <h1 className="text-2xl font-bold tracking-tight text-stone-800 uppercase">
+                    Admin <span className="text-[#d09d80]">Dashboard.</span>
                   </h1>
-                  <div className="h-4 w-[1px] bg-[#E2D1C3]" />
-                  <p className="text-[11px] text-[#8B735B] font-bold tracking-[0.2em] uppercase">
+                  <div className="h-4 w-[1px] bg-stone-200" />
+                  <p className="text-[11px] text-[#d09d80] font-bold tracking-[0.2em] uppercase">
                     Portal
                   </p>
                 </div>
               </div>
 
               <div className="flex items-center gap-4">
-                <div className="hidden md:flex items-center gap-2 mr-4 text-[10px] font-bold text-[#8B735B] uppercase tracking-widest bg-[#FDFCFB] border border-[#E2D1C3]/30 px-3 py-1.5 rounded-full">
+                <div className="hidden md:flex items-center gap-2 mr-4 text-[10px] font-bold text-stone-500 uppercase tracking-widest bg-white border border-stone-100 px-3 py-1.5 rounded-full">
                   <Clock className="w-3 h-3" />
                   <span>{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</span>
                 </div>
@@ -1468,19 +1468,19 @@ export default function AdminDashboard() {
                   variant="ghost"
                   size="sm"
                   onClick={() => setPrivacyMode(prev => !prev)}
-                  className={`text-[10px] font-bold tracking-[0.2em] uppercase border border-[#E2D1C3]/30 px-4 h-9 rounded-full transition-all ${privacyMode ? 'bg-[#1A1A1A] text-white' : 'hover:bg-[#E2D1C3]/20 text-[#8B735B]'}`}
+                  className={`text-[10px] font-bold tracking-[0.2em] uppercase border border-stone-200 px-4 h-9 rounded-full transition-all ${privacyMode ? 'bg-stone-900 text-white' : 'hover:bg-stone-50 text-stone-600'}`}
                 >
                   {privacyMode ? 'Privacy: On' : 'Privacy: Off'}
                 </Button>
 
-                <div className="w-[1px] h-6 bg-[#E2D1C3]/30 mx-1" />
+                <div className="w-[1px] h-6 bg-stone-200 mx-1" />
 
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={loadAllData}
                   disabled={isLoading}
-                  className="text-[10px] font-bold tracking-[0.2em] uppercase text-[#8B735B] hover:bg-[#E2D1C3]/20 h-9 px-4 rounded-full border border-[#E2D1C3]/30"
+                  className="text-[10px] font-bold tracking-[0.2em] uppercase text-stone-600 hover:bg-stone-50 h-9 px-4 rounded-full border border-stone-200"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 mr-2 ${isLoading ? "animate-spin" : ""}`} />
                   Refresh
@@ -1510,7 +1510,7 @@ export default function AdminDashboard() {
                   transition={{ duration: 0.3 }}
                   className="lg:hidden mb-10"
                 >
-                  <TabsList className="bg-white border border-[#E2D1C3]/30 h-16 items-center rounded-2xl p-2 w-full flex overflow-x-auto scrollbar-none gap-2">
+                  <TabsList className="bg-white border border-stone-100 h-16 items-center rounded-2xl p-2 w-full flex overflow-x-auto scrollbar-none gap-2">
                     {[
                       { value: 'dashboard', icon: LayoutDashboard, label: 'Overview' },
                       { value: 'appointments', icon: CalendarDays, label: 'Bookings' },
@@ -1523,7 +1523,7 @@ export default function AdminDashboard() {
                       <TabsTrigger
                         key={tab.value}
                         value={tab.value}
-                        className="data-[state=active]:bg-[#0F2922] data-[state=active]:text-white data-[state=active]:shadow-xl text-[#0F2922]/60 h-full flex items-center gap-3 rounded-xl px-6 text-[10px] font-bold uppercase tracking-widest transition-all"
+                        className="data-[state=active]:bg-stone-900 data-[state=active]:text-white data-[state=active]:shadow-xl text-stone-500 h-full flex items-center gap-3 rounded-xl px-6 text-[10px] font-bold uppercase tracking-widest transition-all"
                       >
                         <tab.icon className="w-4 h-4" />
                         {tab.label}
@@ -1535,224 +1535,13 @@ export default function AdminDashboard() {
                 {/* Dashboard Overview */}
                 <LazyTabContent isActive={activeTab === "dashboard"}>
                   <TabsContent value="dashboard" className="space-y-8">
-                    {/* Stats Cards - Premium Glassmorphism */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
-                      {[
-                        {
-                          title: "Today's Bookings",
-                          value: appointments.filter(a => a.date === new Date().toISOString().split('T')[0]).length,
-                          icon: CalendarDays,
-                          delta: "+12%"
-                        },
-                        {
-                          title: "Pending Payments",
-                          value: payments.filter(p => p.status === 'pending').length,
-                          icon: CreditCard,
-                          delta: "Action Required"
-                        },
-                        {
-                          title: "Active Clients",
-                          value: clients.length,
-                          icon: UserCircle,
-                          delta: "+3.2%"
-                        },
-                        {
-                          title: "Team Strength",
-                          value: staff.filter(s => s.status === 'active').length,
-                          icon: Users,
-                          delta: "Full Coverage"
-                        },
-                        {
-                          title: "Inquiries",
-                          value: socialMessages.filter(m => !m.isReplied).length,
-                          icon: MessageSquare,
-                          delta: "5 New"
-                        },
-                        {
-                          title: "Monthly Yield",
-                          value: `₱${payments.filter(p => p.status === 'completed' && new Date(p.createdAt).getMonth() === new Date().getMonth()).reduce((sum, p) => sum + p.amount, 0).toLocaleString()}`,
-                          icon: DollarSign,
-                          delta: "+8.4%"
-                        }
-                      ].map((stat, index) => (
-                        <motion.div
-                          key={stat.title}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.05 }}
-                          className="bg-white p-6 border border-[#E2D1C3]/30 rounded-2xl hover:border-[#8B735B]/50 hover:shadow-[0_8px_30px_rgb(139,115,91,0.08)] transition-all duration-500 group cursor-default"
-                        >
-                          <div className="flex items-start justify-between mb-4">
-                            <div className="p-2.5 bg-[#FDFCFB] border border-[#E2D1C3]/20 rounded-xl group-hover:bg-[#E2D1C3]/10 transition-colors">
-                              <stat.icon className="w-5 h-5 text-[#8B735B]" />
-                            </div>
-                            <div className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${stat.delta.includes('+') ? 'bg-emerald-50 text-emerald-600' : 'bg-[#E2D1C3]/20 text-[#8B735B]'}`}>
-                              {stat.delta}
-                            </div>
-                          </div>
-                          <p className="text-[10px] font-bold tracking-[0.1em] text-[#8B735B] uppercase mb-1">{stat.title}</p>
-                          <h3 className="text-2xl font-bold text-[#1A1A1A] tabular-nums tracking-tight">{stat.value}</h3>
-                        </motion.div>
-                      ))}
-                    </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                      {/* Revenue Trend Chart */}
-                      <Card className="border-[#E2D1C3]/30 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                        <CardHeader className="bg-[#FDFCFB] border-b border-[#E2D1C3]/20 p-6">
-                          <CardTitle className="text-sm font-bold uppercase tracking-widest text-[#8B735B] flex items-center gap-2">
-                            <TrendingUp className="w-4 h-4" />
-                            Revenue Trend
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-6 pt-10 h-[350px]">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={payments.slice(-15)}>
-                              <defs>
-                                <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
-                                  <stop offset="5%" stopColor="#C9FF31" stopOpacity={0.3} />
-                                  <stop offset="95%" stopColor="#C9FF31" stopOpacity={0} />
-                                </linearGradient>
-                              </defs>
-                              <XAxis dataKey="createdAt" hide />
-                              <YAxis hide />
-                              <ReTooltip
-                                contentStyle={{
-                                  backgroundColor: '#1A1A1A',
-                                  border: 'none',
-                                  borderRadius: '16px',
-                                  color: '#FFF',
-                                  fontSize: '11px',
-                                  fontWeight: 'bold',
-                                  boxShadow: '0 10px 30px rgba(0,0,0,0.1)'
-                                }}
-                                formatter={(value: number | undefined) => [value ? `₱${value.toLocaleString()}` : "₱0", "Revenue"]}
-                              />
-                              <Area type="monotone" dataKey="amount" stroke="#8B715C" strokeWidth={3} fillOpacity={1} fill="url(#colorAmount)" />
-                            </AreaChart>
-                          </ResponsiveContainer>
-                        </CardContent>
-                      </Card>
-
-                      {/* Appointment Status Pie Chart */}
-                      <Card className="border-[#E2D1C3]/30 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                        <CardHeader className="bg-[#FDFCFB] border-b border-[#E2D1C3]/20 p-6">
-                          <CardTitle className="text-sm font-bold uppercase tracking-widest text-[#8B735B] flex items-center gap-2">
-                            <BarChart3 className="w-4 h-4" />
-                            Clinical Breakdown
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-6 h-[350px]">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                              <Pie
-                                data={[
-                                  { name: 'Completed', value: appointments.filter(a => a.status === 'completed').length },
-                                  { name: 'Scheduled', value: appointments.filter(a => a.status === 'scheduled').length },
-                                  { name: 'Confirmed', value: appointments.filter(a => a.status === 'confirmed').length },
-                                  { name: 'Cancelled', value: appointments.filter(a => a.status === 'cancelled').length },
-                                ]}
-                                cx="50%"
-                                cy="50%"
-                                innerRadius={60}
-                                outerRadius={80}
-                                paddingAngle={10}
-                                dataKey="value"
-                              >
-                                <Cell key="cell-0" fill="#0F2922" />
-                                <Cell key="cell-1" fill="#C9FF31" />
-                                <Cell key="cell-2" fill="#8B735B" />
-                                <Cell key="cell-3" fill="#E2D1C3" />
-                              </Pie>
-                              <ReTooltip
-                                contentStyle={{
-                                  backgroundColor: '#1A1A1A',
-                                  border: 'none',
-                                  borderRadius: '16px',
-                                  color: '#FFF',
-                                  fontSize: '11px',
-                                  fontWeight: 'bold'
-                                }}
-                              />
-                            </PieChart>
-                          </ResponsiveContainer>
-                          <div className="flex flex-col gap-4 pr-10">
-                            {[
-                              { label: 'Completed', color: '#0F2922' },
-                              { label: 'Scheduled', color: '#C9FF31' },
-                              { label: 'Confirmed', color: '#8B735B' },
-                              { label: 'Cancelled', color: '#E2D1C3' },
-                            ].map((item) => (
-                              <div key={item.label} className="flex items-center gap-3">
-                                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-[#1A1A1A]/60">{item.label}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </div>
-
-                    {/* Booking Agenda / Today's Schedule */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-                      <div className="lg:col-span-1 space-y-6">
-                        <div className="flex items-center justify-between px-2">
-                          <h3 className="text-sm font-bold uppercase tracking-widest text-[#1A1A1A]">Agenda</h3>
-                          <span className="text-[10px] font-bold text-[#8B735B] bg-[#E2D1C3]/20 px-3 py-1 rounded-full uppercase tracking-widest">
-                            {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                          </span>
-                        </div>
-                        <div className="space-y-4">
-                          {appointments
-                            .filter(apt => apt.date === new Date().toISOString().split('T')[0])
-                            .sort((a, b) => a.time.localeCompare(b.time))
-                            .slice(0, 5)
-                            .map((appointment) => (
-                              <div key={appointment.id} className="group flex items-center gap-5 p-4 bg-white border border-[#E2D1C3]/30 rounded-2xl hover:border-[#8B735B]/40 transition-all">
-                                <div className="text-center min-w-[50px]">
-                                  <p className="text-[10px] font-bold text-[#8B735B] uppercase">{appointment.time.split(' ')[1]}</p>
-                                  <p className="text-sm font-bold text-[#1A1A1A]">{appointment.time.split(' ')[0]}</p>
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-xs font-bold text-[#1A1A1A] truncate">{privacyMode ? maskName(appointment.clientName) : appointment.clientName}</p>
-                                  <p className="text-[10px] font-bold text-[#8B735B] uppercase truncate">{appointment.service}</p>
-                                </div>
-                                <div className={`w-1.5 h-1.5 rounded-full ${appointment.status === 'completed' ? 'bg-emerald-500' : 'bg-[#C9FF31]'}`} />
-                              </div>
-                            ))}
-                        </div>
-                      </div>
-
-                      <div className="lg:col-span-2">
-                        {/* Summary View / Large Graphic or Placeholder for more stats */}
-                        <div className="relative h-full min-h-[400px] bg-[#fbc6c5] rounded-[40px] p-10 overflow-hidden group">
-                          <div className="absolute top-0 right-0 w-[60%] h-[60%] bg-white/20 blur-[100px] rounded-full group-hover:bg-white/30 transition-all duration-1000" />
-                          <div className="relative z-10 flex flex-col justify-between h-full">
-                            <div>
-                              <Badge className="bg-[#0F2922] text-white border-none mb-6 px-4 py-1.5 rounded-full font-bold uppercase tracking-widest">Overview Active</Badge>
-                              <h2 className="text-4xl font-bold text-[#0F2922] tracking-tight leading-tight uppercase">
-                                Elevating <br />
-                                <span className="text-white">The Standard.</span>
-                              </h2>
-                              <p className="text-[#0F2922]/70 text-sm mt-6 max-w-sm font-medium leading-relaxed">
-                                Your dashboard provides real-time insights into system health, financial growth, and clinical excellence.
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-10">
-                              <div>
-                                <p className="text-[10px] font-bold text-white uppercase tracking-[0.2em] mb-1">Growth</p>
-                                <p className="text-2xl font-bold text-[#0F2922]">+24.5%</p>
-                              </div>
-                              <div className="w-[1px] h-10 bg-[#0F2922]/10" />
-                              <div>
-                                <p className="text-[10px] font-bold text-white uppercase tracking-[0.2em] mb-1">Retention</p>
-                                <p className="text-2xl font-bold text-[#0F2922]">92.0%</p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                    <DashboardTab
+                        appointments={appointments}
+                        payments={payments}
+                        clients={clients}
+                        staff={staff}
+                        socialMessages={socialMessages}
+                    />
                   </TabsContent>
                 </LazyTabContent>
 
@@ -1763,7 +1552,7 @@ export default function AdminDashboard() {
                       <h2 className="text-2xl font-bold text-gray-900">Booking Management</h2>
                       <Button
                         onClick={() => openModal()}
-                        className="bg-[#0F2922] hover:bg-[#0F2922]/90 text-white shadow-2xl shadow-[#0F2922]/30 hover:shadow-[#0F2922]/40 transition-all duration-300 hover:scale-105 font-bold px-6 py-3 rounded-2xl"
+                        className="bg-stone-900 hover:bg-stone-800 text-white shadow-lg shadow-stone-900/10 hover:shadow-stone-900/20 transition-all duration-300 hover:scale-105 font-bold px-6 py-3 rounded-2xl"
                       >
                         <Plus className="w-4 h-4 mr-2" />
                         New Appointment
@@ -1982,10 +1771,10 @@ export default function AdminDashboard() {
                 </LazyTabContent>
                 <LazyTabContent isActive={activeTab === "email"}>
                   <TabsContent value="email" className="space-y-8">
-                    <Card className="border-white/60 bg-white/70 backdrop-blur-xl shadow-xl rounded-3xl">
+                    <Card className="border-stone-100 bg-white/70 backdrop-blur-xl shadow-xl rounded-3xl">
                       <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                          <Mail className="w-5 h-5 text-rose-500" />
+                          <Mail className="w-5 h-5 text-[#d09d80]" />
                           Email Services
                         </CardTitle>
                       </CardHeader>
@@ -2061,11 +1850,11 @@ export default function AdminDashboard() {
                           </div>
                           <div className="rounded-2xl border bg-white/70 p-4">
                             <Table>
-                              <TableHeader className="bg-[#FDFCFB]">
-                                <TableRow className="border-b border-[#E2D1C3]/20 hover:bg-transparent">
-                                  <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#8B735B] py-5">From</TableHead>
-                                  <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#8B735B]">Subject</TableHead>
-                                  <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#8B735B]">Preview</TableHead>
+                              <TableHeader className="bg-stone-50/50">
+                                <TableRow className="border-b border-stone-100 hover:bg-transparent">
+                                  <TableHead className="text-[10px] font-bold uppercase tracking-widest text-stone-500 py-5">From</TableHead>
+                                  <TableHead className="text-[10px] font-bold uppercase tracking-widest text-stone-500">Subject</TableHead>
+                                  <TableHead className="text-[10px] font-bold uppercase tracking-widest text-stone-500">Preview</TableHead>
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
@@ -2108,15 +1897,15 @@ export default function AdminDashboard() {
                   <TabsContent value="content" className="space-y-8">
                     <Tabs value={contentSubTab} onValueChange={setContentSubTab} className="w-full">
                       <TabsList className="bg-white/30 backdrop-blur-xl border border-white/60 shadow h-12 items-center justify-center rounded-2xl p-2 grid w-full grid-cols-3 mb-6">
-                        <TabsTrigger value="services" className="data-[state=active]:bg-[#0F2922] data-[state=active]:text-white text-gray-700 h-9 justify-center rounded-xl border border-transparent px-3 py-2 text-sm font-bold transition-all duration-300 data-[state=active]:border-white/80">Services Manager</TabsTrigger>
-                        <TabsTrigger value="portfolio" className="data-[state=active]:bg-[#0F2922] data-[state=active]:text-white text-gray-700 h-9 justify-center rounded-xl border border-transparent px-3 py-2 text-sm font-bold transition-all duration-300 data-[state=active]:border-white/80">Portfolio Manager</TabsTrigger>
-                        <TabsTrigger value="categories" className="data-[state=active]:bg-[#0F2922] data-[state=active]:text-white text-gray-700 h-9 justify-center rounded-xl border border-transparent px-3 py-2 text-sm font-bold transition-all duration-300 data-[state=active]:border-white/80">Category Manager</TabsTrigger>
+                        <TabsTrigger value="services" className="data-[state=active]:bg-stone-900 data-[state=active]:text-white text-gray-700 h-9 justify-center rounded-xl border border-transparent px-3 py-2 text-sm font-bold transition-all duration-300 data-[state=active]:border-white/80">Services Manager</TabsTrigger>
+                        <TabsTrigger value="portfolio" className="data-[state=active]:bg-stone-900 data-[state=active]:text-white text-gray-700 h-9 justify-center rounded-xl border border-transparent px-3 py-2 text-sm font-bold transition-all duration-300 data-[state=active]:border-white/80">Portfolio Manager</TabsTrigger>
+                        <TabsTrigger value="categories" className="data-[state=active]:bg-stone-900 data-[state=active]:text-white text-gray-700 h-9 justify-center rounded-xl border border-transparent px-3 py-2 text-sm font-bold transition-all duration-300 data-[state=active]:border-white/80">Category Manager</TabsTrigger>
                       </TabsList>
                       <TabsContent value="services" className="space-y-8">
-                        <Card className="border-white/60 bg-white/70 backdrop-blur-xl shadow-xl rounded-3xl">
+                        <Card className="border-stone-100 bg-white/70 backdrop-blur-xl shadow-xl rounded-3xl">
                           <CardHeader>
                             <CardTitle className="flex items-center gap-2">
-                              <FileImage className="w-5 h-5 text-indigo-500" />
+                              <FileImage className="w-5 h-5 text-[#d09d80]" />
                               Services Manager
                             </CardTitle>
                           </CardHeader>
@@ -2253,10 +2042,10 @@ export default function AdminDashboard() {
                       </TabsContent>
 
                       <TabsContent value="portfolio" className="space-y-8">
-                        <Card className="border-white/60 bg-white/70 backdrop-blur-xl shadow-xl rounded-3xl">
+                        <Card className="border-stone-100 bg-white/70 backdrop-blur-xl shadow-xl rounded-3xl">
                           <CardHeader>
                             <CardTitle className="flex items-center gap-2">
-                              <FileImage className="w-5 h-5 text-rose-500" />
+                              <FileImage className="w-5 h-5 text-[#d09d80]" />
                               Portfolio Manager
                             </CardTitle>
                           </CardHeader>
@@ -2626,10 +2415,10 @@ export default function AdminDashboard() {
                       </TabsContent>
 
                       <TabsContent value="categories" className="space-y-8">
-                        <Card className="border-white/60 bg-white/70 backdrop-blur-xl shadow-xl rounded-3xl">
+                        <Card className="border-stone-100 bg-white/70 backdrop-blur-xl shadow-xl rounded-3xl">
                           <CardHeader>
                             <CardTitle className="flex items-center gap-2">
-                              <LayoutDashboard className="w-5 h-5 text-brand-tan" />
+                              <LayoutDashboard className="w-5 h-5 text-[#d09d80]" />
                               Category Manager
                             </CardTitle>
                           </CardHeader>

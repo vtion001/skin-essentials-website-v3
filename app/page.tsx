@@ -481,6 +481,7 @@ export default function HomePage() {
                           fill
                           sizes="(max-width: 1024px) 50vw, 25vw"
                           className="object-cover"
+                          suppressHydrationWarning
                         />
                       </div>
                       <div className="relative aspect-[3/4] rounded-full overflow-hidden shadow-2xl transform hover:scale-105 transition-transform duration-500">

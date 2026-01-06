@@ -78,6 +78,28 @@ export function useAdminAppointments(showNotification: (type: "success" | "error
             if (res.success) {
                 loadAppointments()
                 showNotification('success', `Status updated to ${newStatus}`)
+
+                // Trigger SMS if confirmed
+                if (newStatus === 'confirmed') {
+                    const appointment = appointments.find(a => a.id === id)
+                    if (appointment && appointment.clientPhone) {
+                        const dateStr = new Date(appointment.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                        const message = `Dear ${appointment.clientName}, your appointment for ${appointment.service} at Skin Essentials on ${dateStr} at ${appointment.time} has been CONFIRMED. Please arrive 10 mins early. Thank you!`
+                        
+                        // Non-blocking SMS call
+                        fetch('/api/admin/sms/send', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                phoneNumber: appointment.clientPhone,
+                                message: message
+                            })
+                        }).then(r => r.json()).then(data => {
+                            if (data.ok) showNotification('success', 'Confirmation SMS sent')
+                            else console.error('Failed to send SMS:', data.error)
+                        }).catch(e => console.error('SMS Network Error:', e))
+                    }
+                }
             } else {
                 showNotification('error', res.error || 'Failed to update status')
             }
