@@ -99,18 +99,18 @@ export const FACEBOOK_PERMISSIONS = {
   // Basic permissions
   PUBLIC_PROFILE: 'public_profile',
   EMAIL: 'email',
-  
+
   // Page permissions
   PAGES_SHOW_LIST: 'pages_show_list',
   PAGES_READ_ENGAGEMENT: 'pages_read_engagement',
   PAGES_MANAGE_METADATA: 'pages_manage_metadata',
   PAGES_MANAGE_POSTS: 'pages_manage_posts',
   PAGES_MESSAGING: 'pages_messaging',
-  
+
   // Business permissions
   BUSINESS_MANAGEMENT: 'business_management',
   PAGES_READ_USER_CONTENT: 'pages_read_user_content',
-  
+
   // Instagram permissions (if needed)
   INSTAGRAM_BASIC: 'instagram_basic',
   INSTAGRAM_MANAGE_MESSAGES: 'instagram_manage_messages'
@@ -191,7 +191,7 @@ class FacebookAPIService {
     this.appId = process.env.FACEBOOK_APP_ID || 'your_app_id';
     this.appSecret = process.env.FACEBOOK_APP_SECRET || 'your_app_secret';
     this.redirectUri = process.env.FACEBOOK_REDIRECT_URI || `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/facebook/callback`;
-    
+
     if (!this.appId || !this.appSecret) {
       console.warn('Facebook API credentials not configured. Please set FACEBOOK_APP_ID and FACEBOOK_APP_SECRET environment variables.');
     }
@@ -231,9 +231,9 @@ class FacebookAPIService {
 
       return { isValid: true };
     } catch (error) {
-      return { 
-        isValid: false, 
-        error: `Validation request failed: ${error instanceof Error ? error.message : 'Unknown error'}` 
+      return {
+        isValid: false,
+        error: `Validation request failed: ${error instanceof Error ? error.message : 'Unknown error'}`
       };
     }
   }
@@ -275,7 +275,7 @@ class FacebookAPIService {
   async getPageAccessToken(userAccessToken: string, pageId: string): Promise<{ accessToken?: string; error?: string }> {
     try {
       const response = await fetch(`${this.baseUrl}/${pageId}?fields=access_token&access_token=${userAccessToken}`);
-      
+
       const data = await response.json();
 
       if (data.error) {
@@ -302,7 +302,7 @@ class FacebookAPIService {
       const errorType = data.error.type || 'Unknown';
       const errorMessage = data.error.message || 'Unknown error';
       const errorCode = data.error.code || 'N/A';
-      
+
       console.error(`Facebook API Error in ${context}:`, {
         type: errorType,
         message: errorMessage,
@@ -316,10 +316,10 @@ class FacebookAPIService {
       if (errorType === 'OAuthException' || errorCode === 190) {
         throw new Error(`Facebook API Error: Invalid OAuth access token - ${errorMessage}`);
       }
-      
+
       throw new Error(`Facebook API Error: ${errorMessage} (Type: ${errorType}, Code: ${errorCode})`);
     }
-    
+
     throw new Error(`Facebook API Error: Unexpected response format in ${context}`);
   }
 
@@ -332,15 +332,15 @@ class FacebookAPIService {
     customRedirectUri?: string
   } = {}): string {
     const { state, includeOptionalPermissions = false, customRedirectUri } = options
-    
+
     // Generate secure state parameter if not provided
     const secureState = state || this.generateSecureState()
-    
+
     // Combine required and optional permissions based on user choice
-    const permissions = includeOptionalPermissions 
+    const permissions = includeOptionalPermissions
       ? [...REQUIRED_PERMISSIONS, ...OPTIONAL_PERMISSIONS]
       : REQUIRED_PERMISSIONS
-    
+
     const params = new URLSearchParams({
       client_id: this.appId,
       redirect_uri: customRedirectUri || this.redirectUri,
@@ -372,7 +372,7 @@ class FacebookAPIService {
       const decoded = Buffer.from(state, 'base64').toString()
       const [timestamp] = decoded.split('-')
       const stateAge = Date.now() - parseInt(timestamp)
-      
+
       // State should be used within 10 minutes
       return stateAge < 10 * 60 * 1000
     } catch {
@@ -391,14 +391,14 @@ class FacebookAPIService {
    * Exchange authorization code for access token with comprehensive validation
    */
   async exchangeCodeForToken(
-    code: string, 
+    code: string,
     state: string,
     redirectUri?: string
-  ): Promise<{ 
+  ): Promise<{
     accessToken?: string
     userInfo?: any
     grantedPermissions?: string[]
-    error?: string 
+    error?: string
   }> {
     try {
       // Validate state parameter for security
@@ -447,14 +447,14 @@ class FacebookAPIService {
 
       if (missingPermissions.length > 0) {
         console.warn('Missing required permissions:', missingPermissions)
-        return { 
-          error: `Missing required permissions: ${missingPermissions.join(', ')}. Please grant all required permissions and try again.` 
+        return {
+          error: `Missing required permissions: ${missingPermissions.join(', ')}. Please grant all required permissions and try again.`
         }
       }
 
       console.log('Facebook authentication successful with permissions:', grantedPermissions)
 
-      return { 
+      return {
         accessToken,
         userInfo: userInfoResult.user,
         grantedPermissions
@@ -522,7 +522,7 @@ class FacebookAPIService {
       if (!isServer) {
         const resp = await fetch('/api/facebook/conversations', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
           body: JSON.stringify({ accessToken: pageAccessToken, pageId })
         })
         const json = await resp.json()
@@ -538,7 +538,7 @@ class FacebookAPIService {
         `${this.baseUrl}/${pageId}/conversations?access_token=${pageAccessToken}&fields=id,participants,updated_time,message_count,unread_count,can_reply&limit=50`
       );
       const data = await response.json();
-      
+
       if (data.error) {
         return [];
       }
@@ -559,7 +559,7 @@ class FacebookAPIService {
       if (!isServer) {
         const resp = await fetch('/api/facebook/messages', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
           body: JSON.stringify({ accessToken: pageAccessToken, conversationId })
         })
         const json = await resp.json()
@@ -575,7 +575,7 @@ class FacebookAPIService {
         `${this.baseUrl}/${conversationId}/messages?access_token=${pageAccessToken}&fields=id,created_time,from,to,message,attachments&limit=50`
       );
       const data = await response.json();
-      
+
       if (data.error) {
         return [];
       }
@@ -597,7 +597,7 @@ class FacebookAPIService {
       if (!isServer && accessToken) {
         const resp = await fetch('/api/facebook/user', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
           body: JSON.stringify({ accessToken, userId: accessTokenOrUserId })
         })
         data = await resp.json()
@@ -725,7 +725,7 @@ class FacebookAPIService {
         .createHmac('sha256', this.appSecret)
         .update(payload)
         .digest('hex');
-      
+
       return `sha256=${expectedSignature}` === signature;
     } catch (error) {
       console.error('Error verifying webhook signature:', error);

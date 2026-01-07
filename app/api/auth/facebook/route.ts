@@ -60,7 +60,9 @@ export async function GET(request: NextRequest) {
     // Exchange code for access token with comprehensive validation
     const forwardedProto = request.headers.get('x-forwarded-proto') || 'http'
     const forwardedHost = request.headers.get('x-forwarded-host') || request.headers.get('host') || new URL(request.url).host
-    const origin = `${forwardedProto}://${forwardedHost}`
+    const isNgrok = forwardedHost.includes('ngrok') || forwardedHost.includes('skinessentialsbyher.com')
+    const proto = isNgrok ? 'https' : forwardedProto
+    const origin = `${proto}://${forwardedHost}`
     const callbackRedirectUri = `${origin}/api/auth/facebook`
     const tokenResult = await facebookAPI.exchangeCodeForToken(code, state, callbackRedirectUri)
     

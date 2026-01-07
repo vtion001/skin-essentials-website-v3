@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { SmsAnalytics } from "./sms-analytics"
 import { ScheduledSmsList } from "./scheduled-sms-list"
+import { SmsLogs } from "./sms-logs"
 
 interface SmsStatus {
     configured: boolean
@@ -266,6 +267,7 @@ export function SmsManager({ smsStatus, refreshSmsStatus, showNotification }: Sm
                 </CardContent>
             </Card>
             <SmsAnalytics />
+            <SmsLogs />
             <ScheduledSmsList />
         </div >
     )

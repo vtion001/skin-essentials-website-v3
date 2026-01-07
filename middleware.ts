@@ -25,7 +25,7 @@ export async function middleware(request: NextRequest) {
     const csrf = cookies.get('csrf_token')?.value
     if (!csrf) {
       const token = generateCsrfToken()
-      response.cookies.set('csrf_token', token, { httpOnly: false, sameSite: 'strict', path: '/' })
+      response.cookies.set('csrf_token', token, { httpOnly: false, sameSite: 'lax', path: '/' })
     }
 
     if (isApi && request.method !== 'GET') {
@@ -65,7 +65,7 @@ export async function middleware(request: NextRequest) {
           setAll(cookiesToSet) {
             cookiesToSet.forEach(({ name, value, options }) => {
               request.cookies.set(name, value)
-              response.cookies.set(name, value, options)
+              response.cookies.set(name, value, { ...options, sameSite: 'lax', secure: true })
             })
           },
         },

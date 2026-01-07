@@ -73,6 +73,11 @@ class SocialMediaService {
     }
 
     private saveToStorage() {
+        // Guard: Only use localStorage in browser environment
+        if (typeof window === 'undefined') {
+            console.log('[SocialMediaService] Skipping localStorage - running on server')
+            return
+        }
         try {
             localStorage.setItem('social_messages_data', JSON.stringify(this.messages))
             localStorage.setItem('social_conversations_data', JSON.stringify(this.conversations))
@@ -88,7 +93,7 @@ class SocialMediaService {
             }))
             fetch('/api/social/state', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
                 body: JSON.stringify({
                     messages: this.messages,
                     conversations: this.conversations,

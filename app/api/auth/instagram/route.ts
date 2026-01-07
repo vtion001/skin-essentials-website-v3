@@ -31,7 +31,13 @@ export async function GET(request: NextRequest) {
     }
 
     // Exchange code for access token
-    const redirectUri = `${request.nextUrl.origin}/api/auth/instagram`
+    const forwardedProto = request.headers.get('x-forwarded-proto') || 'http'
+    const forwardedHost = request.headers.get('x-forwarded-host') || request.headers.get('host') || new URL(request.url).host
+    const isNgrok = forwardedHost.includes('ngrok') || forwardedHost.includes('skinessentialsbyher.com')
+    const proto = isNgrok ? 'https' : forwardedProto
+    const origin = `${proto}://${forwardedHost}`
+    
+    const redirectUri = `${origin}/api/auth/instagram`
     const shortLivedToken = await instagramAPI.exchangeCodeForToken(code, redirectUri)
 
     // Get long-lived token
@@ -92,7 +98,7 @@ export async function GET(request: NextRequest) {
 
     // Redirect back to admin with success
     return NextResponse.redirect(
-      new URL('/admin?instagram_connected=true', request.url)
+      new URL('/admin?instagram_connected=true', origin)
     )
 
   } catch (error) {

@@ -6,12 +6,12 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { 
-  MessageCircle, 
-  Send, 
-  Facebook, 
-  Instagram, 
-  RefreshCw, 
+import {
+  MessageCircle,
+  Send,
+  Facebook,
+  Instagram,
+  RefreshCw,
   Settings,
   Calendar,
   Plus,
@@ -24,13 +24,15 @@ import {
 import { SocialMessage, SocialConversation, SocialPlatformConnection } from "@/lib/admin-services"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog"
 import { FacebookConnection } from "@/components/admin/facebook-connection"
+import { useSupabaseRealtime } from "@/hooks/useSupabaseRealtime"
+import type { DBMessage, DBConversation } from '@/lib/services/admin/supabase-social.service'
 
 interface SocialConversationUIProps {
   socialMediaService: any
 }
 
 export function SocialConversationUI({ socialMediaService }: SocialConversationUIProps) {
-  const DEFAULT_POLL_MS = 5000
+  const DEFAULT_POLL_MS = 15000 // 15 seconds default polling
   const [conversations, setConversations] = useState<SocialConversation[]>([])
   const [selectedConversation, setSelectedConversation] = useState<SocialConversation | null>(null)
   const [messages, setMessages] = useState<SocialMessage[]>([])
@@ -46,7 +48,34 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
   const autoTimer = useRef<NodeJS.Timeout | null>(null)
   const convoTimer = useRef<NodeJS.Timeout | null>(null)
   const refreshing = useRef(false)
+  const syncMutex = useRef(false) // Global mutex to prevent concurrent syncs
   const fileInputRef = useRef<HTMLInputElement | null>(null)
+  const lastSyncRef = useRef<string | null>(null)
+
+  // Get connected page IDs for real-time subscriptions
+  const connectedPageIds = platformConnections
+    .filter(c => c.isConnected && c.platform === 'facebook')
+    .map(c => c.pageId)
+
+  // Real-time subscription for instant message updates
+  const { isConnected: realtimeConnected, lastMessage } = useSupabaseRealtime({
+    pageIds: connectedPageIds,
+    enabled: connectedPageIds.length > 0,
+    onNewMessage: (msg: DBMessage) => {
+      console.log('[SM_UI] Real-time message received:', msg.id)
+      // Refresh conversations list to show new message
+      loadConversationsFromSupabase()
+      // If this is the selected conversation, refresh messages
+      if (selectedConversation && msg.conversation_id === selectedConversation.id) {
+        loadMessagesFromSupabase(selectedConversation.id)
+      }
+    },
+    onConversationUpdate: (conv: DBConversation) => {
+      console.log('[SM_UI] Real-time conversation update:', conv.id)
+      loadConversationsFromSupabase()
+    }
+  })
+
   const formatTimestamp = (iso: string) => {
     const d = new Date(iso)
     const now = Date.now()
@@ -71,7 +100,7 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
   useEffect(() => {
     loadConversations()
     loadPlatformConnections()
-    setTimeout(() => { handleRefresh().catch(() => {}) }, 0)
+    setTimeout(() => { handleRefresh().catch(() => { }) }, 0)
     const onStorage = (e: StorageEvent) => {
       if (
         e.key === 'social_connections_data' ||
@@ -89,9 +118,9 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
     const interval = setInterval(() => {
       loadPlatformConnections()
     }, 10000)
-    const onVisible = () => { if (document.visibilityState === 'visible') handleRefresh().catch(() => {}) }
-    const onFocus = () => handleRefresh().catch(() => {})
-    const onOnline = () => handleRefresh().catch(() => {})
+    const onVisible = () => { if (document.visibilityState === 'visible') handleRefresh().catch(() => { }) }
+    const onFocus = () => handleRefresh().catch(() => { })
+    const onOnline = () => handleRefresh().catch(() => { })
     document.addEventListener('visibilitychange', onVisible)
     window.addEventListener('focus', onFocus)
     window.addEventListener('online', onOnline)
@@ -110,12 +139,13 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
       clearInterval(autoTimer.current)
       autoTimer.current = null
     }
-    const pollMs = activeTab === 'facebook' ? 2000 : getPollMs()
+    const pollMs = activeTab === 'facebook' ? 10000 : getPollMs() // 10s for Facebook, configurable otherwise
     autoTimer.current = setInterval(async () => {
-      if (refreshing.current) return
+      if (refreshing.current || syncMutex.current) return
       if (document.visibilityState !== 'visible') return
       try {
         refreshing.current = true
+        syncMutex.current = true
         if (activeTab === 'facebook' || activeTab === 'all') {
           await socialMediaService.syncMessagesFromPlatform('facebook')
         }
@@ -126,6 +156,7 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
         if (selectedConversation) loadMessages(selectedConversation.id)
       } finally {
         refreshing.current = false
+        syncMutex.current = false
       }
     }, pollMs)
     return () => { if (autoTimer.current) { clearInterval(autoTimer.current); autoTimer.current = null } }
@@ -135,10 +166,9 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
     if (selectedConversation) {
       loadMessages(selectedConversation.id)
       if (convoTimer.current) clearInterval(convoTimer.current)
-      const intervalMs = selectedConversation.platform === 'facebook' ? 1000 : 3000
+      const intervalMs = selectedConversation.platform === 'facebook' ? 5000 : 8000 // 5s/8s for message updates only
       convoTimer.current = setInterval(async () => {
-        const platform = selectedConversation.platform
-        await socialMediaService.syncMessagesFromPlatform(platform)
+        // Only reload messages, don't trigger another full sync (autoTimer handles that)
         loadMessages(selectedConversation.id)
       }, intervalMs)
     } else {
@@ -148,24 +178,123 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
   }, [selectedConversation])
 
   useEffect(() => {
-    handleRefresh().catch(() => {})
+    handleRefresh().catch(() => { })
   }, [activeTab])
 
   useEffect(() => {
     scrollToBottom()
   }, [messages])
 
-  const loadConversations = () => {
+  // Load conversations from Supabase (fast local read)
+  const loadConversationsFromSupabase = async () => {
+    try {
+      const res = await fetch('/api/social/conversations', {
+        headers: { 'ngrok-skip-browser-warning': 'true' }
+      })
+      if (!res.ok) throw new Error('Failed to fetch conversations')
+      const data = await res.json()
+
+      // Convert DB format to UI format
+      const uiConversations: SocialConversation[] = (data.conversations || []).map((c: DBConversation) => ({
+        id: c.id,
+        platform: c.platform as 'facebook' | 'instagram',
+        pageId: c.page_id,
+        participantId: c.participant_id || '',
+        participantName: c.participant_name || 'Unknown',
+        participantProfilePicture: c.participant_profile_picture || undefined,
+        lastMessage: c.last_message || '',
+        lastMessageTimestamp: c.last_message_timestamp || new Date().toISOString(),
+        unreadCount: c.unread_count || 0,
+        isArchived: c.is_archived || false
+      }))
+
+      setConversations(uiConversations)
+      console.log('[SM_UI] Supabase conversations loaded:', uiConversations.length)
+      if (initialLoading) setTimeout(() => setInitialLoading(false), 300)
+    } catch (error) {
+      console.error('[SM_UI] Error loading conversations from Supabase:', error)
+      // Fallback to old method
+      loadConversationsLocal()
+    }
+  }
+
+  // Fallback: Load from localStorage (old method)
+  const loadConversationsLocal = () => {
     const allConversations = socialMediaService.getAllConversations()
     setConversations(allConversations)
-    console.log('[SM_UI] conversations loaded', allConversations.length)
+    console.log('[SM_UI] localStorage conversations loaded', allConversations.length)
     if (initialLoading) setTimeout(() => setInitialLoading(false), 300)
   }
 
-  const loadMessages = (conversationId: string) => {
+  // Load messages from Supabase (fast local read)
+  const loadMessagesFromSupabase = async (conversationId: string) => {
+    try {
+      const res = await fetch(`/api/social/messages?conversationId=${encodeURIComponent(conversationId)}`, {
+        headers: { 'ngrok-skip-browser-warning': 'true' }
+      })
+      if (!res.ok) throw new Error('Failed to fetch messages')
+      const data = await res.json()
+
+      // Convert DB format to UI format
+      const uiMessages: SocialMessage[] = (data.messages || []).map((m: DBMessage) => ({
+        id: m.id,
+        conversationId: m.conversation_id,
+        platform: m.platform as 'facebook' | 'instagram',
+        pageId: m.page_id,
+        senderId: m.sender_id || '',
+        senderName: m.sender_name || 'Unknown',
+        message: m.message || '',
+        messageType: m.message_type as 'text' | 'image' | 'video' | 'audio',
+        attachments: m.attachments,
+        isFromPage: m.is_from_page,
+        timestamp: m.timestamp,
+        isRead: m.is_read
+      }))
+
+      setMessages(uiMessages)
+      console.log('[SM_UI] Supabase messages loaded:', conversationId, uiMessages.length)
+    } catch (error) {
+      console.error('[SM_UI] Error loading messages from Supabase:', error)
+      // Fallback to old method
+      loadMessagesLocal(conversationId)
+    }
+  }
+
+  // Fallback: Load from localStorage (old method)
+  const loadMessagesLocal = (conversationId: string) => {
     const conversationMessages = socialMediaService.getMessagesByConversation(conversationId)
     setMessages(conversationMessages)
-    console.log('[SM_UI] messages loaded', conversationId, conversationMessages.length)
+    console.log('[SM_UI] localStorage messages loaded', conversationId, conversationMessages.length)
+  }
+
+  // Trigger incremental sync to Supabase
+  const triggerIncrementalSync = async () => {
+    if (syncMutex.current) return
+    syncMutex.current = true
+
+    try {
+      for (const conn of platformConnections.filter(c => c.isConnected && c.platform === 'facebook')) {
+        const res = await fetch('/api/social/sync', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': 'true'
+          },
+          body: JSON.stringify({
+            pageId: conn.pageId,
+            accessToken: conn.accessToken,
+            pageName: conn.pageName,
+            fullSync: false // Incremental by default
+          })
+        })
+        const data = await res.json()
+        console.log('[SM_UI] Sync result:', data)
+      }
+    } catch (error) {
+      console.error('[SM_UI] Sync error:', error)
+    } finally {
+      syncMutex.current = false
+    }
   }
 
   const loadPlatformConnections = () => {
@@ -173,6 +302,9 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
     setPlatformConnections(connections)
     console.log('[SM_UI] platform connections', connections.length)
   }
+
+  const loadConversations = () => loadConversationsFromSupabase()
+  const loadMessages = (conversationId: string) => loadMessagesFromSupabase(conversationId)
 
   const connectFacebook = async () => {
     try {
@@ -183,7 +315,7 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
       })
       const data = await res.json()
       if (data.loginUrl) window.location.href = data.loginUrl
-    } catch {}
+    } catch { }
   }
 
   const scrollToBottom = () => {
@@ -200,7 +332,7 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
         newMessage,
         selectedConversation.platform
       )
-      
+
       if (success) {
         setNewMessage("")
         loadMessages(selectedConversation.id)
@@ -237,7 +369,7 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
           loadConversations()
         }
       }
-    } catch {}
+    } catch { }
     finally {
       setIsLoading(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
@@ -271,7 +403,7 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('book_appointment'))
       }
-    } catch {}
+    } catch { }
   }
 
   const handleConversationSelect = (conversation: SocialConversation) => {
@@ -283,39 +415,62 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
   const handleRefresh = async () => {
     setIsLoading(true)
     try {
+      // First, trigger incremental sync to Supabase (fetches only new messages)
+      await triggerIncrementalSync()
+
+      // Then load conversations from Supabase (fast local read)
+      await loadConversationsFromSupabase()
+
+      if (selectedConversation) {
+        await loadMessagesFromSupabase(selectedConversation.id)
+      }
+    } catch (error) {
+      console.error("Error refreshing messages:", error)
+      // Fallback to old method if Supabase fails
       if (activeTab === "facebook" || activeTab === "all") {
         await socialMediaService.syncMessagesFromPlatform("facebook")
       }
       if (activeTab === "instagram" || activeTab === "all") {
         await socialMediaService.syncMessagesFromPlatform("instagram")
       }
-      loadConversations()
+      loadConversationsLocal()
       if (selectedConversation) {
-        loadMessages(selectedConversation.id)
+        loadMessagesLocal(selectedConversation.id)
       }
-    } catch (error) {
-      console.error("Error refreshing messages:", error)
     } finally {
       setIsLoading(false)
     }
   }
 
-  const filteredConversations = conversations.filter(conv => {
-    const matchesTab = activeTab === "all" || conv.platform === activeTab
-    const matchesSearch = searchQuery === "" || 
-      conv.participantName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      conv.lastMessage.toLowerCase().includes(searchQuery.toLowerCase())
-    const isActivePage = conv.pageId
-      ? platformConnections.some((c) => c.platform === conv.platform && c.pageId === conv.pageId && c.isConnected)
-      : true
-    return matchesTab && matchesSearch && isActivePage
-  })
+  // Filter and deduplicate conversations (same conversation ID can appear from multiple pages)
+  const filteredConversations = React.useMemo(() => {
+    const filtered = conversations.filter(conv => {
+      const matchesTab = activeTab === "all" || conv.platform === activeTab
+      const matchesSearch = searchQuery === "" ||
+        conv.participantName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        conv.lastMessage.toLowerCase().includes(searchQuery.toLowerCase())
+      const isActivePage = conv.pageId
+        ? platformConnections.some((c) => c.platform === conv.platform && c.pageId === conv.pageId && c.isConnected)
+        : true
+      return matchesTab && matchesSearch && isActivePage
+    })
+
+    // Deduplicate by conversation ID - keep the one with the most recent message
+    const seen = new Map<string, typeof filtered[0]>()
+    for (const conv of filtered) {
+      const existing = seen.get(conv.id)
+      if (!existing || new Date(conv.lastMessageTimestamp) > new Date(existing.lastMessageTimestamp)) {
+        seen.set(conv.id, conv)
+      }
+    }
+    return Array.from(seen.values())
+  }, [conversations, activeTab, searchQuery, platformConnections])
 
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp)
     const now = new Date()
     const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60)
-    
+
     if (diffInHours < 1) {
       return "Just now"
     } else if (diffInHours < 24) {
@@ -362,7 +517,7 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('record_payment'))
       }
-    } catch {}
+    } catch { }
   }
 
   return (
@@ -413,7 +568,7 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
               </Dialog>
             </div>
           </div>
-          
+
           <div className="relative mb-3 sm:mb-4">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
@@ -424,7 +579,7 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
               aria-label="Search conversations"
             />
           </div>
-          
+
           <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="all">All</TabsTrigger>
@@ -447,14 +602,13 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
                 ))}
               </div>
             ) : (
-              filteredConversations.map((conversation) => (
+              filteredConversations.map((conversation, idx) => (
                 <div
-                  key={conversation.id}
-                  className={`p-3 rounded-lg cursor-pointer transition-colors mb-2 ${
-                  selectedConversation?.id === conversation.id
+                  key={`${conversation.id}-${conversation.platform}-${conversation.pageId || idx}`}
+                  className={`p-3 rounded-lg cursor-pointer transition-colors mb-2 ${selectedConversation?.id === conversation.id
                     ? "bg-blue-50 border border-blue-200"
                     : "bg-white hover:bg-gray-100"
-                  }`}
+                    }`}
                   onClick={() => handleConversationSelect(conversation)}
                   role="listitem"
                   aria-label={`${conversation.participantName} ${conversation.unreadCount ? 'unread ' + conversation.unreadCount : ''}`}
@@ -463,8 +617,8 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
                     <div className="relative">
                       <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden ring-2 ring-blue-100">
                         {!brokenAvatars[conversation.participantId] && avatarUrlFor(conversation.participantId, conversation.participantProfilePicture) ? (
-                          <img 
-                            src={avatarUrlFor(conversation.participantId, conversation.participantProfilePicture)} 
+                          <img
+                            src={avatarUrlFor(conversation.participantId, conversation.participantProfilePicture)}
                             alt={`${conversation.participantName} avatar`}
                             className="h-full w-full object-cover"
                             loading="lazy"
@@ -481,7 +635,7 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
                         {getPlatformIcon(conversation.platform)}
                       </div>
                     </div>
-                    
+
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
                         <h4 className="font-semibold text-sm truncate">
@@ -519,8 +673,8 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
                   <div className="relative">
                     <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden ring-2 ring-blue-100">
                       {!brokenAvatars[selectedConversation.participantId] && avatarUrlFor(selectedConversation.participantId, selectedConversation.participantProfilePicture) ? (
-                        <img 
-                          src={avatarUrlFor(selectedConversation.participantId, selectedConversation.participantProfilePicture)} 
+                        <img
+                          src={avatarUrlFor(selectedConversation.participantId, selectedConversation.participantProfilePicture)}
                           alt={`${selectedConversation.participantName} avatar`}
                           className="h-full w-full object-cover"
                           loading="lazy"
@@ -553,17 +707,17 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
                     <Button
                       variant="outline"
                       size="sm"
-                          onClick={() => {
-                            try {
-                              socialMediaService.createPotentialClientDraft(selectedConversation.id)
-                              if (typeof window !== 'undefined') {
-                                window.dispatchEvent(new CustomEvent('capture_client'))
-                              }
-                            } catch {}
-                          }}
-                      >
-                        Capture Client
-                      </Button>
+                      onClick={() => {
+                        try {
+                          socialMediaService.createPotentialClientDraft(selectedConversation.id)
+                          if (typeof window !== 'undefined') {
+                            window.dispatchEvent(new CustomEvent('capture_client'))
+                          }
+                        } catch { }
+                      }}
+                    >
+                      Capture Client
+                    </Button>
                   )}
                 </div>
               </div>
@@ -579,11 +733,10 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
                     role="listitem"
                   >
                     <div
-                      className={`max-w-[60%] sm:max-w-[55%] lg:max-w-[45%] xl:max-w-[40%] break-words rounded-lg p-3 ${
-                        message.isFromPage
-                          ? "bg-blue-500 text-white motion-safe:transition-all motion-safe:hover:brightness-105"
-                          : "bg-gray-100 text-gray-900 motion-safe:transition-all motion-safe:hover:shadow-sm"
-                      }`}
+                      className={`max-w-[60%] sm:max-w-[55%] lg:max-w-[45%] xl:max-w-[40%] break-words rounded-lg p-3 ${message.isFromPage
+                        ? "bg-blue-500 text-white motion-safe:transition-all motion-safe:hover:brightness-105"
+                        : "bg-gray-100 text-gray-900 motion-safe:transition-all motion-safe:hover:shadow-sm"
+                        }`}
                     >
                       <p className="text-sm leading-snug">{message.message || (message.messageType === 'image' ? 'Media message' : '')}</p>
                       {idx === 0 || new Date(message.timestamp).toDateString() !== new Date(messages[idx - 1].timestamp).toDateString() ? (
@@ -591,12 +744,10 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
                           {new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).format(new Date(message.timestamp))}
                         </div>
                       ) : null}
-                      <div className={`flex items-center gap-1 mt-1 ${
-                        message.isFromPage ? "justify-end" : "justify-start"
-                      }`}>
-                        <span className={`text-xs ${
-                          message.isFromPage ? "text-blue-100" : "text-gray-500"
+                      <div className={`flex items-center gap-1 mt-1 ${message.isFromPage ? "justify-end" : "justify-start"
                         }`}>
+                        <span className={`text-xs ${message.isFromPage ? "text-blue-100" : "text-gray-500"
+                          }`}>
                           {formatTimestamp(message.timestamp)}
                         </span>
                         {message.isFromPage && (
@@ -615,36 +766,36 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
             {/* Message Input */}
             <div className="p-3 sm:p-4 border-t bg-white/80">
               <div className="flex gap-2">
-            <Input
-              placeholder="Type a message..."
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-              disabled={isLoading}
-              aria-label="Message input"
-              className="h-10 sm:h-9"
-            />
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={onFileChange}
-              style={{ display: 'none' }}
-            />
-            <Button 
-              onClick={handleUploadClick} 
-              disabled={!selectedConversation || isLoading}
-              className="motion-safe:transition-all motion-safe:hover:scale-[1.02] min-h-10 sm:min-h-9"
-            >
-              <ImageIcon className="h-4 w-4" />
-            </Button>
-            <Button 
-              onClick={handleSendMessage} 
-              disabled={!newMessage.trim() || isLoading}
-              className="motion-safe:transition-all motion-safe:hover:scale-[1.02] min-h-10 sm:min-h-9"
-            >
-              <Send className="h-4 w-4" />
-            </Button>
+                <Input
+                  placeholder="Type a message..."
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+                  disabled={isLoading}
+                  aria-label="Message input"
+                  className="h-10 sm:h-9"
+                />
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={onFileChange}
+                  style={{ display: 'none' }}
+                />
+                <Button
+                  onClick={handleUploadClick}
+                  disabled={!selectedConversation || isLoading}
+                  className="motion-safe:transition-all motion-safe:hover:scale-[1.02] min-h-10 sm:min-h-9"
+                >
+                  <ImageIcon className="h-4 w-4" />
+                </Button>
+                <Button
+                  onClick={handleSendMessage}
+                  disabled={!newMessage.trim() || isLoading}
+                  className="motion-safe:transition-all motion-safe:hover:scale-[1.02] min-h-10 sm:min-h-9"
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
               </div>
             </div>
           </>
@@ -678,7 +829,7 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
             {messages
               .flatMap(m => m.attachments)
               .filter(Boolean)
-              .slice(0,8)
+              .slice(0, 8)
               .map((url, i) => (
                 <div key={`${url}-${i}`} className="aspect-square rounded-md overflow-hidden relative group">
                   <img src={url as string} alt="media" className="w-full h-full object-cover" loading="lazy" />
@@ -696,7 +847,7 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
         <div className="space-y-2">
           <div className="font-medium text-sm">Shared files</div>
           <div className="space-y-1">
-            {messages.filter(m => m.attachments.length > 0).slice(0,4).map((m) => (
+            {messages.filter(m => m.attachments.length > 0).slice(0, 4).map((m) => (
               <div key={m.id} className="flex items-center justify-between text-sm">
                 <div className="truncate max-w-[240px]">{m.attachments[0]}</div>
                 <span className="text-gray-500 text-xs">{formatTime(m.timestamp)}</span>

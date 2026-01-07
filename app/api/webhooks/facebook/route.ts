@@ -1,206 +1,168 @@
+/**
+ * Facebook Webhook Handler
+ * Receives real-time updates from Facebook when new messages arrive
+ * 
+ * Setup: 
+ * 1. Go to Facebook Developer Console > Your App > Webhooks
+ * 2. Add callback URL: https://your-domain.com/api/webhooks/facebook
+ * 3. Add verify token from FACEBOOK_WEBHOOK_VERIFY_TOKEN env var
+ * 4. Subscribe to: messages, messaging_postbacks
+ */
+
 import { NextRequest, NextResponse } from 'next/server'
-import { FacebookWebhookEntry, FacebookMessagingEvent, FacebookChange } from '@/lib/types/api.types'
-import { SocialMediaConnection } from '@/lib/types/connection.types'
-import { facebookAPI } from '@/lib/facebook-api'
-import { socialMediaService } from '@/lib/admin-services'
-import { logError } from '@/lib/error-logger'
+import { supabaseSocialService } from '@/lib/services/admin/supabase-social.service'
 
-export async function GET(request: NextRequest) {
+// GET: Webhook verification (Facebook sends this to verify your endpoint)
+export async function GET(req: NextRequest) {
+  const searchParams = req.nextUrl.searchParams
+
+  const mode = searchParams.get('hub.mode')
+  const token = searchParams.get('hub.verify_token')
+  const challenge = searchParams.get('hub.challenge')
+
+  const verifyToken = process.env.FACEBOOK_WEBHOOK_VERIFY_TOKEN
+
+  console.log('[Facebook Webhook] Verification request:', { mode, token, challenge })
+
+  if (mode === 'subscribe' && token === verifyToken) {
+    console.log('[Facebook Webhook] Verification successful')
+    return new NextResponse(challenge, { status: 200 })
+  }
+
+  console.error('[Facebook Webhook] Verification failed')
+  return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+}
+
+// POST: Receive incoming messages and events
+export async function POST(req: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams
-    const mode = searchParams.get('hub.mode')
-    const token = searchParams.get('hub.verify_token')
-    const challenge = searchParams.get('hub.challenge')
+    const body = await req.json()
 
+    console.log('[Facebook Webhook] Received event:', JSON.stringify(body, null, 2))
 
-    const expectedToken = (process.env.FACEBOOK_WEBHOOK_VERIFY_TOKEN || 'SEBH_DEV_VERIFY')
-    // Verify webhook subscription
-    if (mode === 'subscribe' && (token || '').trim() === expectedToken.trim()) {
-      return new NextResponse(challenge, { status: 200 })
+    // Validate this is a page event
+    if (body.object !== 'page') {
+      return NextResponse.json({ error: 'Not a page event' }, { status: 400 })
     }
 
-    return new NextResponse('Forbidden', { status: 403 })
+    // Process each entry
+    for (const entry of body.entry || []) {
+      const pageId = entry.id
+      const time = entry.time
+
+      // Process messaging events
+      for (const event of entry.messaging || []) {
+        await processMessagingEvent(pageId, event)
+      }
+
+      // Process changes (for other webhook subscriptions)
+      for (const change of entry.changes || []) {
+        await processChange(pageId, change)
+      }
+    }
+
+    // Always return 200 quickly to Facebook (they have strict timeout)
+    return NextResponse.json({ received: true }, { status: 200 })
+
   } catch (error) {
-    await logError('facebook_webhook_get', error as Error)
-    return new NextResponse('Internal Server Error', { status: 500 })
+    console.error('[Facebook Webhook] Error processing:', error)
+    // Still return 200 to prevent Facebook from retrying
+    return NextResponse.json({ received: true, error: 'Processing error' }, { status: 200 })
   }
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json()
-    const signature = request.headers.get('x-hub-signature-256')
-    console.log('Facebook webhook POST received', {
-      object: body?.object,
-      entryCount: Array.isArray(body?.entry) ? body.entry.length : 0,
-      hasSignature: !!signature
+async function processMessagingEvent(pageId: string, event: any) {
+  const senderId = event.sender?.id
+  const recipientId = event.recipient?.id
+  const timestamp = event.timestamp
+
+  // Determine if this is an incoming or outgoing message
+  const isFromPage = senderId === pageId
+  const participantId = isFromPage ? recipientId : senderId
+
+  console.log('[Facebook Webhook] Processing message event:', {
+    pageId,
+    senderId,
+    recipientId,
+    isFromPage,
+    hasMessage: !!event.message
+  })
+
+  // Handle incoming message
+  if (event.message) {
+    const message = event.message
+    const messageId = message.mid
+    const text = message.text || ''
+    const attachments = message.attachments
+
+    // Generate a conversation ID (Facebook uses thread IDs, but for DMs we use participant combo)
+    const conversationId = `t_${pageId}_${participantId}`
+
+    // Upsert the conversation first
+    await supabaseSocialService.upsertConversation({
+      id: conversationId,
+      platform: 'facebook',
+      page_id: pageId,
+      participant_id: participantId,
+      participant_name: null, // We'll fetch this separately
+      last_message: text || (attachments ? '[Media]' : ''),
+      last_message_timestamp: new Date(timestamp).toISOString(),
+      unread_count: isFromPage ? 0 : 1,
+      is_archived: false
     })
 
-    if (!signature) {
-      return new NextResponse('No signature', { status: 400 })
-    }
+    // Insert the message
+    await supabaseSocialService.insertMessage({
+      id: messageId,
+      conversation_id: conversationId,
+      platform: 'facebook',
+      page_id: pageId,
+      sender_id: senderId,
+      sender_name: null,
+      message: text,
+      message_type: attachments ? 'media' : 'text',
+      attachments: attachments || null,
+      is_from_page: isFromPage,
+      is_read: isFromPage, // Outgoing messages are always "read"
+      timestamp: new Date(timestamp).toISOString()
+    })
 
-    // Verify webhook signature
-    const isValid = facebookAPI.verifyWebhookSignature(
-      JSON.stringify(body),
-      signature
-    )
-    console.log('Facebook webhook signature valid:', isValid)
+    console.log('[Facebook Webhook] Message saved:', messageId)
+  }
 
-    if (!isValid) {
-      return new NextResponse('Invalid signature', { status: 401 })
-    }
+  // Handle message read receipts
+  if (event.read) {
+    console.log('[Facebook Webhook] Read receipt:', event.read)
+    // Could update is_read for messages up to this watermark
+  }
 
-    const __dbg = Array.from({ length: 20 }, (_, i) => i + 1)
-    for (const n of __dbg) {
-      console.log('FB_POST_DEBUG', n)
-    }
+  // Handle message delivery receipts
+  if (event.delivery) {
+    console.log('[Facebook Webhook] Delivery receipt:', event.delivery)
+  }
 
-    // Process webhook data
-    if (body.object === 'page') {
-      for (const entry of body.entry) {
-        await processPageEntry(entry)
-      }
-    }
-
-    console.log('Facebook webhook processed successfully')
-    return new NextResponse('OK', { status: 200 })
-  } catch (error) {
-    await logError('facebook_webhook_post', error as Error)
-    return new NextResponse('Internal Server Error', { status: 500 })
+  // Handle postbacks (button clicks)
+  if (event.postback) {
+    console.log('[Facebook Webhook] Postback:', event.postback)
   }
 }
 
-async function processPageEntry(entry: FacebookWebhookEntry) {
-  try {
-    const pageId = entry.id
-    if (typeof entry.time === 'number') {
-      const ageMs = Date.now() - entry.time
-      if (ageMs > 5 * 60 * 1000) return
-    }
+async function processChange(pageId: string, change: any) {
+  console.log('[Facebook Webhook] Processing change:', {
+    pageId,
+    field: change.field,
+    value: change.value
+  })
 
-    // Get the platform connection for this page
-    const connections = socialMediaService.getPlatformConnections()
-    const connection = connections.find(
-      conn => conn.platform === 'facebook' && conn.pageId === pageId
-    )
-
-    if (!connection) {
-      return
-    }
-
-    // Process messaging events
-    if (entry.messaging) {
-      for (const messagingEvent of entry.messaging) {
-        await processMessagingEvent(messagingEvent, connection, pageId)
-      }
-    }
-
-    // Process changes (for other types of updates)
-    if (entry.changes) {
-      for (const change of entry.changes) {
-        await processChange(change, connection, pageId)
-      }
-    }
-
-  } catch (error) {
-    await logError('facebook_process_page_entry', error as Error, { entry })
-  }
-}
-
-async function processMessagingEvent(event: FacebookMessagingEvent, connection: SocialMediaConnection, pageId: string) {
-  try {
-    const { sender, recipient, timestamp, message, delivery, read } = event
-
-    // Handle new messages
-    if (message) {
-      const senderId = sender.id
-      const recipientId = recipient.id
-
-      // Check if this is a message TO the page (from a user)
-      if (recipientId === pageId) {
-        // Get sender info
-        const senderInfo = await facebookAPI.getUserInfo(senderId, connection.accessToken)
-
-        // Find or create conversation
-        let conversation = socialMediaService.getConversationById(`fb_${senderId}`)
-
-        if (!conversation) {
-          // Create new conversation
-          conversation = {
-            id: `fb_${senderId}`,
-            platform: 'facebook',
-            participantId: senderId,
-            participantName: senderInfo.user?.name || 'Unknown User',
-            participantProfilePicture: senderInfo.user?.profile_pic || '',
-            lastMessage: message.text || 'Media message',
-            lastMessageTimestamp: new Date(timestamp).toISOString(),
-            unreadCount: 1,
-            isActive: true,
-            messages: []
-          }
-
-          // Add conversation to service
-          socialMediaService.addConversation(conversation)
-        }
-
-        // Determine message type based on content
-        let messageType: 'text' | 'image' | 'video' | 'audio' | 'file' = 'text'
-        if (message.attachments && message.attachments.length > 0) {
-          const attachment = message.attachments[0]
-          if (attachment.type === 'image') messageType = 'image'
-          else if (attachment.type === 'video') messageType = 'video'
-          else if (attachment.type === 'audio') messageType = 'audio'
-          else messageType = 'file'
-        }
-
-        // Create message object
-        const newMessage = {
-          id: `fb_${event.mid || Date.now()}`,
-          platform: 'facebook' as const,
-          senderId: senderId,
-          senderName: senderInfo.user?.name || 'Unknown User',
-          senderProfilePicture: senderInfo.user?.profile_pic || '',
-          message: message.text || '',
-          timestamp: new Date(timestamp).toISOString(),
-          isRead: false,
-          isReplied: false,
-          replyMessage: '',
-          replyTimestamp: '',
-          attachments: message.attachments?.map((att: { payload?: { url?: string } }) => att.payload?.url || '') || [],
-          clientId: senderId,
-          conversationId: `fb_${senderId}`,
-          messageType: messageType,
-          isFromPage: false
-        }
-
-        // Add message to conversation using the new public method
-        socialMediaService.addMessageToConversation(`fb_${senderId}`, newMessage)
-
-      }
-    }
-
-    // Handle delivery confirmations
-    if (delivery) {
-    }
-
-    // Handle read receipts
-    if (read) {
-    }
-
-  } catch (error) {
-    await logError('facebook_process_messaging_event', error as Error, { event })
-  }
-}
-
-async function processChange(change: FacebookChange, connection: SocialMediaConnection, pageId: string) {
-  try {
-    // Handle different types of changes
-
-    // You can add specific handling for different change types here
-    // For example: feed updates, page info changes, etc.
-
-  } catch (error) {
-    await logError('facebook_process_change', error as Error, { change })
+  // Handle different change types
+  switch (change.field) {
+    case 'feed':
+      // Page feed updates (posts, comments)
+      break
+    case 'conversations':
+      // Conversation updates
+      break
+    default:
+      console.log('[Facebook Webhook] Unhandled change field:', change.field)
   }
 }

@@ -132,6 +132,7 @@ import { useAdminEventSync } from "@/lib/hooks/use-admin-event-sync"
 import { useAdminFilters } from "@/lib/hooks/use-admin-filters"
 import { supabaseBrowserClient } from "@/lib/supabase/client"
 import { AppointmentModal } from "@/components/admin/modals/appointment-modal"
+import { ProfileSettingsModal } from "@/components/admin/modals/profile-settings-modal"
 import { useAdminAppointments } from "@/lib/hooks/features/use-admin-appointments"
 import { AuditLogsTab } from "@/components/admin/tabs/audit-logs-tab"
 import { EncryptionErrorBanner } from "@/components/admin/encryption-error-banner"
@@ -241,6 +242,7 @@ export default function AdminDashboard() {
   const [isStaffModalOpen, setIsStaffModalOpen] = useState(false)
   const [isInfluencerModalOpen, setIsInfluencerModalOpen] = useState(false)
   const [isReferralModalOpen, setIsReferralModalOpen] = useState(false)
+  const [isProfileSettingsOpen, setIsProfileSettingsOpen] = useState(false)
 
   // Selected items
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null)
@@ -1424,7 +1426,7 @@ export default function AdminDashboard() {
                   <DropdownMenuSeparator className="bg-stone-100" />
                   <DropdownMenuItem
                     className="focus:bg-stone-50 focus:text-stone-900 cursor-pointer rounded-lg"
-                    onClick={() => showNotification("success", "Profile settings coming soon")}
+                    onClick={() => setIsProfileSettingsOpen(true)}
                   >
                     <Settings className="w-4 h-4 mr-2" />
                     Profile Settings
@@ -1502,6 +1504,10 @@ export default function AdminDashboard() {
                 errorCount={decryptionErrorCount}
                 onRetry={loadAllData}
                 onRunDiagnostics={handleRunDiagnostics}
+              />
+              <ProfileSettingsModal 
+                open={isProfileSettingsOpen} 
+                onOpenChange={setIsProfileSettingsOpen} 
               />
               <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col gap-8 w-full">
                 <motion.div

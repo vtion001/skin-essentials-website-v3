@@ -18,6 +18,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: 'Invalid MFA code' }, { status: 401 })
   }
   const res = NextResponse.json({ success: true })
-  res.cookies.set('mfa_ok', '1', { httpOnly: true, sameSite: 'strict', path: '/' })
+  res.cookies.set('mfa_ok', '1', { httpOnly: true, sameSite: 'lax', path: '/' })
   return res
 }
