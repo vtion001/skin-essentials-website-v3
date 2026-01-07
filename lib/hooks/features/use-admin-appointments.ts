@@ -79,12 +79,18 @@ export function useAdminAppointments(showNotification: (type: "success" | "error
                 loadAppointments()
                 showNotification('success', `Status updated to ${newStatus}`)
 
-                // Trigger SMS if confirmed
-                if (newStatus === 'confirmed') {
+                // Trigger SMS if confirmed or scheduled
+                if (newStatus === 'confirmed' || newStatus === 'scheduled') {
                     const appointment = appointments.find(a => a.id === id)
                     if (appointment && appointment.clientPhone) {
                         const dateStr = new Date(appointment.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-                        const message = `Dear ${appointment.clientName}, your appointment for ${appointment.service} at Skin Essentials on ${dateStr} at ${appointment.time} has been CONFIRMED. Please arrive 10 mins early. Thank you!`
+                        let message = ''
+                        
+                        if (newStatus === 'confirmed') {
+                            message = `Dear ${appointment.clientName}, your appointment for ${appointment.service} at Skin Essentials on ${dateStr} at ${appointment.time} has been CONFIRMED. Please arrive 10 mins early. Thank you!`
+                        } else if (newStatus === 'scheduled') {
+                            message = `Dear ${appointment.clientName}, your booking for ${appointment.service} on ${dateStr} at ${appointment.time} is RECEIVED. We will review it and notify you once confirmed. Thank you!`
+                        }
                         
                         // Non-blocking SMS call
                         fetch('/api/admin/sms/send', {
@@ -95,7 +101,7 @@ export function useAdminAppointments(showNotification: (type: "success" | "error
                                 message: message
                             })
                         }).then(r => r.json()).then(data => {
-                            if (data.ok) showNotification('success', 'Confirmation SMS sent')
+                            if (data.ok) showNotification('success', `${newStatus === 'confirmed' ? 'Confirmation' : 'Received'} SMS sent`)
                             else console.error('Failed to send SMS:', data.error)
                         }).catch(e => console.error('SMS Network Error:', e))
                     }

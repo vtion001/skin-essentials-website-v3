@@ -1,23 +1,50 @@
+-- ============================================
 -- Audit Logs for HIPAA Compliance
-create table if not exists audit_logs (
-  id uuid default gen_random_uuid() primary key,
-  user_id text,
-  action text,
-  resource text,
-  resource_id text,
-  details jsonb,
-  status text,
-  ip_address text,
-  timestamp timestamptz default now()
+-- Version 2.0 - With proper timestamp column
+-- ============================================
+
+-- Drop and recreate to ensure clean schema
+DROP TABLE IF EXISTS audit_logs CASCADE;
+
+CREATE TABLE audit_logs (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id TEXT,
+    action TEXT NOT NULL,
+    resource TEXT NOT NULL,
+    resource_id TEXT,
+    details JSONB,
+    status TEXT DEFAULT 'SUCCESS',
+    ip_address TEXT,
+    timestamp TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-create index if not exists idx_audit_logs_timestamp on audit_logs(timestamp);
-create index if not exists idx_audit_logs_user on audit_logs(user_id);
-create index if not exists idx_audit_logs_action on audit_logs(action);
+-- Indexes for performance
+CREATE INDEX idx_audit_logs_timestamp ON audit_logs(timestamp DESC);
+CREATE INDEX idx_audit_logs_user ON audit_logs(user_id);
+CREATE INDEX idx_audit_logs_action ON audit_logs(action);
+CREATE INDEX idx_audit_logs_resource ON audit_logs(resource);
+CREATE INDEX idx_audit_logs_status ON audit_logs(status);
 
-alter table audit_logs enable row level security;
+-- Composite index for common queries
+CREATE INDEX idx_audit_logs_user_time ON audit_logs(user_id, timestamp DESC);
 
--- Only admins can read audit logs (enforced by API, but RLS adds depth)
--- Service role bypasses RLS, so this policy is for direct client access if ever needed (though it shouldn't be)
-drop policy if exists "Allow service role full access" on audit_logs;
-create policy "Allow service role full access" on audit_logs using (true) with check (true);
+-- Enable RLS
+ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policy: Service role can access all (API uses service role)
+DROP POLICY IF EXISTS "Allow service role full access" ON audit_logs;
+CREATE POLICY "Allow service role full access" ON audit_logs 
+    USING (true) 
+    WITH CHECK (true);
+
+-- Notify PostgREST to reload schema
+NOTIFY pgrst, 'reload schema';
+
+-- ============================================
+-- Verification Query (optional - run to verify)
+-- ============================================
+-- SELECT column_name, data_type, is_nullable 
+-- FROM information_schema.columns 
+-- WHERE table_name = 'audit_logs' 
+-- ORDER BY ordinal_position;

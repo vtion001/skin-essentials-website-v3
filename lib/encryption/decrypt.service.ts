@@ -91,9 +91,17 @@ export class DecryptionService {
                     return result
                 }
             } catch (error: any) {
-                // If it's the last key and it still fails, log it and return unavailable
+                // If it's the last key and it still fails, log it quietly
                 if (i === keys.length - 1) {
-                    console.error('All decryption keys failed:', error.message)
+                    // Only log detailed error in development, suppress in production
+                    if (process.env.NODE_ENV === 'development') {
+                        // Log at most once per unique error message to reduce noise
+                        const errorKey = `decrypt_${error.message?.slice(0, 50)}`
+                        if (!(global as any)[errorKey]) {
+                            console.warn('[Decryption] Failed for some records:', error.message)
+                                ; (global as any)[errorKey] = true
+                        }
+                    }
                     return "[Unavailable]"
                 }
                 // Otherwise, continue to the next key (fallback)
