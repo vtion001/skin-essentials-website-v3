@@ -28,3 +28,24 @@ export async function triggerTestError() {
   await logError('TEST_CONTEXT', new Error('This is a test error triggered from the Developer Hub'), { user: 'admin' });
   return { success: true };
 }
+
+export async function simulateClientError() {
+  // Simulate a report coming from the frontend
+  const { logError } = await import('@/lib/error-logger');
+  await logError('client_test_simulation', new Error('Simulated Client Crash'), { 
+    path: '/admin/developer',
+    browser: 'Simulator',
+    timestamp: new Date().toISOString()
+  });
+  return { success: true };
+}
+
+export async function testSlack() {
+  const { sendSlackAlert } = await import('@/lib/slack-service');
+  await sendSlackAlert('✅ Slack Integration Verified!', {
+    status: 'Success',
+    message: 'The Developer Hub is now connected to this Slack channel.',
+    timestamp: new Date().toISOString()
+  });
+  return { success: true };
+}

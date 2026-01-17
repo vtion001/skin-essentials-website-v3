@@ -91,7 +91,11 @@ export function useInfluencerHandlers({
             setSelectedInfluencer(null)
             setInfluencerForm({ commissionRate: 0.10, status: "active" })
         } catch (error) {
-            console.error("Influencer submit error:", error)
+            const { reportError } = await import('@/lib/client-logger')
+            reportError(error, { 
+                context: 'admin_influencer_submit_error', 
+                meta: { selectedInfluencer, influencerForm } 
+            })
             showNotification("error", "Failed to save influencer")
         } finally {
             setIsLoading(false)
@@ -147,7 +151,11 @@ export function useInfluencerHandlers({
             setIsReferralModalOpen(false)
             setReferralForm({})
         } catch (error) {
-            console.error("Referral submit error:", error)
+            const { reportError } = await import('@/lib/client-logger')
+            reportError(error, { 
+                context: 'admin_referral_submit_error', 
+                meta: { selectedInfluencer, referralForm } 
+            })
             showNotification("error", "Failed to save referral")
         } finally {
             setIsLoading(false)
@@ -204,7 +212,11 @@ export function useInfluencerHandlers({
             setInfluencers(influencerService.getAllInfluencers())
             showNotification("success", "Influencer deleted successfully!")
         } catch (error) {
-            console.error("Influencer delete error:", error)
+            const { reportError } = await import('@/lib/client-logger')
+            reportError(error, { 
+                context: 'admin_influencer_delete_error', 
+                meta: { influencerId } 
+            })
             showNotification("error", "Failed to delete influencer")
         } finally {
             setIsLoading(false)

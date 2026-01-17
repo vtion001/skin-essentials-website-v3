@@ -4,6 +4,7 @@
 import { useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { AlertCircle } from 'lucide-react'
+import { reportError } from '@/lib/client-logger'
 
 export default function Error({
     error,
@@ -13,8 +14,11 @@ export default function Error({
     reset: () => void
 }) {
     useEffect(() => {
-        // Log the error to an error reporting service
-        console.error('Admin dashboard error:', error)
+        // Automatically report the error to the Developer Hub
+        reportError(error, { 
+            context: 'admin_dashboard_crash',
+            meta: { digest: error.digest }
+        })
     }, [error])
 
     return (

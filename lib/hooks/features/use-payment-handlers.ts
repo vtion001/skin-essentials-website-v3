@@ -82,7 +82,11 @@ export function usePaymentHandlers({
             setPaymentForm({})
             setSelectedPayment(null)
         } catch (error) {
-            console.error("Payment submit error:", error)
+            const { reportError } = await import('@/lib/client-logger')
+            reportError(error, { 
+                context: 'admin_payment_submit_error', 
+                meta: { selectedPayment, paymentForm } 
+            })
             showNotification("error", "Failed to save payment")
         } finally {
             setIsLoading(false)
@@ -125,7 +129,11 @@ export function usePaymentHandlers({
 
             showNotification("success", "Payment deleted successfully!")
         } catch (error) {
-            console.error("Payment delete error:", error)
+            const { reportError } = await import('@/lib/client-logger')
+            reportError(error, { 
+                context: 'admin_payment_delete_error', 
+                meta: { paymentId } 
+            })
             showNotification("error", "Failed to delete payment")
         } finally {
             setIsLoading(false)

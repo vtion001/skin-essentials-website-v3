@@ -151,7 +151,11 @@ export function useMedicalRecordHandlers({
             resetFormTexts()
             setSelectedMedicalRecord(null)
         } catch (error) {
-            console.error("Medical record submit error:", error)
+            const { reportError } = await import('@/lib/client-logger')
+            reportError(error, { 
+                context: 'admin_medical_record_submit_error', 
+                meta: { selectedMedicalRecord, medicalRecordForm } 
+            })
             showNotification("error", "Failed to save medical record")
         } finally {
             setIsLoading(false)
@@ -208,7 +212,11 @@ export function useMedicalRecordHandlers({
             await refreshMedicalRecords()
             showNotification("success", "Medical record deleted successfully!")
         } catch (error) {
-            console.error("Medical record delete error:", error)
+            const { reportError } = await import('@/lib/client-logger')
+            reportError(error, { 
+                context: 'admin_medical_record_delete_error', 
+                meta: { recordId } 
+            })
             showNotification("error", "Failed to delete medical record")
         } finally {
             setIsLoading(false)

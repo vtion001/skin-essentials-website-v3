@@ -149,7 +149,11 @@ export function useStaffHandlers({
             setStaffForm({})
             setSelectedStaff(null)
         } catch (error) {
-            console.error("Staff submit error:", error)
+            const { reportError } = await import('@/lib/client-logger')
+            reportError(error, { 
+                context: 'admin_staff_submit_error', 
+                meta: { selectedStaff, staffForm } 
+            })
             showNotification("error", "Failed to save staff")
         } finally {
             setIsLoading(false)
@@ -199,7 +203,11 @@ export function useStaffHandlers({
             setStaff(staffService.getAllStaff())
             showNotification("success", "Staff deleted successfully!")
         } catch (error) {
-            console.error("Staff delete error:", error)
+            const { reportError } = await import('@/lib/client-logger')
+            reportError(error, { 
+                context: 'admin_staff_delete_error', 
+                meta: { staffId } 
+            })
             showNotification("error", "Failed to delete staff")
         } finally {
             setIsLoading(false)

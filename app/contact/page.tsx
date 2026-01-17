@@ -70,7 +70,7 @@ export default function ContactPage() {
       return
     }
     try {
-      const res = await fetch('/api/bookings', {
+      const response = await fetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -81,18 +81,39 @@ export default function ContactPage() {
           date: formData.date,
           time: formData.time,
           notes: formData.message,
-          duration: 60,
-          price: 0,
+          // Tag it as from contact page
           sourcePlatform: 'website'
         })
       })
-      if (res.ok) {
-        setIsSubmitted(true)
-        setFormData({ name: "", email: "", phone: "", service: "", message: "", date: "", time: "" })
-        setTimeout(() => setIsSubmitted(false), 5000)
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        const errorMsg = data.error || "Failed to send message"
+        const { toast } = await import('sonner')
+        toast.error(errorMsg)
+        const { reportError } = await import('@/lib/client-logger')
+        reportError(new Error(`Contact Form API Error: ${errorMsg}`), {
+          context: 'contact_form_submit',
+          meta: { status: response.status, data, formData }
+        })
+        return
       }
-    } catch { }
-    setIsSubmitting(false)
+
+      const { toast } = await import('sonner')
+      toast.success("Message sent! We'll contact you soon.")
+      setFormData({ name: "", email: "", phone: "", service: "", message: "", date: "", time: "" })
+    } catch (err) {
+      const { toast } = await import('sonner')
+      toast.error("Network error. Please try again.")
+      const { reportError } = await import('@/lib/client-logger')
+      reportError(err, {
+        context: 'contact_form_network_error',
+        meta: { formData }
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const contactInfo = [

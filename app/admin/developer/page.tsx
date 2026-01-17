@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { fetchSystemHealth, fetchSystemLogs, triggerTestError } from '@/app/actions/developer';
+import { fetchSystemHealth, fetchSystemLogs, triggerTestError, simulateClientError, testSlack } from '@/app/actions/developer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -54,6 +54,23 @@ export default function DeveloperHub() {
     setTimeout(loadData, 2000);
   };
 
+  const handleSimulateClient = async () => {
+    toast.promise(simulateClientError(), {
+      loading: 'Simulating client error...',
+      success: 'Client error reported! Check logs.',
+      error: 'Failed to simulate client error'
+    });
+    setTimeout(loadData, 2000);
+  };
+
+  const handleTestSlack = async () => {
+    toast.promise(testSlack(), {
+      loading: 'Sending Slack test...',
+      success: 'Check your Slack channel!',
+      error: 'Failed to send Slack alert'
+    });
+  };
+
   const StatusDot = ({ status }: { status: string }) => (
     <div className={`w-3 h-3 rounded-full ${status === 'healthy' || status === 'SUCCESS' ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
   );
@@ -72,6 +89,14 @@ export default function DeveloperHub() {
           <Button variant="outline" onClick={loadData} disabled={loading}>
             <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh
+          </Button>
+          <Button variant="outline" onClick={handleTestSlack}>
+            <Terminal className="w-4 h-4 mr-2" />
+            Test Slack
+          </Button>
+          <Button variant="secondary" onClick={handleSimulateClient}>
+            <Activity className="w-4 h-4 mr-2" />
+            Simulate Client
           </Button>
           <Button variant="destructive" onClick={handleTestError}>
             <Bug className="w-4 h-4 mr-2" />
@@ -171,11 +196,10 @@ export default function DeveloperHub() {
                   logs.map((log) => (
                     <div key={log.id} className="mb-4 border-b border-slate-800 pb-2 last:border-0 hover:bg-slate-900/50 p-2 rounded transition-colors group">
                       <div className="flex items-center gap-3 mb-1">
-                        <span className={`px-2 py-0.5 text-[10px] rounded font-bold ${
-                          log.level === 'ERROR' ? 'bg-red-900/50 text-red-400' : 
-                          log.level === 'WARN' ? 'bg-yellow-900/50 text-yellow-400' :
-                          'bg-blue-900/50 text-blue-400'
-                        }`}>
+                        <span className={`px-2 py-0.5 text-[10px] rounded font-bold ${log.level === 'ERROR' ? 'bg-red-900/50 text-red-400' :
+                            log.level === 'WARN' ? 'bg-yellow-900/50 text-yellow-400' :
+                              'bg-blue-900/50 text-blue-400'
+                          }`}>
                           {log.level}
                         </span>
                         <span className="text-slate-500 text-xs">{new Date(log.timestamp).toLocaleString()}</span>
@@ -201,15 +225,15 @@ export default function DeveloperHub() {
         </TabsContent>
 
         <TabsContent value="audit" className="space-y-4">
-           {/* Reusing logic for audit, just switching the data source in the effect via 'logType' */}
-           <div className="p-4 bg-yellow-50 text-yellow-800 rounded border border-yellow-200 flex items-center gap-2">
-             <AlertTriangle className="w-5 h-5" />
-             <span>Switch to "Audit Trail" tab above to view HIPAA compliance logs. (Note: Currently simpler view implemented sharing the log viewer logic)</span>
-           </div>
-           
-           <Button onClick={() => { setLogType('audit'); loadData(); }} variant="secondary">
-             Load Audit Data
-           </Button>
+          {/* Reusing logic for audit, just switching the data source in the effect via 'logType' */}
+          <div className="p-4 bg-yellow-50 text-yellow-800 rounded border border-yellow-200 flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5" />
+            <span>Switch to "Audit Trail" tab above to view HIPAA compliance logs. (Note: Currently simpler view implemented sharing the log viewer logic)</span>
+          </div>
+
+          <Button onClick={() => { setLogType('audit'); loadData(); }} variant="secondary">
+            Load Audit Data
+          </Button>
         </TabsContent>
       </Tabs>
     </div>

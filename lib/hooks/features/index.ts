@@ -25,5 +25,8 @@ export { useMedicalRecordHandlers } from "./use-medical-record-handlers"
 // Payment Management
 export { usePaymentHandlers } from "./use-payment-handlers"
 
+// Portfolio Management
+export { usePortfolioHandlers } from "./use-portfolio-handlers"
+
 // Staff Management
 export { useStaffHandlers } from "./use-staff-handlers"

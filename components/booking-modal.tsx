@@ -396,10 +396,22 @@ export function BookingModal({ isOpen, onClose, defaultServiceId }: BookingModal
                             if (res.ok) {
                               setStep(3)
                             } else {
-                              setBookingError(data.error || "Something went wrong. Please try again.")
+                              const errorMsg = data.error || "Something went wrong. Please try again."
+                              setBookingError(errorMsg)
+                              const { reportError } = await import('@/lib/client-logger')
+                              reportError(new Error(`Booking API Error: ${errorMsg}`), { 
+                                context: 'booking_form_submit', 
+                                meta: { status: res.status, data, formData } 
+                              })
                             }
                           } catch (err) {
-                            setBookingError("Failed to connect to the booking server.")
+                            const errorMsg = "Failed to connect to the booking server."
+                            setBookingError(errorMsg)
+                            const { reportError } = await import('@/lib/client-logger')
+                            reportError(err, { 
+                              context: 'booking_form_network_error', 
+                              meta: { formData } 
+                            })
                           } finally {
                             setIsSubmitting(false)
                           }

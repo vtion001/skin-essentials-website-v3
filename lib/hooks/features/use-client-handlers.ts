@@ -160,7 +160,11 @@ export function useClientHandlers({
             setClientForm({})
             setSelectedClient(null)
         } catch (error) {
-            console.error("Client submit error:", error)
+            const { reportError } = await import('@/lib/client-logger')
+            reportError(error, { 
+                context: 'admin_client_submit_error', 
+                meta: { selectedClient, clientForm } 
+            })
             showNotification("error", "Failed to save client")
         } finally {
             setIsLoading(false)
@@ -202,7 +206,11 @@ export function useClientHandlers({
             setClients(clientService.getAllClients())
             showNotification("success", "Client deleted successfully!")
         } catch (error) {
-            console.error("Client delete error:", error)
+            const { reportError } = await import('@/lib/client-logger')
+            reportError(error, { 
+                context: 'admin_client_delete_error', 
+                meta: { clientId } 
+            })
             showNotification("error", "Failed to delete client")
         } finally {
             setIsLoading(false)

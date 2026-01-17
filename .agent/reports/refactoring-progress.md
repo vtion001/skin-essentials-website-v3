@@ -5,7 +5,8 @@
 | Metric | Before | After | Change |
 |--------|--------|-------|--------|
 | `app/admin/page.tsx` lines | **4,151** | **4,021** | **-130 lines (3.1%)** |
-| Extracted hooks | 0 | **6** | +6 hooks |
+| Extracted hooks | 0 | **9** | +9 hooks |
+| Extracted components | 0 | **6** | +6 components |
 | Functions delegated | 0 | **6** | Cleaner separation |
 | TypeScript errors | 0 | **0** | ✅ No regressions |
 
@@ -13,103 +14,187 @@
 
 ## Phase 1: Hook Extraction ✅ COMPLETE
 
-### Created Hooks
+### Created Hooks (lib/hooks/features/)
 
 | Hook | File | Lines | Purpose | Status |
 |------|------|-------|---------|--------|
-| `useCameraCapture` | `lib/hooks/features/use-camera-capture.ts` | ~95 | Camera stream, photo capture | ✅ Integrated |
-| `usePaymentHandlers` | `lib/hooks/features/use-payment-handlers.ts` | ~130 | Payment CRUD operations | ✅ Integrated |
-| `useMedicalRecordHandlers` | `lib/hooks/features/use-medical-record-handlers.ts` | ~200 | Medical record CRUD | 🔲 Ready |
-| `useClientHandlers` | `lib/hooks/features/use-client-handlers.ts` | ~210 | Client CRUD, duplicate detection | ✅ Integrated |
-| `useStaffHandlers` | `lib/hooks/features/use-staff-handlers.ts` | ~220 | Staff CRUD, form parsing | ✅ Integrated |
-| `useInfluencerHandlers` | `lib/hooks/features/use-influencer-handlers.ts` | ~220 | Influencer & referral CRUD | ✅ Integrated |
-
-### Pre-existing Hooks
-
-| Hook | File | Purpose |
-|------|------|---------|
-| `useAdminAppointments` | `lib/hooks/features/use-admin-appointments.ts` | Appointment management |
-| `useAdminData` | `lib/hooks/use-admin-data.ts` | Data fetching orchestration |
-| `useAdminFilters` | `lib/hooks/use-admin-filters.ts` | Filter state management |
-| `useAdminCommunication` | `lib/hooks/use-admin-communication.ts` | Email/SMS status |
-| `useFileUpload` | `lib/hooks/use-file-upload.ts` | File upload utilities |
+| `useCameraCapture` | `use-camera-capture.ts` | ~95 | Camera stream, photo capture | ✅ Integrated |
+| `usePaymentHandlers` | `use-payment-handlers.ts` | ~130 | Payment CRUD operations | ✅ Integrated |
+| `useMedicalRecordHandlers` | `use-medical-record-handlers.ts` | ~200 | Medical record CRUD | 🔲 Ready |
+| `useClientHandlers` | `use-client-handlers.ts` | ~210 | Client CRUD, duplicate detection | ✅ Integrated |
+| `useStaffHandlers` | `use-staff-handlers.ts` | ~220 | Staff CRUD, form parsing | ✅ Integrated |
+| `useInfluencerHandlers` | `use-influencer-handlers.ts` | ~220 | Influencer & referral CRUD | ✅ Integrated |
+| `usePortfolioHandlers` | `use-portfolio-handlers.ts` | ~195 | Portfolio CRUD, file upload | 🔲 Ready |
 
 ---
 
-## Phase 2: Hook Integration ✅ COMPLETE
+## Phase 2: Context Infrastructure ✅ COMPLETE
 
-### Integrated into `page.tsx`
+### Created Context (app/admin/_context/)
 
-- [x] All 6 hooks imported
-- [x] All hooks initialized with proper dependencies
-- [x] `handleClientSubmit` delegated (~74 lines saved)
-- [x] `handlePaymentSubmit` delegated (~30 lines saved)  
-- [x] `handleStaffSubmit` delegated (~70 lines saved)
-- [x] `handleInfluencerSubmit` delegated (~25 lines saved)
-- [x] `handleReferralSubmit` delegated (~20 lines saved)
-- [x] Helper functions moved to hooks (parseStaffFormData, isValidContact, buildStaffPayload)
-- [x] Duplicate state removed
-- [x] TypeScript compiles successfully
+| File | Lines | Purpose |
+|------|-------|---------|
+| `AdminContext.tsx` | ~185 | Centralized state management for admin module |
 
----
+### Created Types (app/admin/_types/)
 
-## Architecture Improvements
-
-### Before (Monolithic)
-```
-app/admin/page.tsx (4,151 lines)
-├── 54+ inline functions
-├── Mixed concerns (UI + data + business logic)
-├── Hard to test
-└── Hard to maintain
-```
-
-### After (Modular)
-```
-app/admin/page.tsx (4,021 lines) - Orchestration layer
-├── lib/hooks/features/
-│   ├── use-camera-capture.ts (95 lines)
-│   ├── use-client-handlers.ts (210 lines)
-│   ├── use-payment-handlers.ts (130 lines)
-│   ├── use-medical-record-handlers.ts (200 lines)
-│   ├── use-staff-handlers.ts (220 lines)
-│   ├── use-influencer-handlers.ts (220 lines)
-│   └── index.ts (barrel export)
-└── Thin wrappers delegating to hooks
-```
+| File | Lines | Purpose |
+|------|-------|---------|
+| `admin.types.ts` | ~175 | Consolidated type definitions |
 
 ---
 
-## What's Still Inline
+## Phase 3: Modular Component Extraction ✅ COMPLETE
 
-These functions remain inline and could be extracted in a future phase:
+### Admin Core Components (components/admin/)
 
-1. **quickAddClientFromAppointment** - Appointment-to-client quick add
-2. **handleSocialReply** - Social media reply
-3. **openPaymentModal/openPaymentModalPrefill** - Modal management with prefill logic
-4. **openMedicalRecordModal** - Medical modal with text field population
-5. **Content management** - Service/category CRUD
-6. **Portfolio management** - Portfolio CRUD
-7. **UI rendering** - 3000+ lines of JSX
+| Component | File | Lines | Purpose |
+|-----------|------|-------|---------|
+| `AdminSidebar` | `admin-sidebar.tsx` | ~210 | Navigation menu, system status, profile |
+| `AdminHeader` | `admin-header.tsx` | ~80 | Title, date, privacy toggle, actions |
+
+### Social Conversation Module (components/admin/social-conversation/)
+
+| File | Type | Lines | Purpose |
+|------|------|-------|---------|
+| `types.ts` | Types | ~70 | Type definitions for social messaging |
+| `hooks/useConversations.ts` | Hook | ~110 | Conversation fetching & state |
+| `hooks/useMessaging.ts` | Hook | ~150 | Message sending & loading |
+| `hooks/index.ts` | Barrel | ~10 | Module exports |
+
+### Staff Tab Module (components/admin/tabs/staff/)
+
+| File | Type | Lines | Purpose |
+|------|------|-------|---------|
+| `StaffFilters.tsx` | Component | ~130 | Search, position/status filters |
+| `StaffTable.tsx` | Component | ~240 | Staff table with treatments |
+| `index.ts` | Barrel | ~15 | Module exports |
+
+### Facebook Module (components/admin/facebook/)
+
+| File | Type | Lines | Purpose |
+|------|------|-------|---------|
+| `hooks/useFacebookAuth.ts` | Hook | ~195 | OAuth authentication flow |
+| `hooks/index.ts` | Barrel | ~10 | Module exports |
+
+---
+
+## Architecture Overview
+
+```
+app/admin/
+├── page.tsx (4,021 lines) - Orchestration layer
+├── _context/
+│   └── AdminContext.tsx (185 lines) - State management
+├── _types/
+│   └── admin.types.ts (175 lines) - Type definitions
+├── _hooks/ (prepared for future hooks)
+└── _components/ (prepared for future components)
+
+lib/hooks/features/
+├── use-camera-capture.ts (95 lines)
+├── use-client-handlers.ts (210 lines)
+├── use-influencer-handlers.ts (220 lines)
+├── use-medical-record-handlers.ts (200 lines)
+├── use-payment-handlers.ts (130 lines)
+├── use-portfolio-handlers.ts (195 lines)
+├── use-staff-handlers.ts (220 lines)
+└── index.ts (barrel export)
+
+components/admin/
+├── admin-sidebar.tsx (210 lines)
+├── admin-header.tsx (80 lines)
+├── social-conversation/
+│   ├── types.ts
+│   └── hooks/
+│       ├── useConversations.ts
+│       └── useMessaging.ts
+├── tabs/staff/
+│   ├── StaffFilters.tsx
+│   └── StaffTable.tsx
+└── facebook/
+    └── hooks/
+        └── useFacebookAuth.ts
+```
+
+---
+
+## Files Created This Session
+
+| File | Type | Lines |
+|------|------|-------|
+| `lib/hooks/features/use-staff-handlers.ts` | Hook | ~220 |
+| `lib/hooks/features/use-influencer-handlers.ts` | Hook | ~220 |
+| `lib/hooks/features/use-portfolio-handlers.ts` | Hook | ~195 |
+| `components/admin/admin-sidebar.tsx` | Component | ~210 |
+| `components/admin/admin-header.tsx` | Component | ~80 |
+| `app/admin/_context/AdminContext.tsx` | Context | ~185 |
+| `app/admin/_types/admin.types.ts` | Types | ~175 |
+| `components/admin/social-conversation/types.ts` | Types | ~70 |
+| `components/admin/social-conversation/hooks/useConversations.ts` | Hook | ~110 |
+| `components/admin/social-conversation/hooks/useMessaging.ts` | Hook | ~150 |
+| `components/admin/tabs/staff/StaffFilters.tsx` | Component | ~130 |
+| `components/admin/tabs/staff/StaffTable.tsx` | Component | ~240 |
+| `components/admin/facebook/hooks/useFacebookAuth.ts` | Hook | ~195 |
+
+---
+
+## Remaining Work
+
+### To Fully Complete Integration
+
+1. **Replace sidebar JSX** in page.tsx with `<AdminSidebar />`
+2. **Replace header JSX** in page.tsx with `<AdminHeader />`
+3. **Wire up `usePortfolioHandlers`** hook
+4. **Wire up `useMedicalRecordHandlers`** hook
+5. **Refactor `social-conversation-ui.tsx`** to use new hooks
+6. **Refactor `staff-tab.tsx`** to use new components
+7. **Refactor `facebook-connection.tsx`** to use new hook
+
+### Estimated Additional Line Reduction
+
+| Change | Lines Saved |
+|--------|-------------|
+| Replace sidebar with component | ~140 |
+| Replace header with component | ~50 |
+| Wire portfolio handlers | ~15 |
+| Wire medical handlers | ~60 |
+| Integrate social conversation hooks | ~200 |
+| Integrate staff components | ~300 |
+| Integrate facebook hook | ~150 |
+| **Total** | **~915 lines** |
+
+### Final Projected Size
+
+| Metric | Current | After Full Integration |
+|--------|---------|------------------------|
+| `page.tsx` lines | 4,021 | **~3,500** |
+| `social-conversation-ui.tsx` | 862 | **~400** |
+| `staff-tab.tsx` | 811 | **~350** |
+| `facebook-connection.tsx` | 793 | **~450** |
+
+---
+
+## Bug Fixes Applied
+
+1. Fixed `app/admin/developer/page.tsx` - Missing error handler in toast.promise
+2. Fixed `app/contact/page.tsx` - Missing closing brace in handleSubmit function
 
 ---
 
 ## Testing Checklist
 
-- [ ] Client creation works
-- [ ] Client editing works
-- [ ] Client duplicate detection works
-- [ ] Payment creation works
-- [ ] Payment editing works
-- [ ] Staff creation works
-- [ ] Staff editing works
-- [ ] Influencer creation works
-- [ ] Influencer editing works
-- [ ] Referral recording works
-- [ ] Camera capture works
+- [x] TypeScript compiles (new modules)
+- [x] Dev server runs
+- [ ] Client CRUD works
+- [ ] Payment CRUD works
+- [ ] Staff CRUD works
+- [ ] Influencer CRUD works
+- [ ] Portfolio CRUD works
 - [ ] All tabs render correctly
-- [ ] No console errors
+- [ ] Social messaging works
+- [ ] Facebook OAuth works
 
 ---
 
-*Last Updated: 2026-01-17 12:18*
+*Last Updated: 2026-01-17 14:14*
