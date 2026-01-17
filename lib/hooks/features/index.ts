@@ -16,8 +16,14 @@ export { useCameraCapture } from "./use-camera-capture"
 // Client Management
 export { useClientHandlers } from "./use-client-handlers"
 
+// Influencer Management
+export { useInfluencerHandlers } from "./use-influencer-handlers"
+
 // Medical Records
 export { useMedicalRecordHandlers } from "./use-medical-record-handlers"
 
 // Payment Management
 export { usePaymentHandlers } from "./use-payment-handlers"
+
+// Staff Management
+export { useStaffHandlers } from "./use-staff-handlers"

@@ -17,7 +17,7 @@ export default function DeveloperHub() {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [logType, setLogType] = useState<'error' | 'audit'>('error');
-  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [lastUpdated, setLastUpdated] = useState<string>('');
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -28,7 +28,7 @@ export default function DeveloperHub() {
       ]);
       setHealth(healthData);
       setLogs(logsData.data || []);
-      setLastUpdated(new Date());
+      setLastUpdated(new Date().toLocaleTimeString());
     } catch (e) {
       toast.error('Failed to update system status');
     } finally {
@@ -37,6 +37,7 @@ export default function DeveloperHub() {
   }, [logType, search]);
 
   useEffect(() => {
+    setLastUpdated(new Date().toLocaleTimeString()); // Set initial client-side date
     loadData();
     // Auto-refresh every 30s
     const interval = setInterval(loadData, 30000);
@@ -152,7 +153,7 @@ export default function DeveloperHub() {
             />
           </div>
           <div className="text-xs text-slate-400">
-            Last updated: {lastUpdated.toLocaleTimeString()}
+            Last updated: {lastUpdated || '...'}
           </div>
         </div>
 
@@ -171,7 +172,9 @@ export default function DeveloperHub() {
                     <div key={log.id} className="mb-4 border-b border-slate-800 pb-2 last:border-0 hover:bg-slate-900/50 p-2 rounded transition-colors group">
                       <div className="flex items-center gap-3 mb-1">
                         <span className={`px-2 py-0.5 text-[10px] rounded font-bold ${
-                          log.level === 'ERROR' ? 'bg-red-900/50 text-red-400' : 'bg-blue-900/50 text-blue-400'
+                          log.level === 'ERROR' ? 'bg-red-900/50 text-red-400' : 
+                          log.level === 'WARN' ? 'bg-yellow-900/50 text-yellow-400' :
+                          'bg-blue-900/50 text-blue-400'
                         }`}>
                           {log.level}
                         </span>

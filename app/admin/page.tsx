@@ -138,6 +138,8 @@ import { useCameraCapture } from "@/lib/hooks/features/use-camera-capture"
 import { usePaymentHandlers } from "@/lib/hooks/features/use-payment-handlers"
 import { useMedicalRecordHandlers } from "@/lib/hooks/features/use-medical-record-handlers"
 import { useClientHandlers } from "@/lib/hooks/features/use-client-handlers"
+import { useStaffHandlers } from "@/lib/hooks/features/use-staff-handlers"
+import { useInfluencerHandlers } from "@/lib/hooks/features/use-influencer-handlers"
 import { AuditLogsTab } from "@/components/admin/tabs/audit-logs-tab"
 import { EncryptionErrorBanner } from "@/components/admin/encryption-error-banner"
 
@@ -323,6 +325,44 @@ export default function AdminDashboard() {
     setIsPaymentModalOpen,
     setPaymentForm,
     setSelectedPayment,
+    showNotification,
+    setIsLoading,
+  })
+
+  // Staff handlers hook (extracted)
+  const {
+    handleStaffSubmit: handleStaffSubmitExtracted,
+    openStaffModal: openStaffModalExtracted,
+    closeStaffModal: closeStaffModalExtracted,
+    deleteStaff: deleteStaffExtracted,
+    parseStaffFormData,
+    isValidContact,
+    buildStaffPayload,
+  } = useStaffHandlers({
+    setStaff,
+    setIsStaffModalOpen,
+    setStaffForm,
+    setSelectedStaff,
+    showNotification,
+    setIsLoading,
+  })
+
+  // Influencer handlers hook (extracted)
+  const {
+    handleInfluencerSubmit: handleInfluencerSubmitExtracted,
+    handleReferralSubmit: handleReferralSubmitExtracted,
+    openInfluencerModal: openInfluencerModalExtracted,
+    closeInfluencerModal: closeInfluencerModalExtracted,
+    openReferralModal: openReferralModalExtracted,
+    closeReferralModal: closeReferralModalExtracted,
+    deleteInfluencer: deleteInfluencerExtracted,
+  } = useInfluencerHandlers({
+    setInfluencers,
+    setIsInfluencerModalOpen,
+    setInfluencerForm,
+    setSelectedInfluencer,
+    setIsReferralModalOpen,
+    setReferralForm,
     showNotification,
     setIsLoading,
   })
@@ -889,79 +929,10 @@ export default function AdminDashboard() {
     }
   }
 
-  function parseStaffFormData(fd: FormData) {
-    const firstName = String(fd.get('staffFirstName') || '')
-    const lastName = String(fd.get('staffLastName') || '')
-    const email = String(fd.get('staffEmail') || '')
-    const phone = String(fd.get('staffPhone') || '')
-    const department = String(fd.get('staffDepartment') || '')
-    const licenseNumber = String(fd.get('licenseNumber') || '')
-    const hireDate = String(fd.get('hireDate') || '')
-    const specialtiesRaw = String(fd.get('specialties') || '')
-    const notes = String(fd.get('staffNotes') || '')
-    return {
-      firstName,
-      lastName,
-      email,
-      phone,
-      department,
-      licenseNumber,
-      hireDate,
-      specialties: specialtiesRaw.split('\n').filter(i => i.trim()),
-      notes,
-    }
-  }
-
-  function isValidContact(email: string, phone: string) {
-    const emailOk = !email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-    const phoneOk = !phone || /\+?\d[\d\s-]{6,}$/.test(phone)
-    return emailOk && phoneOk
-  }
-
-  function buildStaffPayload(selectedStaff: { id: string } | null, staffForm: Record<string, unknown>, overrides: Record<string, unknown>) {
-    return selectedStaff
-      ? { id: selectedStaff.id, ...staffForm, ...overrides }
-      : { ...staffForm, ...overrides }
-  }
-
+  // Staff handlers - now using extracted hook (helper functions provided by hook)
   const handleStaffSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-      ; (async () => {
-        try {
-          const formEl = e.currentTarget as HTMLFormElement
-          const fd = new FormData(formEl)
-          const parsed = parseStaffFormData(fd)
-          if (!isValidContact(parsed.email, parsed.phone)) {
-            showNotification("error", "Please enter valid email and phone")
-            setIsLoading(false)
-            return
-          }
-          const method = selectedStaff ? 'PATCH' : 'POST'
-          const payload = buildStaffPayload(selectedStaff, staffForm, parsed)
-          const res = await fetch('/api/admin/staff', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-          if (!res.ok) throw new Error('Failed')
-          try {
-            const json = await res.json()
-            if (method === 'POST' && json?.staff?.id) {
-              staffService.updateStaff(json.staff.id, { treatments: staffForm.treatments || [] })
-            }
-            if (method === 'PATCH' && selectedStaff?.id) {
-              staffService.updateStaff(selectedStaff.id, { treatments: staffForm.treatments || [] })
-            }
-          } catch { }
-          await staffService.fetchFromSupabase?.()
-          setStaff(staffService.getAllStaff())
-          showNotification("success", selectedStaff ? "Staff updated successfully!" : "Staff added successfully!")
-          setIsStaffModalOpen(false)
-          setStaffForm({})
-          setSelectedStaff(null)
-        } catch {
-          showNotification("error", "Failed to save staff")
-        } finally {
-          setIsLoading(false)
-        }
-      })()
+    // Delegate to extracted hook - passes required state
+    handleStaffSubmitExtracted(e, selectedStaff, staffForm)
   }
 
   // Social Media Management
@@ -984,59 +955,15 @@ export default function AdminDashboard() {
     }
   }
 
+  // Influencer handlers - now using extracted hook
   const handleInfluencerSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-      ; (async () => {
-        try {
-          if (!influencerForm.name || !influencerForm.platform) {
-            showNotification('error', 'Please fill required fields')
-            setIsLoading(false)
-            return
-          }
-          const method = selectedInfluencer ? 'PATCH' : 'POST'
-          const payload = selectedInfluencer ? { id: selectedInfluencer.id, ...influencerForm } : influencerForm
-          const res = await fetch('/api/admin/influencers', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-          if (!res.ok) throw new Error('Failed')
-          await influencerService.fetchFromSupabase?.()
-          setInfluencers(influencerService.getAllInfluencers())
-          showNotification('success', selectedInfluencer ? 'Influencer updated successfully!' : 'Influencer added successfully!')
-          setIsInfluencerModalOpen(false)
-          setSelectedInfluencer(null)
-          setInfluencerForm({ commissionRate: 0.10, status: 'active' })
-        } catch {
-          showNotification('error', 'Failed to save influencer')
-        } finally {
-          setIsLoading(false)
-        }
-      })()
+    // Delegate to extracted hook - passes required state
+    handleInfluencerSubmitExtracted(e, selectedInfluencer, influencerForm)
   }
 
   const handleReferralSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!selectedInfluencer) return
-    setIsLoading(true)
-      ; (async () => {
-        try {
-          if (!referralForm.clientName || !referralForm.amount || !referralForm.date) {
-            showNotification('error', 'Please fill referral details')
-            setIsLoading(false)
-            return
-          }
-          const payload = { influencer_id: selectedInfluencer.id, client_name: referralForm.clientName!, amount: Number(referralForm.amount), date: referralForm.date!, notes: referralForm.notes }
-          const res = await fetch('/api/admin/influencer-referrals', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-          if (!res.ok) throw new Error('Failed')
-          await influencerService.fetchFromSupabase?.()
-          setInfluencers(influencerService.getAllInfluencers())
-          showNotification('success', 'Referral recorded successfully!')
-          setIsReferralModalOpen(false)
-          setReferralForm({})
-        } catch {
-          showNotification('error', 'Failed to save referral')
-        } finally {
-          setIsLoading(false)
-        }
-      })()
+    // Delegate to extracted hook - passes required state
+    handleReferralSubmitExtracted(e, selectedInfluencer, referralForm)
   }
 
   const openPaymentModal = (payment?: Payment) => {

@@ -1,20 +1,11 @@
 'use server';
 
-const SYSTEM_MONITOR_KEY = process.env.SYSTEM_MONITOR_KEY;
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+import { getSystemHealth, getSystemLogs } from '@/lib/system-monitor';
 
 export async function fetchSystemHealth() {
   try {
-    const res = await fetch(`${BASE_URL}/api/system/health`, {
-      headers: {
-        'Authorization': `Bearer ${SYSTEM_MONITOR_KEY}`,
-        'Cache-Control': 'no-cache'
-      },
-      cache: 'no-store'
-    });
-    
-    if (!res.ok) throw new Error(`Status: ${res.status}`);
-    return await res.json();
+    const data = await getSystemHealth();
+    return data;
   } catch (error) {
     console.error('Fetch health failed:', error);
     return { status: 'error', error: String(error) };
@@ -23,15 +14,8 @@ export async function fetchSystemHealth() {
 
 export async function fetchSystemLogs(type: 'error' | 'audit' = 'error', search: string = '') {
   try {
-    const res = await fetch(`${BASE_URL}/api/system/logs?type=${type}&search=${encodeURIComponent(search)}`, {
-      headers: {
-        'Authorization': `Bearer ${SYSTEM_MONITOR_KEY}`,
-      },
-      cache: 'no-store'
-    });
-
-    if (!res.ok) throw new Error(`Status: ${res.status}`);
-    return await res.json();
+    const data = await getSystemLogs(50, 0, search, type);
+    return data;
   } catch (error) {
     console.error('Fetch logs failed:', error);
     return { data: [], error: String(error) };
