@@ -10,6 +10,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { ThemeWrapper } from "@/components/theme-wrapper"
 import SharedFooter from "@/components/shared-footer"
 import { MobileNav } from "@/components/mobile-nav"
+import { ActivityPulseTracker } from "@/components/activity-pulse-tracker"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -106,6 +107,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <ActivityPulseTracker />
           <StructuredData />
           <PerformanceMonitor />
           <SmoothScroll>

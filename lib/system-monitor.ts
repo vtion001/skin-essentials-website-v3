@@ -13,7 +13,7 @@ export async function getSystemHealth() {
       dbStatus = 'unhealthy';
     } else {
       const dbStart = Date.now();
-      const { count, error } = await supabase
+      const { error } = await supabase
         .from('audit_logs')
         .select('*', { count: 'exact', head: true });
         
@@ -54,21 +54,25 @@ export async function getSystemHealth() {
 
 export async function getSystemLogs(limit: number = 50, offset: number = 0, search: string = '', type: string = 'error') {
   const supabase = supabaseAdminClient();
-  
-  if (!supabase) {
-    return { data: [], pagination: { total: 0, limit, offset, hasMore: false } };
-  }
+  if (!supabase) throw new Error('Supabase client not available');
 
   try {
-    let data = [];
-    let count = 0;
+    let data: any[] = [];
+    let count: number = 0;
 
-    if (type === 'audit') {
+    if (type === 'audit' || type === 'activity') {
       let query = supabase
         .from('audit_logs')
         .select('*', { count: 'exact' })
         .order('timestamp', { ascending: false })
         .range(offset, offset + limit - 1);
+
+      // If activity, only show ACTIVITY status. If audit, show SUCCESS/FAILURE (security)
+      if (type === 'activity') {
+        query = query.eq('status', 'ACTIVITY');
+      } else {
+        query = query.neq('status', 'ACTIVITY');
+      }
 
       if (search) {
         query = query.or(`action.ilike.%${search}%,resource.ilike.%${search}%`);
@@ -97,14 +101,15 @@ export async function getSystemLogs(limit: number = 50, offset: number = 0, sear
 
     // Standardize the response format
     const standardizedLogs = data.map((log: any) => {
-      if (type === 'audit') {
+      if (type === 'audit' || type === 'activity') {
         return {
           id: log.id,
-          level: 'INFO', // Audit logs are generally info
+          level: type === 'activity' ? 'INFO' : (log.status === 'FAILURE' ? 'ERROR' : 'SUCCESS'),
           source: log.resource,
-          message: `${log.action} - ${log.details ? JSON.stringify(log.details).substring(0, 100) : ''}`,
+          message: `${log.action} ${log.resource_id ? `(${log.resource_id})` : ''}`,
           timestamp: log.timestamp,
           metadata: {
+            details: log.details,
             user_id: log.user_id,
             ip: log.ip_address,
             status: log.status
@@ -144,6 +149,7 @@ export async function getSystemLogs(limit: number = 50, offset: number = 0, sear
     };
 
   } catch (err: any) {
+    console.error('getSystemLogs error:', err);
     throw new Error(err.message);
   }
 }

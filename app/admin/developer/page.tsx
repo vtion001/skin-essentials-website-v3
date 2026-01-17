@@ -1,22 +1,23 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { fetchSystemHealth, fetchSystemLogs, triggerTestError, simulateClientError, testSlack } from '@/app/actions/developer';
+import { useEffect, useState, useCallback, useTransition } from 'react';
+import { fetchSystemHealth, fetchSystemLogs, triggerTestError, simulateClientError, testSlack, simulateActivity } from '@/app/actions/developer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Activity, Server, Database, AlertTriangle, RefreshCw, Terminal, Search, CheckCircle, XCircle, Bug } from 'lucide-react';
+import { Activity, Server, Database, AlertTriangle, RefreshCw, Terminal, Search, CheckCircle, XCircle, Bug, Zap, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function DeveloperHub() {
+  const [isPending, startTransition] = useTransition();
   const [health, setHealth] = useState<any>(null);
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
-  const [logType, setLogType] = useState<'error' | 'audit'>('error');
+  const [logType, setLogType] = useState<'error' | 'audit' | 'activity'>('error');
   const [lastUpdated, setLastUpdated] = useState<string>('');
 
   const loadData = useCallback(async () => {
@@ -26,9 +27,12 @@ export default function DeveloperHub() {
         fetchSystemHealth(),
         fetchSystemLogs(logType, search)
       ]);
-      setHealth(healthData);
-      setLogs(logsData.data || []);
-      setLastUpdated(new Date().toLocaleTimeString());
+      
+      startTransition(() => {
+        setHealth(healthData);
+        setLogs(logsData.data || []);
+        setLastUpdated(new Date().toLocaleTimeString());
+      });
     } catch (e) {
       toast.error('Failed to update system status');
     } finally {
@@ -71,6 +75,15 @@ export default function DeveloperHub() {
     });
   };
 
+  const handleSimulateActivity = async () => {
+    toast.promise(simulateActivity(), {
+      loading: 'Simulating user activity...',
+      success: 'Activity logged! Switch to "Live Activity" tab.',
+      error: 'Failed to simulate activity'
+    });
+    setTimeout(loadData, 1000);
+  };
+
   const StatusDot = ({ status }: { status: string }) => (
     <div className={`w-3 h-3 rounded-full ${status === 'healthy' || status === 'SUCCESS' ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
   );
@@ -93,6 +106,10 @@ export default function DeveloperHub() {
           <Button variant="outline" onClick={handleTestSlack}>
             <Terminal className="w-4 h-4 mr-2" />
             Test Slack
+          </Button>
+          <Button variant="secondary" onClick={handleSimulateActivity}>
+            <Zap className="w-4 h-4 mr-2" />
+            Simulate Activity
           </Button>
           <Button variant="secondary" onClick={handleSimulateClient}>
             <Activity className="w-4 h-4 mr-2" />
@@ -159,82 +176,291 @@ export default function DeveloperHub() {
         </Card>
       </div>
 
-      {/* Main Content Tabs */}
-      <Tabs defaultValue="logs" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 lg:w-[400px]">
-          <TabsTrigger value="logs">Live Logs</TabsTrigger>
-          <TabsTrigger value="audit">Audit Trail</TabsTrigger>
-        </TabsList>
+                  {/* Main Content Tabs */}
 
-        <div className="flex items-center gap-4 my-4">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
-            <Input
-              placeholder="Search logs..."
-              className="pl-9"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && loadData()}
-            />
-          </div>
-          <div className="text-xs text-slate-400">
-            Last updated: {lastUpdated || '...'}
-          </div>
-        </div>
+                  <Tabs value={logType} onValueChange={(v: any) => {
 
-        <TabsContent value="logs" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Application Logs</CardTitle>
-              <CardDescription>Real-time error tracking and runtime events.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-[500px] w-full rounded-md border bg-slate-950 p-4 font-mono text-sm text-slate-300">
-                {logs.length === 0 ? (
-                  <div className="text-slate-500 text-center py-20">No logs found matching your criteria.</div>
-                ) : (
-                  logs.map((log) => (
-                    <div key={log.id} className="mb-4 border-b border-slate-800 pb-2 last:border-0 hover:bg-slate-900/50 p-2 rounded transition-colors group">
-                      <div className="flex items-center gap-3 mb-1">
-                        <span className={`px-2 py-0.5 text-[10px] rounded font-bold ${log.level === 'ERROR' ? 'bg-red-900/50 text-red-400' :
-                            log.level === 'WARN' ? 'bg-yellow-900/50 text-yellow-400' :
-                              'bg-blue-900/50 text-blue-400'
-                          }`}>
-                          {log.level}
-                        </span>
-                        <span className="text-slate-500 text-xs">{new Date(log.timestamp).toLocaleString()}</span>
-                        <span className="text-slate-400 font-semibold">[{log.source}]</span>
-                      </div>
-                      <div className="pl-2 border-l-2 border-slate-800">
-                        <p className="text-slate-100 whitespace-pre-wrap break-all">{log.message}</p>
-                        {log.metadata?.stack && (
-                          <details className="mt-2">
-                            <summary className="text-xs text-slate-500 cursor-pointer hover:text-slate-300">Show Stack Trace</summary>
-                            <pre className="mt-2 text-[10px] text-red-300/70 overflow-x-auto p-2 bg-slate-900 rounded">
-                              {log.metadata.stack}
-                            </pre>
-                          </details>
-                        )}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </ScrollArea>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                    startTransition(() => {
 
-        <TabsContent value="audit" className="space-y-4">
-          {/* Reusing logic for audit, just switching the data source in the effect via 'logType' */}
-          <div className="p-4 bg-yellow-50 text-yellow-800 rounded border border-yellow-200 flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5" />
-            <span>Switch to "Audit Trail" tab above to view HIPAA compliance logs. (Note: Currently simpler view implemented sharing the log viewer logic)</span>
-          </div>
+                      setLogType(v);
 
-          <Button onClick={() => { setLogType('audit'); loadData(); }} variant="secondary">
-            Load Audit Data
-          </Button>
-        </TabsContent>
+                    });
+
+                  }} className="w-full">
+
+              <TabsList className="grid w-full grid-cols-3 lg:w-[600px]">
+
+                <TabsTrigger value="logs">Error Logs</TabsTrigger>
+
+                <TabsTrigger value="activity">Live Activity</TabsTrigger>
+
+                <TabsTrigger value="audit">Audit Trail</TabsTrigger>
+
+              </TabsList>
+
+      
+
+              <div className="flex items-center gap-4 my-4">
+
+                <div className="relative flex-1 max-w-sm">
+
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
+
+                  <Input
+
+                    placeholder="Search logs..."
+
+                    className="pl-9"
+
+                    value={search}
+
+                    onChange={(e) => setSearch(e.target.value)}
+
+                    onKeyDown={(e) => e.key === 'Enter' && loadData()}
+
+                  />
+
+                </div>
+
+                <div className="text-xs text-slate-400">
+
+                  Last updated: {lastUpdated || '...'}
+
+                </div>
+
+              </div>
+
+      
+
+              <TabsContent value="logs" className="space-y-4">
+
+                <Card>
+
+                  <CardHeader>
+
+                    <CardTitle>Application Logs</CardTitle>
+
+                    <CardDescription>Real-time error tracking and runtime events.</CardDescription>
+
+                  </CardHeader>
+
+                  <CardContent>
+
+                    <ScrollArea className="h-[500px] w-full rounded-md border bg-slate-950 p-4 font-mono text-sm text-slate-300">
+
+                      {logs.length === 0 ? (
+
+                        <div className="text-slate-500 text-center py-20">No logs found matching your criteria.</div>
+
+                      ) : (
+
+                        logs.map((log) => (
+
+                          <div key={log.id} className="mb-4 border-b border-slate-800 pb-2 last:border-0 hover:bg-slate-900/50 p-2 rounded transition-colors group">
+
+                            <div className="flex items-center gap-3 mb-1">
+
+                              <span className={`px-2 py-0.5 text-[10px] rounded font-bold ${
+
+                                log.level === 'ERROR' ? 'bg-red-900/50 text-red-400' : 
+
+                                log.level === 'WARN' ? 'bg-yellow-900/50 text-yellow-400' :
+
+                                'bg-blue-900/50 text-blue-400'
+
+                              }`}>
+
+                                {log.level}
+
+                              </span>
+
+                              <span className="text-slate-500 text-xs">{new Date(log.timestamp).toLocaleString()}</span>
+
+                              <span className="text-slate-400 font-semibold">[{log.source}]</span>
+
+                            </div>
+
+                            <div className="pl-2 border-l-2 border-slate-800">
+
+                              <p className="text-slate-100 whitespace-pre-wrap break-all">{log.message}</p>
+
+                              {log.metadata?.stack && (
+
+                                <details className="mt-2">
+
+                                  <summary className="text-xs text-slate-500 cursor-pointer hover:text-slate-300">Show Stack Trace</summary>
+
+                                  <pre className="mt-2 text-[10px] text-red-300/70 overflow-x-auto p-2 bg-slate-900 rounded">
+
+                                    {log.metadata.stack}
+
+                                  </pre>
+
+                                </details>
+
+                              )}
+
+                            </div>
+
+                          </div>
+
+                        ))
+
+                      )}
+
+                    </ScrollArea>
+
+                  </CardContent>
+
+                </Card>
+
+              </TabsContent>
+
+      
+
+              <TabsContent value="activity" className="space-y-4">
+
+                <Card>
+
+                  <CardHeader>
+
+                    <CardTitle>User Activity Pulse</CardTitle>
+
+                    <CardDescription>Real-time feed of non-sensitive user interactions and navigation.</CardDescription>
+
+                  </CardHeader>
+
+                  <CardContent>
+
+                    <ScrollArea className="h-[500px] w-full rounded-md border bg-slate-950 p-4 font-mono text-sm text-slate-300">
+
+                      {logs.length === 0 ? (
+
+                        <div className="text-slate-500 text-center py-20">No activity recorded yet. Try the simulate button above!</div>
+
+                      ) : (
+
+                        logs.map((log) => (
+
+                          <div key={log.id} className="mb-4 border-b border-slate-800 pb-2 last:border-0 hover:bg-slate-900/50 p-2 rounded transition-colors group">
+
+                            <div className="flex items-center gap-3 mb-1">
+
+                              <span className="px-2 py-0.5 text-[10px] rounded font-bold bg-green-900/50 text-green-400">
+
+                                {log.level}
+
+                              </span>
+
+                              <span className="text-slate-500 text-xs">{new Date(log.timestamp).toLocaleString()}</span>
+
+                              <span className="text-slate-400 font-semibold">[{log.source}]</span>
+
+                            </div>
+
+                            <div className="pl-2 border-l-2 border-slate-800">
+
+                              <p className="text-slate-100 uppercase tracking-tighter text-xs font-bold">{log.message}</p>
+
+                              {log.metadata?.details && (
+
+                                <pre className="mt-2 text-[10px] text-blue-300/70 overflow-x-auto p-2 bg-slate-900 rounded">
+
+                                  {JSON.stringify(log.metadata.details, null, 2)}
+
+                                </pre>
+
+                              )}
+
+                            </div>
+
+                          </div>
+
+                        ))
+
+                      )}
+
+                    </ScrollArea>
+
+                  </CardContent>
+
+                </Card>
+
+              </TabsContent>
+
+      
+
+              <TabsContent value="audit" className="space-y-4">
+
+                 <Card>
+
+                  <CardHeader>
+
+                    <CardTitle>Compliance Audit Trail</CardTitle>
+
+                    <CardDescription>Secure log of system access, record deletions, and PHI modifications.</CardDescription>
+
+                  </CardHeader>
+
+                  <CardContent>
+
+                    <ScrollArea className="h-[500px] w-full rounded-md border bg-slate-950 p-4 font-mono text-sm text-slate-300">
+
+                      {logs.length === 0 ? (
+
+                        <div className="text-slate-500 text-center py-20">No audit logs found.</div>
+
+                      ) : (
+
+                        logs.map((log) => (
+
+                          <div key={log.id} className="mb-4 border-b border-slate-800 pb-2 last:border-0 hover:bg-slate-900/50 p-2 rounded transition-colors group">
+
+                            <div className="flex items-center gap-3 mb-1">
+
+                              <span className={`px-2 py-0.5 text-[10px] rounded font-bold ${
+
+                                log.level === 'SUCCESS' ? 'bg-blue-900/50 text-blue-400' : 'bg-red-900/50 text-red-400'
+
+                              }`}>
+
+                                {log.level}
+
+                              </span>
+
+                              <span className="text-slate-500 text-xs">{new Date(log.timestamp).toLocaleString()}</span>
+
+                              <span className="text-slate-400 font-semibold">[{log.source}]</span>
+
+                            </div>
+
+                            <div className="pl-2 border-l-2 border-slate-800">
+
+                              <p className="text-slate-100">{log.message}</p>
+
+                              <div className="mt-2 flex gap-4 text-[10px] text-slate-500">
+
+                                <span>User: {log.metadata?.user_id || 'System'}</span>
+
+                                <span>IP: {log.metadata?.ip || 'N/A'}</span>
+
+                              </div>
+
+                            </div>
+
+                          </div>
+
+                        ))
+
+                      )}
+
+                    </ScrollArea>
+
+                  </CardContent>
+
+                </Card>
+
+              </TabsContent>
       </Tabs>
     </div>
   );

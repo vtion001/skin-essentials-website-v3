@@ -49,3 +49,18 @@ export async function testSlack() {
   });
   return { success: true };
 }
+
+export async function simulateActivity() {
+  const { logActivity } = await import('@/lib/audit-logger');
+  await logActivity('NAVIGATE', 'Developer Hub', { 
+    view: 'Activity Test', 
+    userAgent: 'Simulator' 
+  });
+  return { success: true };
+}
+
+export async function trackActivity(action: string, resource: string, details?: any) {
+  const { logActivity } = await import('@/lib/audit-logger');
+  await logActivity(action, resource, details);
+  return { success: true };
+}

@@ -142,6 +142,7 @@ import { useStaffHandlers } from "@/lib/hooks/features/use-staff-handlers"
 import { useInfluencerHandlers } from "@/lib/hooks/features/use-influencer-handlers"
 import { AuditLogsTab } from "@/components/admin/tabs/audit-logs-tab"
 import { EncryptionErrorBanner } from "@/components/admin/encryption-error-banner"
+import { trackActivity } from "@/app/actions/developer"
 
 const services = [
   "Thread Lifts - Nose Enhancement",
@@ -181,6 +182,11 @@ export default function AdminDashboard() {
 
   // State management
   const [activeTab, setActiveTab] = useState("dashboard")
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab)
+    trackActivity('ADMIN_TAB_SWITCH', tab).catch(() => {})
+  }
   const [isLoading, setIsLoading] = useState(false)
   const [notification, setNotification] = useState<{ type: "success" | "error" | "info"; message: string } | null>(null)
 

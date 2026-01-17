@@ -15,6 +15,8 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { BookingModal } from '@/components/booking-modal'
 
+import { trackActivity } from '@/app/actions/developer'
+
 interface SharedHeaderProps {
   showBackButton?: boolean
   backHref?: string
@@ -25,6 +27,15 @@ export const SharedHeader = ({ showBackButton, backHref }: SharedHeaderProps) =>
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isBookingOpen, setIsBookingOpen] = useState(false)
   const pathname = usePathname()
+
+  // Track Page Views
+  useEffect(() => {
+    if (pathname && !pathname.startsWith('/admin')) {
+      trackActivity('PAGE_VIEW', pathname, {
+        timestamp: new Date().toISOString()
+      }).catch(console.error)
+    }
+  }, [pathname])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -96,7 +107,10 @@ export const SharedHeader = ({ showBackButton, backHref }: SharedHeaderProps) =>
               <div className="flex items-center gap-4">
                 <div className="hidden md:block">
                   <Button
-                    onClick={() => setIsBookingOpen(true)}
+                    onClick={() => {
+                      setIsBookingOpen(true)
+                      trackActivity('MODAL_OPEN', 'Booking Modal', { source: 'Header Desktop' })
+                    }}
                     className="bg-brand-gradient hover:shadow-xl hover-lift text-white text-[10px] tracking-[0.1em] font-bold px-6 py-2 rounded-full"
                   >
                     BOOK NOW

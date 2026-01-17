@@ -43,3 +43,24 @@ export async function logAudit(entry: AuditLogEntry) {
         console.error('Unexpected audit log error:', err, payload)
     }
 }
+
+/**
+ * General Activity Logging
+ * Tracks non-sensitive user interactions for business intelligence and debugging.
+ */
+export async function logActivity(action: string, resource: string, details?: any) {
+    const admin = supabaseAdminClient()
+    if (!admin) return
+
+    try {
+        await admin.from('audit_logs').insert({
+            action: action,
+            resource: resource,
+            details: details,
+            status: 'ACTIVITY',
+            timestamp: new Date().toISOString()
+        })
+    } catch (err) {
+        console.error('Activity log error:', err)
+    }
+}

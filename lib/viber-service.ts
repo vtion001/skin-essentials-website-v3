@@ -90,19 +90,30 @@ export async function notifyNewBookingViber(appointment: any) {
     });
 }
 
+import { logError } from "./error-logger";
+
 /**
  * Logs the Viber transaction to the error_logs table
  */
 async function logViber(provider: string, to: string, message: string, meta: any) {
-    const logEntry = {
-        context: 'viber_log',
-        message: message.substring(0, 200),
-        meta: { provider, to, status: 'sent', timestamp: new Date().toISOString(), ...meta }
-    }
-    const admin = supabaseAdminClient()
-    if (admin) {
-        try {
-            await admin.from('error_logs').insert(logEntry);
-        } catch { }
+    const isError = message.toLowerCase().includes('error');
+    
+    if (isError) {
+        // Use centralized logger for errors to trigger Slack notifications
+        await logError('viber_log', new Error(message), { provider, to, ...meta });
+    } else {
+        // For standard success logs, we can still use the raw insert or logError with a lower severity if we had it
+        // To keep it simple and consistent with your current dashboard:
+        const logEntry = {
+            context: 'viber_log',
+            message: message.substring(0, 200),
+            meta: { provider, to, status: 'sent', timestamp: new Date().toISOString(), ...meta }
+        }
+        const admin = supabaseAdminClient()
+        if (admin) {
+            try {
+                await admin.from('error_logs').insert(logEntry);
+            } catch { }
+        }
     }
 }
