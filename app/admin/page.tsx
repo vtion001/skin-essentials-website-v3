@@ -134,6 +134,10 @@ import { supabaseBrowserClient } from "@/lib/supabase/client"
 import { AppointmentModal } from "@/components/admin/modals/appointment-modal"
 import { ProfileSettingsModal } from "@/components/admin/modals/profile-settings-modal"
 import { useAdminAppointments } from "@/lib/hooks/features/use-admin-appointments"
+import { useCameraCapture } from "@/lib/hooks/features/use-camera-capture"
+import { usePaymentHandlers } from "@/lib/hooks/features/use-payment-handlers"
+import { useMedicalRecordHandlers } from "@/lib/hooks/features/use-medical-record-handlers"
+import { useClientHandlers } from "@/lib/hooks/features/use-client-handlers"
 import { AuditLogsTab } from "@/components/admin/tabs/audit-logs-tab"
 import { EncryptionErrorBanner } from "@/components/admin/encryption-error-banner"
 
@@ -279,6 +283,50 @@ export default function AdminDashboard() {
   // File upload hook
   const { uploadToSupabase, uploadToApi } = useFileUpload()
 
+  // Camera capture hook (extracted)
+  const {
+    isCameraDialogOpen: cameraDialogOpen,
+    cameraTarget: cameraCaptureTarget,
+    videoRef: cameraVideoRef,
+    canvasRef: cameraCanvasRef,
+    openCamera: openCameraCapture,
+    closeCamera: closeCameraCapture,
+    capturePhoto: captureCameraPhoto,
+  } = useCameraCapture()
+
+  // Client handlers hook (extracted)
+  const {
+    handleClientSubmit: handleClientSubmitExtracted,
+    openClientModal: openClientModalExtracted,
+    closeClientModal: closeClientModalExtracted,
+    deleteClient: deleteClientExtracted,
+    clientDuplicateWarning,
+    setClientDuplicateWarning,
+  } = useClientHandlers({
+    clients,
+    setClients,
+    setIsClientModalOpen,
+    setClientForm,
+    setSelectedClient,
+    showNotification,
+    setIsLoading,
+  })
+
+  // Payment handlers hook (extracted)
+  const {
+    handlePaymentSubmit: handlePaymentSubmitExtracted,
+    openPaymentModal: openPaymentModalExtracted,
+    closePaymentModal: closePaymentModalExtracted,
+    deletePayment: deletePaymentExtracted,
+  } = usePaymentHandlers({
+    setPayments,
+    setIsPaymentModalOpen,
+    setPaymentForm,
+    setSelectedPayment,
+    showNotification,
+    setIsLoading,
+  })
+
   function updateMedicalTreatment(idx: number, key: 'date' | 'procedure' | 'staffName' | 'total' | 'aestheticianId', value: string | number | boolean) {
     setMedicalRecordForm(prev => ({
       ...prev,
@@ -398,7 +446,7 @@ export default function AdminDashboard() {
       dateTo: analyticsDateTo, setDateTo: setAnalyticsDateTo,
     }
   } = useAdminFilters()
-  const [clientDuplicateWarning, setClientDuplicateWarning] = useState<string | null>(null)
+  // clientDuplicateWarning is now provided by useClientHandlers hook
 
 
   const [privacyMode, setPrivacyMode] = useState<boolean>(false)
@@ -712,40 +760,10 @@ export default function AdminDashboard() {
 
 
 
-  // Payment Management
+  // Payment Management - now using extracted hook
   const handlePaymentSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-      ; (async () => {
-        try {
-          const method = selectedPayment ? 'PATCH' : 'POST'
-          const formEl = e.currentTarget as HTMLFormElement
-          const fd = new FormData(formEl)
-          const amountRaw = String(fd.get('amount') || '')
-          const transactionId = String(fd.get('transactionId') || '')
-          const notes = String(fd.get('notes') || '')
-          const payloadBase = selectedPayment ? { id: selectedPayment.id, ...paymentForm } : paymentForm
-          const payload = {
-            ...payloadBase,
-            amount: amountRaw ? parseFloat(amountRaw) : (payloadBase.amount || 0),
-            transactionId,
-            notes,
-          }
-          const res = await fetch('/api/admin/payments', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-          if (!res.ok) throw new Error('Failed')
-          const listRes = await fetch('/api/admin/payments', { cache: 'no-store' })
-          const json = await listRes.json()
-          setPayments(Array.isArray(json?.payments) ? json.payments : [])
-          showNotification("success", selectedPayment ? "Payment updated successfully!" : "Payment recorded successfully!")
-          setIsPaymentModalOpen(false)
-          setPaymentForm({})
-          setSelectedPayment(null)
-        } catch {
-          showNotification("error", "Failed to save payment")
-        } finally {
-          setIsLoading(false)
-        }
-      })()
+    // Delegate to extracted hook - passes required state
+    handlePaymentSubmitExtracted(e, selectedPayment, paymentForm)
   }
 
   // Medical Record Management
@@ -823,84 +841,10 @@ export default function AdminDashboard() {
       })()
   }
 
-  // Client Management
+  // Client Management - now using extracted hook
   const handleClientSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-      ; (async () => {
-        try {
-          const formEl = e.currentTarget as HTMLFormElement
-          const fd = new FormData(formEl)
-          const firstName = String(fd.get('firstName') || '')
-          const lastName = String(fd.get('lastName') || '')
-          const emailVal = String(fd.get('email') || '')
-          const phoneVal = String(fd.get('phone') || '')
-          const addressVal = String(fd.get('address') || '')
-          const dobVal = String(fd.get('dateOfBirth') || '')
-          const emergencyRaw = String(fd.get('emergencyContact') || '')
-          const emailOk = !emailVal || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)
-          const phoneOk = !phoneVal || /\+?\d[\d\s-]{6,}$/.test(phoneVal)
-          if (!emailOk || !phoneOk) {
-            showNotification("error", "Please enter valid email and phone")
-            setIsLoading(false)
-            return
-          }
-          setClientDuplicateWarning(null)
-          const isEditing = Boolean(selectedClient?.id)
-          const norm = (s: unknown) => String(s || '').trim().toLowerCase()
-          const email = norm(emailVal)
-          const phone = norm(phoneVal)
-          const nameKey = `${norm(firstName)} ${norm(lastName)}`.trim()
-          const duplicate = clients.find(c => {
-            if (isEditing && c.id === selectedClient!.id) return false
-            const cEmail = norm(c.email)
-            const cPhone = norm(c.phone)
-            const cNameKey = `${norm(c.firstName)} ${norm(c.lastName)}`.trim()
-            return (email && cEmail && email === cEmail) || (phone && cPhone && phone === cPhone) || (!email && !phone && nameKey && cNameKey && cNameKey === nameKey)
-          })
-          if (duplicate) {
-            const basis = email ? 'email' : phone ? 'phone' : 'name'
-            setClientDuplicateWarning(`A client with the same ${basis} already exists.`)
-            showNotification("error", "Duplicate contact detected")
-            setIsLoading(false)
-            return
-          }
-          const method = selectedClient ? 'PATCH' : 'POST'
-          const [ecName, ecPhoneRaw] = emergencyRaw.split('(')
-          const emergencyName = String(ecName || '').trim()
-          const emergencyPhone = String((ecPhoneRaw || '').replace(')', '')).trim()
-          const overrides = {
-            firstName,
-            lastName,
-            email: emailVal,
-            phone: phoneVal,
-            address: addressVal,
-            dateOfBirth: dobVal,
-            emergencyContact: emergencyName || emergencyPhone ? { name: emergencyName, phone: emergencyPhone, relationship: 'family' } : clientForm.emergencyContact,
-            preferences: clientForm.preferences,
-          }
-          const payload = selectedClient ? { id: selectedClient.id, ...clientForm, ...overrides } : { ...clientForm, ...overrides }
-          const res = await fetch('/api/admin/clients', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-          if (!res.ok) throw new Error('Failed')
-          await clientService.fetchFromSupabase?.()
-          setClients(clientService.getAllClients())
-          const link = localStorage.getItem('potential_conversation_id')
-          if (!selectedClient && link) {
-            const all = clientService.getAllClients()
-            const created = all[0]
-            socialMediaService.setConversationClient(link, created.id)
-            try { localStorage.removeItem('potential_client_draft'); localStorage.removeItem('potential_conversation_id') } catch { }
-          }
-          showNotification("success", selectedClient ? "Client updated successfully!" : "Client added successfully!")
-          setIsClientModalOpen(false)
-          setClientForm({})
-          setSelectedClient(null)
-        } catch {
-          showNotification("error", "Failed to save client")
-        } finally {
-          setIsLoading(false)
-        }
-      })()
+    // Delegate to extracted hook - passes required state
+    handleClientSubmitExtracted(e, selectedClient, clientForm)
   }
 
   const quickAddClientFromAppointment = async (a: Appointment) => {
@@ -1505,9 +1449,9 @@ export default function AdminDashboard() {
                 onRetry={loadAllData}
                 onRunDiagnostics={handleRunDiagnostics}
               />
-              <ProfileSettingsModal 
-                open={isProfileSettingsOpen} 
-                onOpenChange={setIsProfileSettingsOpen} 
+              <ProfileSettingsModal
+                open={isProfileSettingsOpen}
+                onOpenChange={setIsProfileSettingsOpen}
               />
               <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col gap-8 w-full">
                 <motion.div
@@ -1542,11 +1486,11 @@ export default function AdminDashboard() {
                 <LazyTabContent isActive={activeTab === "dashboard"}>
                   <TabsContent value="dashboard" className="space-y-8">
                     <DashboardTab
-                        appointments={appointments}
-                        payments={payments}
-                        clients={clients}
-                        staff={staff}
-                        socialMessages={socialMessages}
+                      appointments={appointments}
+                      payments={payments}
+                      clients={clients}
+                      staff={staff}
+                      socialMessages={socialMessages}
                     />
                   </TabsContent>
                 </LazyTabContent>

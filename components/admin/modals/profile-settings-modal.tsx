@@ -109,7 +109,7 @@ export function ProfileSettingsModal({ open, onOpenChange }: ProfileSettingsModa
                                 </TabsContent>
                             </Tabs>
                         </div>
-                        
+
                         <div className="p-6 border-t border-stone-100 bg-stone-50/30 flex justify-end gap-3">
                             <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
                             <Button className="bg-stone-900 text-white hover:bg-stone-800" onClick={handleSave} disabled={isLoading}>
