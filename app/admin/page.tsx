@@ -2216,11 +2216,13 @@ export default function AdminDashboard() {
                             </Dialog>
                             <Dialog open={!!previewPortfolioItem} onOpenChange={(v) => { if (!v) setPreviewPortfolioItem(null) }}>
                               <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto bg-white/95 backdrop-blur-md border border-white/20 shadow-2xl">
+                                <DialogHeader className="pb-2">
+                                  <DialogTitle className="text-2xl font-bold text-gray-900 leading-tight">
+                                    {previewPortfolioItem?.title || 'Transformation Preview'}
+                                  </DialogTitle>
+                                </DialogHeader>
                                 {previewPortfolioItem && (
                                   <div className="space-y-8">
-                                    <DialogHeader className="pb-2">
-                                      <DialogTitle className="text-2xl font-bold text-gray-900 leading-tight">{previewPortfolioItem.title}</DialogTitle>
-                                    </DialogHeader>
                                     <div className="grid grid-cols-2 gap-4">
                                       <div className="relative h-64">
                                         <OptimizedImage src={previewPortfolioItem.beforeImage || '/placeholder.svg'} alt={`Before ${previewPortfolioItem.title}`} fill className="object-cover rounded-xl" />

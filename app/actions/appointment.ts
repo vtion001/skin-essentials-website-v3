@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { supabaseAdminClient } from '@/lib/supabase-admin'
 import { Appointment } from '@/lib/types/admin.types'
 import { AppointmentSchema } from '@/lib/validations/appointment'
+import { formatSms } from '@/lib/sms-templates'
 import { z } from 'zod'
 
 // Helper to check duplicates
@@ -70,7 +71,11 @@ export async function createAppointmentAction(data: Omit<Appointment, 'id' | 'cr
         if (payload.client_phone) {
             try {
                 const { sendSms } = await import("@/lib/sms-service")
-                const msg = `Hi ${payload.client_name}, your appointment on ${payload.date} at ${payload.time} is confirmed. Reply YES to acknowledge.`
+                const msg = formatSms('GENERIC_CONFIRMATION', {
+                    name: payload.client_name,
+                    date: payload.date,
+                    time: payload.time
+                });
                 await sendSms(payload.client_phone, msg)
             } catch (e) {
                 console.error('SMS Error:', e)
@@ -95,21 +100,32 @@ export async function createAppointmentAction(data: Omit<Appointment, 'id' | 'cr
                 // 24h
                 const time24 = new Date(apptTime.getTime() - 24 * 60 * 60 * 1000)
                 if (time24 > now) {
-                    const msg = `Hello ${payload.client_name}, this is a gentle reminder for your appointment with Skin Essentials on ${payload.date} at ${payload.time}. See you soon!`
+                    const msg = formatSms('REMINDER_24H', {
+                        name: payload.client_name,
+                        date: payload.date,
+                        time: payload.time
+                    });
                     await createMessageReminder(payload.client_phone, msg, time24)
                 }
 
                 // 3h
                 const time3 = new Date(apptTime.getTime() - 3 * 60 * 60 * 1000)
                 if (time3 > now) {
-                    const msg = `Hi ${payload.client_name}, seeing you in 3 hours for your ${payload.service || 'appointment'} at Skin Essentials today at ${payload.time}!`
+                    const msg = formatSms('REMINDER_3H', {
+                        name: payload.client_name,
+                        service: payload.service || 'appointment',
+                        time: payload.time
+                    });
                     await createMessageReminder(payload.client_phone, msg, time3)
                 }
 
                 // 1h
                 const time1 = new Date(apptTime.getTime() - 1 * 60 * 60 * 1000)
                 if (time1 > now) {
-                    const msg = `Hi ${payload.client_name}, just a quick reminder! Your appointment is in 1 hour (${payload.time}). We're ready for you!`
+                    const msg = formatSms('REMINDER_1H', {
+                        name: payload.client_name,
+                        time: payload.time
+                    });
                     await createMessageReminder(payload.client_phone, msg, time1)
                 }
             } catch (e) {

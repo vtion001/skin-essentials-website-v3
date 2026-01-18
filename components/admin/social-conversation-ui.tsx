@@ -62,16 +62,13 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
     pageIds: connectedPageIds,
     enabled: connectedPageIds.length > 0,
     onNewMessage: (msg: DBMessage) => {
-      console.log('[SM_UI] Real-time message received:', msg.id)
-      // Refresh conversations list to show new message
+      // Quiet real-time logs
       loadConversationsFromSupabase()
-      // If this is the selected conversation, refresh messages
       if (selectedConversation && msg.conversation_id === selectedConversation.id) {
         loadMessagesFromSupabase(selectedConversation.id)
       }
     },
     onConversationUpdate: (conv: DBConversation) => {
-      console.log('[SM_UI] Real-time conversation update:', conv.id)
       loadConversationsFromSupabase()
     }
   })
@@ -209,7 +206,6 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
       }))
 
       setConversations(uiConversations)
-      console.log('[SM_UI] Supabase conversations loaded:', uiConversations.length)
       if (initialLoading) setTimeout(() => setInitialLoading(false), 300)
     } catch (error) {
       console.error('[SM_UI] Error loading conversations from Supabase:', error)
@@ -222,7 +218,6 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
   const loadConversationsLocal = () => {
     const allConversations = socialMediaService.getAllConversations()
     setConversations(allConversations)
-    console.log('[SM_UI] localStorage conversations loaded', allConversations.length)
     if (initialLoading) setTimeout(() => setInitialLoading(false), 300)
   }
 
@@ -264,7 +259,6 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
   const loadMessagesLocal = (conversationId: string) => {
     const conversationMessages = socialMediaService.getMessagesByConversation(conversationId)
     setMessages(conversationMessages)
-    console.log('[SM_UI] localStorage messages loaded', conversationId, conversationMessages.length)
   }
 
   // Trigger incremental sync to Supabase
@@ -274,7 +268,7 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
 
     try {
       for (const conn of platformConnections.filter(c => c.isConnected && c.platform === 'facebook')) {
-        const res = await fetch('/api/social/sync', {
+        await fetch('/api/social/sync', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -287,8 +281,6 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
             fullSync: false // Incremental by default
           })
         })
-        const data = await res.json()
-        console.log('[SM_UI] Sync result:', data)
       }
     } catch (error) {
       console.error('[SM_UI] Sync error:', error)
@@ -300,7 +292,6 @@ export function SocialConversationUI({ socialMediaService }: SocialConversationU
   const loadPlatformConnections = () => {
     const connections = socialMediaService.getPlatformConnections()
     setPlatformConnections(connections)
-    console.log('[SM_UI] platform connections', connections.length)
   }
 
   const loadConversations = () => loadConversationsFromSupabase()

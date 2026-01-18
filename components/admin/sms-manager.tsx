@@ -33,7 +33,7 @@ const SMS_TEMPLATES = {
     "reminder": "Hello {name}, this is a gentle reminder for your appointment with Skin Essentials on {date} at {time}. See you soon!",
     "followup": "Hi {name}, checking in on your results! How is your skin feeling after the treatment? Let us know if you have any questions.",
     "promo": "Hi {name}! We have a special offer just for you. Visit us this week to get 10% off your next treatment.",
-    "confirm": "Hi {name}, your appointment on {date} at {time} is confirmed. Reply YES to acknowledge."
+    "confirm": "Hi {name}, your appointment on {date} at {time} is for confirmation."
 }
 
 export function SmsManager({ smsStatus, refreshSmsStatus, showNotification }: SmsManagerProps) {

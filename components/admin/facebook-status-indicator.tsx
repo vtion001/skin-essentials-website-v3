@@ -14,7 +14,6 @@ export function FacebookStatusIndicator() {
   const check = useMemo(
     () => async () => {
       try {
-        console.log('[FB_STATUS] checking connections')
         let connections = socialMediaService.getPlatformConnections().filter(c => c.platform === 'facebook')
         if (connections.length === 0) {
           try {
@@ -34,7 +33,6 @@ export function FacebookStatusIndicator() {
                 })
               })
               connections = socialMediaService.getPlatformConnections().filter(c => c.platform === 'facebook')
-              console.log('[FB_STATUS] rebuilt connections from localStorage', pages.length)
             }
           } catch (rebuildErr) {
             console.error('[FB_STATUS] rebuild from storage failed', rebuildErr)
@@ -43,14 +41,12 @@ export function FacebookStatusIndicator() {
         if (connections.length === 0) {
           setStatus('disconnected')
           setMessage('Not connected to Facebook')
-          console.log('[FB_STATUS] no connections found')
           return
         }
         const active = connections.find(c => c.isConnected)
         if (!active) {
           setStatus('disconnected')
           setMessage('Facebook disconnected')
-          console.log('[FB_STATUS] connections exist but marked disconnected')
           return
         }
         // If token missing, try to fetch a page token using stored user token
@@ -75,12 +71,10 @@ export function FacebookStatusIndicator() {
           }
         }
 
-        console.log('[FB_STATUS] validating access token')
         const validation = await facebookAPI.validateAccessToken(active.accessToken)
         if (validation.isValid) {
           setStatus('connected')
           setMessage('Facebook connected')
-          console.log('[FB_STATUS] token valid')
         } else {
           setStatus('disconnected')
           setMessage('Token invalid; reconnect required')
@@ -99,7 +93,6 @@ export function FacebookStatusIndicator() {
     setTimeout(() => { check() }, 0)
     const onStorage = (e: StorageEvent) => {
       if (e.key === 'social_connections_data' || e.key === 'facebook_connection') {
-        console.log('[FB_STATUS] storage change detected, rechecking')
         setTimeout(() => { check() }, 0)
       }
     }

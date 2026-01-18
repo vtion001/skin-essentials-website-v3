@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from "react"
 import { Appointment } from "@/lib/types/admin.types"
 import { AppointmentRow } from "@/lib/types/database.types"
+import { formatSms } from "@/lib/sms-templates"
 import {
     createAppointmentAction,
     updateAppointmentAction,
@@ -86,11 +87,21 @@ export function useAdminAppointments(showNotification: (type: "success" | "error
                         const dateStr = new Date(appointment.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
                         let message = ''
                         
-                        if (newStatus === 'confirmed') {
-                            message = `Dear ${appointment.clientName}, your appointment for ${appointment.service} at Skin Essentials on ${dateStr} at ${appointment.time} has been CONFIRMED. Please arrive 10 mins early. Thank you!`
-                        } else if (newStatus === 'scheduled') {
-                            message = `Dear ${appointment.clientName}, your booking for ${appointment.service} on ${dateStr} at ${appointment.time} is RECEIVED. We will review it and notify you once confirmed. Thank you!`
-                        }
+            if (newStatus === 'confirmed') {
+                message = formatSms('APPOINTMENT_CONFIRMED', {
+                    name: appointment.clientName,
+                    service: appointment.service,
+                    date: dateStr,
+                    time: appointment.time
+                })
+            } else {
+                message = formatSms('APPOINTMENT_RECEIVED', {
+                    name: appointment.clientName,
+                    service: appointment.service,
+                    date: dateStr,
+                    time: appointment.time
+                })
+            }
                         
                         // Non-blocking SMS call
                         fetch('/api/admin/sms/send', {

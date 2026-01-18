@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { supabaseAdminClient } from "@/lib/supabase-admin"
 import { createMessageReminder } from "@/lib/iprogsms"
+import { formatSms } from "@/lib/sms-templates"
 
 export async function POST(req: NextRequest) {
   try {
@@ -126,7 +127,7 @@ export async function POST(req: NextRequest) {
       // Send SMS Confirmation
       if (phone) {
         const { sendSms } = await import("@/lib/sms-service")
-        const msg = `Hi ${name}, your appointment on ${date} at ${time} is confirmed. Reply YES to acknowledge.`
+        const msg = formatSms('GENERIC_CONFIRMATION', { name, date, time })
         await sendSms(phone, msg).catch(console.error)
       }
 
@@ -155,21 +156,21 @@ export async function POST(req: NextRequest) {
           // 24h
           const time24 = new Date(apptTime.getTime() - 24 * 60 * 60 * 1000)
           if (time24 > now) {
-            const msg = `Hello ${name}, this is a gentle reminder for your appointment with Skin Essentials on ${date} at ${time}. See you soon!`
+            const msg = formatSms('REMINDER_24H', { name, date, time })
             createMessageReminder(phone, msg, time24).catch(console.error)
           }
 
           // 3h
           const time3 = new Date(apptTime.getTime() - 3 * 60 * 60 * 1000)
           if (time3 > now) {
-            const msg = `Hi ${name}, seeing you in 3 hours for your ${service} at Skin Essentials today at ${time}!`
+            const msg = formatSms('REMINDER_3H', { name, service, time })
             createMessageReminder(phone, msg, time3).catch(console.error)
           }
 
           // 1h
           const time1 = new Date(apptTime.getTime() - 1 * 60 * 60 * 1000)
           if (time1 > now) {
-            const msg = `Hi ${name}, just a quick reminder! Your appointment is in 1 hour (${time}). We're ready for you!`
+            const msg = formatSms('REMINDER_1H', { name, time })
             createMessageReminder(phone, msg, time1).catch(console.error)
           }
         } catch (e) { console.error("Scheduling error", e) }

@@ -198,8 +198,8 @@ export function DashboardTab({
               Revenue Trend
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-6 pt-10 h-[350px]">
-            <ResponsiveContainer width="100%" height="100%">
+          <CardContent className="p-6 pt-10 h-[350px] min-h-[350px] min-w-0">
+            <ResponsiveContainer width="100%" height="100%" minHeight={300}>
               <AreaChart data={revenueData}>
                 <defs>
                   <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
@@ -235,9 +235,9 @@ export function DashboardTab({
               Clinical Breakdown
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-6 h-[350px] flex items-center justify-between">
-            <div className="h-full w-2/3">
-              <ResponsiveContainer width="100%" height="100%">
+          <CardContent className="p-6 h-[350px] min-h-[350px] min-w-0 flex items-center justify-between">
+            <div className="h-full w-2/3 min-h-[300px]">
+              <ResponsiveContainer width="100%" height="100%" minHeight={300}>
                 <PieChart>
                   <Pie
                     data={appointmentStatusData}

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { supabaseAdminClient } from "@/lib/supabase-admin"
 import { createMessageReminder } from "@/lib/iprogsms"
+import { formatSms } from "@/lib/sms-templates"
 
 function toManilaDate(dateStr: string, timeStr: string) {
   const [h, m] = (timeStr || "00:00").split(":").map((x) => Number(x))
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest) {
     if (config.dayBefore) {
       const remindTime = new Date(at.getTime() - 24 * 60 * 60 * 1000)
       if (remindTime > now) {
-        const msg = makeMsg("Hello {name}, this is a gentle reminder for your appointment with Skin Essentials on {date} at {time}. See you soon!")
+        const msg = formatSms('REMINDER_24H', { name: a.client_name, date: a.date, time: a.time })
         logs.push(`Scheduling 24h reminder for ${clientInfo}...`)
         const res = await createMessageReminder(String(a.client_phone), msg, remindTime)
         if (res.ok) {
@@ -84,7 +85,7 @@ export async function POST(req: NextRequest) {
       if (remindTime > now) {
         // Prevent scheduling if it's too close? E.g. if remindTime is in 1 minute?
         // iProg likely handles it.
-        const msg = makeMsg("Hi {name}, seeing you in 3 hours for your {service} at Skin Essentials today at {time}!")
+        const msg = formatSms('REMINDER_3H', { name: a.client_name, service: a.service || "Appointment", time: a.time })
         logs.push(`Scheduling 3h reminder for ${clientInfo}...`)
         const res = await createMessageReminder(String(a.client_phone), msg, remindTime)
         if (res.ok) {
@@ -100,7 +101,7 @@ export async function POST(req: NextRequest) {
     if (config.oneHourBefore) {
       const remindTime = new Date(at.getTime() - 1 * 60 * 60 * 1000)
       if (remindTime > now) {
-        const msg = makeMsg("Hi {name}, just a quick reminder! Your appointment is in 1 hour ({time}). We're ready for you!")
+        const msg = formatSms('REMINDER_1H', { name: a.client_name, time: a.time })
         logs.push(`Scheduling 1h reminder for ${clientInfo}...`)
         const res = await createMessageReminder(String(a.client_phone), msg, remindTime)
         if (res.ok) {
