@@ -1,5 +1,12 @@
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  outputFileTracingRoot: __dirname,
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -34,8 +41,18 @@ const nextConfig = {
     optimizePackageImports: [
       'lucide-react',
       '@radix-ui/react-icons',
-      'framer-motion'
+      'framer-motion',
+      'recharts', // Add recharts for better tree-shaking
+      'react-hook-form',
+      '@tanstack/react-query',
     ],
+  },
+  // Improve bundle splitting for admin routes
+  modularizeImports: {
+    'recharts': {
+      transform: 'recharts/lib/{{member}}',
+      preventFullImport: true,
+    },
   },
 }
 

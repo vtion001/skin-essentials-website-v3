@@ -87,6 +87,18 @@ export function useInfluencerHandlers({
                     : "Influencer added successfully!"
             )
 
+            // Log Activity
+            const { logActivity } = await import('@/lib/audit-logger')
+            await logActivity(
+                selectedInfluencer ? 'UPDATE_INFLUENCER' : 'CREATE_INFLUENCER',
+                'Partnerships',
+                { 
+                    id: selectedInfluencer?.id || 'new', 
+                    name: influencerForm.name,
+                    platform: influencerForm.platform
+                }
+            )
+
             setIsInfluencerModalOpen(false)
             setSelectedInfluencer(null)
             setInfluencerForm({ commissionRate: 0.10, status: "active" })
@@ -150,6 +162,14 @@ export function useInfluencerHandlers({
             showNotification("success", "Referral recorded successfully!")
             setIsReferralModalOpen(false)
             setReferralForm({})
+
+            // Log Activity
+            const { logActivity } = await import('@/lib/audit-logger')
+            await logActivity('RECORD_REFERRAL', 'Partnerships', { 
+                influencerId: selectedInfluencer.id, 
+                amount: payload.amount,
+                client: payload.client_name
+            })
         } catch (error) {
             const { reportError } = await import('@/lib/client-logger')
             reportError(error, { 
@@ -211,6 +231,10 @@ export function useInfluencerHandlers({
             await influencerService.fetchFromSupabase?.()
             setInfluencers(influencerService.getAllInfluencers())
             showNotification("success", "Influencer deleted successfully!")
+
+            // Log Activity
+            const { logActivity } = await import('@/lib/audit-logger')
+            await logActivity('DELETE_INFLUENCER', 'Partnerships', { id: influencerId })
         } catch (error) {
             const { reportError } = await import('@/lib/client-logger')
             reportError(error, { 

@@ -18,22 +18,24 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 import { motion, AnimatePresence } from "framer-motion"
-import {
-  PieChart,
-  Pie,
-  Cell,
-  BarChart as ReBarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip as ReTooltip,
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  AreaChart,
-  Area,
-} from "recharts"
+import dynamic from "next/dynamic"
+
+// Lazy load Recharts components - significantly reduces initial bundle size (~400KB)
+const PieChart = dynamic(() => import("recharts").then(mod => mod.PieChart), { ssr: false })
+const Pie = dynamic(() => import("recharts").then(mod => mod.Pie), { ssr: false })
+const Cell = dynamic(() => import("recharts").then(mod => mod.Cell), { ssr: false })
+const BarChart = dynamic(() => import("recharts").then(mod => mod.BarChart), { ssr: false })
+const Bar = dynamic(() => import("recharts").then(mod => mod.Bar), { ssr: false })
+const XAxis = dynamic(() => import("recharts").then(mod => mod.XAxis), { ssr: false })
+const YAxis = dynamic(() => import("recharts").then(mod => mod.YAxis), { ssr: false })
+const CartesianGrid = dynamic(() => import("recharts").then(mod => mod.CartesianGrid), { ssr: false })
+const ReTooltip = dynamic(() => import("recharts").then(mod => mod.Tooltip), { ssr: false })
+const ResponsiveContainer = dynamic(() => import("recharts").then(mod => mod.ResponsiveContainer), { ssr: false })
+const LineChart = dynamic(() => import("recharts").then(mod => mod.LineChart), { ssr: false })
+const Line = dynamic(() => import("recharts").then(mod => mod.Line), { ssr: false })
+const AreaChart = dynamic(() => import("recharts").then(mod => mod.AreaChart), { ssr: false })
+const Area = dynamic(() => import("recharts").then(mod => mod.Area), { ssr: false })
+
 import {
   Plus,
   Edit,
@@ -185,7 +187,7 @@ export default function AdminDashboard() {
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab)
-    trackActivity('ADMIN_TAB_SWITCH', tab).catch(() => {})
+    trackActivity('ADMIN_TAB_SWITCH', tab).catch(() => { })
   }
   const [isLoading, setIsLoading] = useState(false)
   const [notification, setNotification] = useState<{ type: "success" | "error" | "info"; message: string } | null>(null)
@@ -1123,13 +1125,12 @@ export default function AdminDashboard() {
   return (
     <>
       <div className="min-h-screen bg-[#FDFCFB] text-[#1A1A1A] font-sans selection:bg-[#E2D1C3] selection:text-[#1A1A1A]">
-        {/* Subtle background grain or texture */}
-        <div className="fixed inset-0 pointer-events-none opacity-[0.03] z-[100] bg-[url('https://www.transparenttextures.com/patterns/felt.png')]" />
+        {/* Background texture removed for performance - was loading 128KB external PNG */}
 
-        {/* Interactive background elements - refined */}
-        <div className="fixed inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#E2D1C3]/20 blur-[120px] rounded-full animate-pulse-subtle" />
-          <div className="absolute bottom-[10%] right-[-5%] w-[35%] h-[35%] bg-[#C3D7E2]/20 blur-[100px] rounded-full animate-pulse-subtle delay-1000" />
+        {/* Interactive background elements - refined with GPU acceleration */}
+        <div className="fixed inset-0 overflow-hidden pointer-events-none will-change-auto">
+          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#E2D1C3]/20 blur-[120px] rounded-full opacity-80" aria-hidden="true" />
+          <div className="absolute bottom-[10%] right-[-5%] w-[35%] h-[35%] bg-[#C3D7E2]/20 blur-[100px] rounded-full opacity-80" aria-hidden="true" />
         </div>
 
         {/* Premium Notification */}
@@ -1184,10 +1185,16 @@ export default function AdminDashboard() {
             {/* Sidebar Header: Brand Logo & Title */}
             <div className="p-8 pb-6">
               <div className="flex items-center justify-center mb-6">
-                <img
-                  src="https://res.cloudinary.com/dbviya1rj/image/upload/v1753674655/skinessentials_logo_350_x_180_px_fpp26r.png"
+                {/* LCP Image: Using Next.js Image with priority, explicit dimensions, and modern format */}
+                <Image
+                  src="https://res.cloudinary.com/dbviya1rj/image/upload/f_auto,q_auto,w_200/v1753674655/skinessentials_logo_350_x_180_px_fpp26r"
                   alt="Skin Essentials Logo"
+                  width={160}
+                  height={82}
+                  priority
+                  fetchPriority="high"
                   className="w-full h-auto object-contain max-w-[200px]"
+                  sizes="200px"
                 />
               </div>
 
@@ -1240,7 +1247,7 @@ export default function AdminDashboard() {
                           transition={{ type: "spring", stiffness: 300, damping: 30 }}
                         />
                       )}
-                      <item.icon className={`w-5 h-5 transition-colors ${activeTab === item.key ? 'text-[#d09d80]' : 'text-stone-400 group-hover:text-stone-900'}`} />
+                      <item.icon className={`w-5 h-5 ${activeTab === item.key ? 'text-[#d09d80]' : 'text-stone-400'}`} aria-hidden="true" />
                       {item.label}
                       {item.key === 'social' && socialMessages.filter(m => !m.isReplied).length > 0 && (
                         <span className="ml-auto bg-[#0F2922] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md min-w-[20px] text-center">
@@ -1282,7 +1289,7 @@ export default function AdminDashboard() {
                           transition={{ type: "spring", stiffness: 300, damping: 30 }}
                         />
                       )}
-                      <item.icon className={`w-5 h-5 transition-colors ${activeTab === item.key ? 'text-[#d09d80]' : 'text-stone-400 group-hover:text-stone-900'}`} />
+                      <item.icon className={`w-5 h-5 ${activeTab === item.key ? 'text-[#d09d80]' : 'text-stone-400'}`} aria-hidden="true" />
                       {item.label}
                     </button>
                   ))}
@@ -1844,6 +1851,12 @@ export default function AdminDashboard() {
                                           if (jr?.ok) setContentServices(jr.data.map((c: ServiceCategory) => ({ id: c.id, category: c.category, description: c.description, image: c.image, color: c.color, services: c.services })))
                                           setNewServiceForm({ name: '', price: '', description: '', duration: '', results: '', image: '' })
                                           showNotification('success', 'Service added')
+
+                                          // Log Activity
+                                          trackActivity('CREATE_SERVICE', 'Media Assets', {
+                                            name: newServiceForm.name,
+                                            category: contentSelectedCategory
+                                          }).catch(() => { })
                                         } else showNotification('error', 'Failed to add service')
                                       } catch { showNotification('error', 'Failed to add service') }
                                     }}
@@ -1908,6 +1921,12 @@ export default function AdminDashboard() {
                                                 const jr = await r.json()
                                                 if (jr?.ok) setContentServices(jr.data.map((c: ServiceCategory) => ({ id: c.id, category: c.category, services: c.services })))
                                                 showNotification('success', 'Service removed')
+
+                                                // Log Activity
+                                                trackActivity('DELETE_SERVICE', 'Media Assets', {
+                                                  name: s.name,
+                                                  category: contentSelectedCategory
+                                                }).catch(() => { })
                                               } else showNotification('error', 'Failed')
                                             } catch { showNotification('error', 'Failed') }
                                           }}

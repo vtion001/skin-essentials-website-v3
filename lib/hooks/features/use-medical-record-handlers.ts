@@ -145,6 +145,18 @@ export function useMedicalRecordHandlers({
                     : "Medical record created successfully!"
             )
 
+            // Log Activity
+            const { logActivity } = await import('@/lib/audit-logger')
+            await logActivity(
+                selectedMedicalRecord ? 'UPDATE_MEDICAL_RECORD' : 'CREATE_MEDICAL_RECORD',
+                'Medical Records',
+                { 
+                    id: selectedMedicalRecord?.id || 'new', 
+                    clientId: medicalRecordForm.clientId,
+                    date: medicalRecordForm.date
+                }
+            )
+
             // Reset form state
             setIsMedicalRecordModalOpen(false)
             setMedicalRecordForm({})
@@ -211,6 +223,10 @@ export function useMedicalRecordHandlers({
 
             await refreshMedicalRecords()
             showNotification("success", "Medical record deleted successfully!")
+
+            // Log Activity
+            const { logActivity } = await import('@/lib/audit-logger')
+            await logActivity('DELETE_MEDICAL_RECORD', 'Medical Records', { id: recordId })
         } catch (error) {
             const { reportError } = await import('@/lib/client-logger')
             reportError(error, { 

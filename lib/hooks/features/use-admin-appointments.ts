@@ -59,9 +59,18 @@ export function useAdminAppointments(showNotification: (type: "success" | "error
         try {
             const res = await createAppointmentAction(data)
             if (res.success) {
-                showNotification('success', 'Appointment created successfully')
-                loadAppointments()
-                return true
+                            showNotification('success', 'Appointment created successfully')
+                            loadAppointments()
+                
+                            // Log Activity
+                            const { logActivity } = await import('@/lib/audit-logger')
+                            await logActivity('CREATE_APPOINTMENT', 'Booking Management', { 
+                                name: data.clientName, 
+                                service: data.service, 
+                                date: data.date, 
+                                time: data.time 
+                            });
+                            return true;
             } else {
                 console.error('Create Appointment Error:', res.error)
                 showNotification('error', res.error || 'Failed to create appointment')
@@ -78,6 +87,11 @@ export function useAdminAppointments(showNotification: (type: "success" | "error
             const res = await updateAppointmentAction(id, { status: newStatus })
             if (res.success) {
                 loadAppointments()
+
+                // Log Activity
+                const { logActivity } = await import('@/lib/audit-logger')
+                await logActivity('UPDATE_APPOINTMENT_STATUS', 'Booking Management', { id, status: newStatus })
+                
                 showNotification('success', `Status updated to ${newStatus}`)
 
                 // Trigger SMS if confirmed or scheduled
@@ -86,23 +100,23 @@ export function useAdminAppointments(showNotification: (type: "success" | "error
                     if (appointment && appointment.clientPhone) {
                         const dateStr = new Date(appointment.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
                         let message = ''
-                        
-            if (newStatus === 'confirmed') {
-                message = formatSms('APPOINTMENT_CONFIRMED', {
-                    name: appointment.clientName,
-                    service: appointment.service,
-                    date: dateStr,
-                    time: appointment.time
-                })
-            } else {
-                message = formatSms('APPOINTMENT_RECEIVED', {
-                    name: appointment.clientName,
-                    service: appointment.service,
-                    date: dateStr,
-                    time: appointment.time
-                })
-            }
-                        
+
+                        if (newStatus === 'confirmed') {
+                            message = formatSms('APPOINTMENT_CONFIRMED', {
+                                name: appointment.clientName,
+                                service: appointment.service,
+                                date: dateStr,
+                                time: appointment.time
+                            })
+                        } else {
+                            message = formatSms('APPOINTMENT_RECEIVED', {
+                                name: appointment.clientName,
+                                service: appointment.service,
+                                date: dateStr,
+                                time: appointment.time
+                            })
+                        }
+
                         // Non-blocking SMS call
                         fetch('/api/admin/sms/send', {
                             method: 'POST',
@@ -130,9 +144,12 @@ export function useAdminAppointments(showNotification: (type: "success" | "error
             const res = await deleteAppointmentAction(id)
             if (res.success) {
                 showNotification('success', 'Appointment deleted successfully')
-                // Optimistic update?
                 setAppointments(prev => prev.filter(a => a.id !== id))
-                // loadAppointments() // Re-fetch to be sure?
+
+                // Log Activity
+                const { logActivity } = await import('@/lib/audit-logger')
+                await logActivity('DELETE_APPOINTMENT', 'Booking Management', { id })
+                
                 return true
             } else {
                 showNotification('error', res.error || 'Failed to delete appointment')

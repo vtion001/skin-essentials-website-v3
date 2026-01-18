@@ -96,10 +96,9 @@ export default function RootLayout({
         <link rel="apple-touch-icon" sizes="180x180" href="https://res.cloudinary.com/dbviya1rj/image/upload/c_fill,w_180,h_180/v1763694737/jneevo5qj2skirxgww0c.png" />
         <link rel="shortcut icon" href="https://res.cloudinary.com/dbviya1rj/image/upload/c_fill,w_32,h_32/v1763694737/jneevo5qj2skirxgww0c.png" />
         <link rel="canonical" href="https://www.skinessentialsbyher.com" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="//fonts.googleapis.com" />
-        <link rel="dns-prefetch" href="//fonts.gstatic.com" />
+        {/* Preconnect to critical third-party origins for LCP improvement */}
+        <link rel="preconnect" href="https://res.cloudinary.com" />
+        <link rel="dns-prefetch" href="//res.cloudinary.com" />
       </head>
       <body className={`${inter.variable} ${playfair.variable} ${inter.className} antialiased`} suppressHydrationWarning>
         <ThemeProvider

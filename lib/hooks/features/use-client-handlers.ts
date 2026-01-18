@@ -136,6 +136,18 @@ export function useClientHandlers({
             await clientService.fetchFromSupabase?.()
             setClients(clientService.getAllClients())
 
+            // Log Activity
+            const { logActivity } = await import('@/lib/audit-logger')
+            await logActivity(
+                selectedClient ? 'UPDATE_CLIENT' : 'CREATE_CLIENT',
+                'Client Management',
+                { 
+                    id: selectedClient?.id || 'new', 
+                    name: `${firstName} ${lastName}`,
+                    email: emailVal
+                }
+            )
+
             // Handle conversation linking for new clients
             const link = typeof window !== "undefined"
                 ? localStorage.getItem("potential_conversation_id")
@@ -204,6 +216,11 @@ export function useClientHandlers({
 
             await clientService.fetchFromSupabase?.()
             setClients(clientService.getAllClients())
+
+            // Log Activity
+            const { logActivity } = await import('@/lib/audit-logger')
+            await logActivity('DELETE_CLIENT', 'Client Management', { id: clientId })
+
             showNotification("success", "Client deleted successfully!")
         } catch (error) {
             const { reportError } = await import('@/lib/client-logger')

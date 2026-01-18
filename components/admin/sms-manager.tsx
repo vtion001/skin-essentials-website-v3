@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { SmsAnalytics } from "./sms-analytics"
 import { ScheduledSmsList } from "./scheduled-sms-list"
 import { SmsLogs } from "./sms-logs"
+import { trackActivity } from "@/app/actions/developer"
 
 interface SmsStatus {
     configured: boolean
@@ -154,7 +155,13 @@ export function SmsManager({ smsStatus, refreshSmsStatus, showNotification }: Sm
 
                                     const j = await res.json()
                                     console.log('SMS Response:', j)
-                                    showNotification(j?.ok ? 'success' : 'error', j?.ok ? 'SMS sent' : (j?.error || 'Failed to send'))
+                                    if (j?.ok) {
+                                        showNotification('success', 'SMS sent')
+                                        // Log Activity
+                                        trackActivity('SEND_SMS_MANUAL', 'SMS Gateway', { to }).catch(() => {})
+                                    } else {
+                                        showNotification('error', j?.error || 'Failed to send')
+                                    }
                                 } catch (e) {
                                     console.error('SMS Send Error:', e)
                                     showNotification('error', 'Failed to send')
@@ -185,7 +192,13 @@ export function SmsManager({ smsStatus, refreshSmsStatus, showNotification }: Sm
                                         setShowScanLogs(true)
                                     }
 
-                                    showNotification(j?.ok ? 'success' : 'error', j?.ok ? `Reminders sent: ${j?.sent || 0}` : (j?.error || 'Failed to run'))
+                                    if (j?.ok) {
+                                        showNotification('success', `Reminders sent: ${j?.sent || 0}`)
+                                        // Log Activity
+                                        trackActivity('RUN_REMINDER_SCAN', 'SMS Gateway', { sent: j?.sent || 0 }).catch(() => {})
+                                    } else {
+                                        showNotification('error', j?.error || 'Failed to run')
+                                    }
                                 } catch {
                                     showNotification('error', 'Failed to run automation')
                                 } finally {

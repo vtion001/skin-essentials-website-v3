@@ -140,6 +140,18 @@ export function useStaffHandlers({
             await staffService.fetchFromSupabase?.()
             setStaff(staffService.getAllStaff())
 
+            // Log Activity
+            const { logActivity } = await import('@/lib/audit-logger')
+            await logActivity(
+                selectedStaff ? 'UPDATE_STAFF' : 'CREATE_STAFF',
+                'Staff Management',
+                { 
+                    id: selectedStaff?.id || 'new', 
+                    name: `${parsed.firstName} ${parsed.lastName}`,
+                    position: parsed.department
+                }
+            )
+
             showNotification(
                 "success",
                 selectedStaff ? "Staff updated successfully!" : "Staff added successfully!"
@@ -201,6 +213,11 @@ export function useStaffHandlers({
 
             await staffService.fetchFromSupabase?.()
             setStaff(staffService.getAllStaff())
+
+            // Log Activity
+            const { logActivity } = await import('@/lib/audit-logger')
+            await logActivity('DELETE_STAFF', 'Staff Management', { id: staffId })
+
             showNotification("success", "Staff deleted successfully!")
         } catch (error) {
             const { reportError } = await import('@/lib/client-logger')

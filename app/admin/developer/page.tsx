@@ -23,16 +23,29 @@ export default function DeveloperHub() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [healthData, logsData] = await Promise.all([
+      const [healthResult, logsResult] = await Promise.all([
         fetchSystemHealth(),
         fetchSystemLogs(logType, search)
       ]);
-      
+
       startTransition(() => {
-        setHealth(healthData);
-        setLogs(logsData.data || []);
+        // Extract data from ActionResult wrapper
+        if (healthResult.success && healthResult.data) {
+          setHealth(healthResult.data);
+        }
+        if (logsResult.success && logsResult.data) {
+          setLogs(logsResult.data.data || []);
+        }
         setLastUpdated(new Date().toLocaleTimeString());
       });
+
+      // Show errors if any request failed
+      if (!healthResult.success) {
+        toast.error(`Health check failed: ${healthResult.error}`);
+      }
+      if (!logsResult.success) {
+        toast.error(`Log fetch failed: ${logsResult.error}`);
+      }
     } catch (e) {
       toast.error('Failed to update system status');
     } finally {
@@ -176,291 +189,287 @@ export default function DeveloperHub() {
         </Card>
       </div>
 
-                  {/* Main Content Tabs */}
+      {/* Main Content Tabs */}
 
-                  <Tabs value={logType} onValueChange={(v: any) => {
+      <Tabs value={logType} onValueChange={(v: any) => {
 
-                    startTransition(() => {
+        startTransition(() => {
 
-                      setLogType(v);
+          setLogType(v);
 
-                    });
+        });
 
-                  }} className="w-full">
+      }} className="w-full">
 
-              <TabsList className="grid w-full grid-cols-3 lg:w-[600px]">
+        <TabsList className="grid w-full grid-cols-3 lg:w-[600px]">
 
-                <TabsTrigger value="logs">Error Logs</TabsTrigger>
+          <TabsTrigger value="logs">Error Logs</TabsTrigger>
 
-                <TabsTrigger value="activity">Live Activity</TabsTrigger>
+          <TabsTrigger value="activity">Live Activity</TabsTrigger>
 
-                <TabsTrigger value="audit">Audit Trail</TabsTrigger>
+          <TabsTrigger value="audit">Audit Trail</TabsTrigger>
 
-              </TabsList>
+        </TabsList>
 
-      
 
-              <div className="flex items-center gap-4 my-4">
 
-                <div className="relative flex-1 max-w-sm">
+        <div className="flex items-center gap-4 my-4">
 
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
+          <div className="relative flex-1 max-w-sm">
 
-                  <Input
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
 
-                    placeholder="Search logs..."
+            <Input
 
-                    className="pl-9"
+              placeholder="Search logs..."
 
-                    value={search}
+              className="pl-9"
 
-                    onChange={(e) => setSearch(e.target.value)}
+              value={search}
 
-                    onKeyDown={(e) => e.key === 'Enter' && loadData()}
+              onChange={(e) => setSearch(e.target.value)}
 
-                  />
+              onKeyDown={(e) => e.key === 'Enter' && loadData()}
 
-                </div>
+            />
 
-                <div className="text-xs text-slate-400">
+          </div>
 
-                  Last updated: {lastUpdated || '...'}
+          <div className="text-xs text-slate-400">
 
-                </div>
+            Last updated: {lastUpdated || '...'}
 
-              </div>
+          </div>
 
-      
+        </div>
 
-              <TabsContent value="logs" className="space-y-4">
 
-                <Card>
 
-                  <CardHeader>
+        <TabsContent value="logs" className="space-y-4">
 
-                    <CardTitle>Application Logs</CardTitle>
+          <Card>
 
-                    <CardDescription>Real-time error tracking and runtime events.</CardDescription>
+            <CardHeader>
 
-                  </CardHeader>
+              <CardTitle>Application Logs</CardTitle>
 
-                  <CardContent>
+              <CardDescription>Real-time error tracking and runtime events.</CardDescription>
 
-                    <ScrollArea className="h-[500px] w-full rounded-md border bg-slate-950 p-4 font-mono text-sm text-slate-300">
+            </CardHeader>
 
-                      {logs.length === 0 ? (
+            <CardContent>
 
-                        <div className="text-slate-500 text-center py-20">No logs found matching your criteria.</div>
+              <ScrollArea className="h-[500px] w-full rounded-md border bg-slate-950 p-4 font-mono text-sm text-slate-300">
 
-                      ) : (
+                {logs.length === 0 ? (
 
-                        logs.map((log) => (
+                  <div className="text-slate-500 text-center py-20">No logs found matching your criteria.</div>
 
-                          <div key={log.id} className="mb-4 border-b border-slate-800 pb-2 last:border-0 hover:bg-slate-900/50 p-2 rounded transition-colors group">
+                ) : (
 
-                            <div className="flex items-center gap-3 mb-1">
+                  logs.map((log) => (
 
-                              <span className={`px-2 py-0.5 text-[10px] rounded font-bold ${
+                    <div key={log.id} className="mb-4 border-b border-slate-800 pb-2 last:border-0 hover:bg-slate-900/50 p-2 rounded transition-colors group">
 
-                                log.level === 'ERROR' ? 'bg-red-900/50 text-red-400' : 
+                      <div className="flex items-center gap-3 mb-1">
 
-                                log.level === 'WARN' ? 'bg-yellow-900/50 text-yellow-400' :
+                        <span className={`px-2 py-0.5 text-[10px] rounded font-bold ${log.level === 'ERROR' ? 'bg-red-900/50 text-red-400' :
 
-                                'bg-blue-900/50 text-blue-400'
+                            log.level === 'WARN' ? 'bg-yellow-900/50 text-yellow-400' :
 
-                              }`}>
+                              'bg-blue-900/50 text-blue-400'
 
-                                {log.level}
+                          }`}>
 
-                              </span>
+                          {log.level}
 
-                              <span className="text-slate-500 text-xs">{new Date(log.timestamp).toLocaleString()}</span>
+                        </span>
 
-                              <span className="text-slate-400 font-semibold">[{log.source}]</span>
+                        <span className="text-slate-500 text-xs">{new Date(log.timestamp).toLocaleString()}</span>
 
-                            </div>
+                        <span className="text-slate-400 font-semibold">[{log.source}]</span>
 
-                            <div className="pl-2 border-l-2 border-slate-800">
+                      </div>
 
-                              <p className="text-slate-100 whitespace-pre-wrap break-all">{log.message}</p>
+                      <div className="pl-2 border-l-2 border-slate-800">
 
-                              {log.metadata?.stack && (
+                        <p className="text-slate-100 whitespace-pre-wrap break-all">{log.message}</p>
 
-                                <details className="mt-2">
+                        {log.metadata?.stack && (
 
-                                  <summary className="text-xs text-slate-500 cursor-pointer hover:text-slate-300">Show Stack Trace</summary>
+                          <details className="mt-2">
 
-                                  <pre className="mt-2 text-[10px] text-red-300/70 overflow-x-auto p-2 bg-slate-900 rounded">
+                            <summary className="text-xs text-slate-500 cursor-pointer hover:text-slate-300">Show Stack Trace</summary>
 
-                                    {log.metadata.stack}
+                            <pre className="mt-2 text-[10px] text-red-300/70 overflow-x-auto p-2 bg-slate-900 rounded">
 
-                                  </pre>
+                              {log.metadata.stack}
 
-                                </details>
+                            </pre>
 
-                              )}
+                          </details>
 
-                            </div>
+                        )}
 
-                          </div>
+                      </div>
 
-                        ))
+                    </div>
 
-                      )}
+                  ))
 
-                    </ScrollArea>
+                )}
 
-                  </CardContent>
+              </ScrollArea>
 
-                </Card>
+            </CardContent>
 
-              </TabsContent>
+          </Card>
 
-      
+        </TabsContent>
 
-              <TabsContent value="activity" className="space-y-4">
 
-                <Card>
 
-                  <CardHeader>
+        <TabsContent value="activity" className="space-y-4">
 
-                    <CardTitle>User Activity Pulse</CardTitle>
+          <Card>
 
-                    <CardDescription>Real-time feed of non-sensitive user interactions and navigation.</CardDescription>
+            <CardHeader>
 
-                  </CardHeader>
+              <CardTitle>User Activity Pulse</CardTitle>
 
-                  <CardContent>
+              <CardDescription>Real-time feed of non-sensitive user interactions and navigation.</CardDescription>
 
-                    <ScrollArea className="h-[500px] w-full rounded-md border bg-slate-950 p-4 font-mono text-sm text-slate-300">
+            </CardHeader>
 
-                      {logs.length === 0 ? (
+            <CardContent>
 
-                        <div className="text-slate-500 text-center py-20">No activity recorded yet. Try the simulate button above!</div>
+              <ScrollArea className="h-[500px] w-full rounded-md border bg-slate-950 p-4 font-mono text-sm text-slate-300">
 
-                      ) : (
+                {logs.length === 0 ? (
 
-                        logs.map((log) => (
+                  <div className="text-slate-500 text-center py-20">No activity recorded yet. Try the simulate button above!</div>
 
-                          <div key={log.id} className="mb-4 border-b border-slate-800 pb-2 last:border-0 hover:bg-slate-900/50 p-2 rounded transition-colors group">
+                ) : (
 
-                            <div className="flex items-center gap-3 mb-1">
+                  logs.map((log) => (
 
-                              <span className="px-2 py-0.5 text-[10px] rounded font-bold bg-green-900/50 text-green-400">
+                    <div key={log.id} className="mb-4 border-b border-slate-800 pb-2 last:border-0 hover:bg-slate-900/50 p-2 rounded transition-colors group">
 
-                                {log.level}
+                      <div className="flex items-center gap-3 mb-1">
 
-                              </span>
+                        <span className="px-2 py-0.5 text-[10px] rounded font-bold bg-green-900/50 text-green-400">
 
-                              <span className="text-slate-500 text-xs">{new Date(log.timestamp).toLocaleString()}</span>
+                          {log.level}
 
-                              <span className="text-slate-400 font-semibold">[{log.source}]</span>
+                        </span>
 
-                            </div>
+                        <span className="text-slate-500 text-xs">{new Date(log.timestamp).toLocaleString()}</span>
 
-                            <div className="pl-2 border-l-2 border-slate-800">
+                        <span className="text-slate-400 font-semibold">[{log.source}]</span>
 
-                              <p className="text-slate-100 uppercase tracking-tighter text-xs font-bold">{log.message}</p>
+                      </div>
 
-                              {log.metadata?.details && (
+                      <div className="pl-2 border-l-2 border-slate-800">
 
-                                <pre className="mt-2 text-[10px] text-blue-300/70 overflow-x-auto p-2 bg-slate-900 rounded">
+                        <p className="text-slate-100 uppercase tracking-tighter text-xs font-bold">{log.message}</p>
 
-                                  {JSON.stringify(log.metadata.details, null, 2)}
+                        {log.metadata?.details && (
 
-                                </pre>
+                          <pre className="mt-2 text-[10px] text-blue-300/70 overflow-x-auto p-2 bg-slate-900 rounded">
 
-                              )}
+                            {JSON.stringify(log.metadata.details, null, 2)}
 
-                            </div>
+                          </pre>
 
-                          </div>
+                        )}
 
-                        ))
+                      </div>
 
-                      )}
+                    </div>
 
-                    </ScrollArea>
+                  ))
 
-                  </CardContent>
+                )}
 
-                </Card>
+              </ScrollArea>
 
-              </TabsContent>
+            </CardContent>
 
-      
+          </Card>
 
-              <TabsContent value="audit" className="space-y-4">
+        </TabsContent>
 
-                 <Card>
 
-                  <CardHeader>
 
-                    <CardTitle>Compliance Audit Trail</CardTitle>
+        <TabsContent value="audit" className="space-y-4">
 
-                    <CardDescription>Secure log of system access, record deletions, and PHI modifications.</CardDescription>
+          <Card>
 
-                  </CardHeader>
+            <CardHeader>
 
-                  <CardContent>
+              <CardTitle>Compliance Audit Trail</CardTitle>
 
-                    <ScrollArea className="h-[500px] w-full rounded-md border bg-slate-950 p-4 font-mono text-sm text-slate-300">
+              <CardDescription>Secure log of system access, record deletions, and PHI modifications.</CardDescription>
 
-                      {logs.length === 0 ? (
+            </CardHeader>
 
-                        <div className="text-slate-500 text-center py-20">No audit logs found.</div>
+            <CardContent>
 
-                      ) : (
+              <ScrollArea className="h-[500px] w-full rounded-md border bg-slate-950 p-4 font-mono text-sm text-slate-300">
 
-                        logs.map((log) => (
+                {logs.length === 0 ? (
 
-                          <div key={log.id} className="mb-4 border-b border-slate-800 pb-2 last:border-0 hover:bg-slate-900/50 p-2 rounded transition-colors group">
+                  <div className="text-slate-500 text-center py-20">No audit logs found.</div>
 
-                            <div className="flex items-center gap-3 mb-1">
+                ) : (
 
-                              <span className={`px-2 py-0.5 text-[10px] rounded font-bold ${
+                  logs.map((log) => (
 
-                                log.level === 'SUCCESS' ? 'bg-blue-900/50 text-blue-400' : 'bg-red-900/50 text-red-400'
+                    <div key={log.id} className="mb-4 border-b border-slate-800 pb-2 last:border-0 hover:bg-slate-900/50 p-2 rounded transition-colors group">
 
-                              }`}>
+                      <div className="flex items-center gap-3 mb-1">
 
-                                {log.level}
+                        <span className={`px-2 py-0.5 text-[10px] rounded font-bold ${log.level === 'SUCCESS' ? 'bg-blue-900/50 text-blue-400' : 'bg-red-900/50 text-red-400'
 
-                              </span>
+                          }`}>
 
-                              <span className="text-slate-500 text-xs">{new Date(log.timestamp).toLocaleString()}</span>
+                          {log.level}
 
-                              <span className="text-slate-400 font-semibold">[{log.source}]</span>
+                        </span>
 
-                            </div>
+                        <span className="text-slate-500 text-xs">{new Date(log.timestamp).toLocaleString()}</span>
 
-                            <div className="pl-2 border-l-2 border-slate-800">
+                        <span className="text-slate-400 font-semibold">[{log.source}]</span>
 
-                              <p className="text-slate-100">{log.message}</p>
+                      </div>
 
-                              <div className="mt-2 flex gap-4 text-[10px] text-slate-500">
+                      <div className="pl-2 border-l-2 border-slate-800">
 
-                                <span>User: {log.metadata?.user_id || 'System'}</span>
+                        <p className="text-slate-100">{log.message}</p>
 
-                                <span>IP: {log.metadata?.ip || 'N/A'}</span>
+                        <div className="mt-2 flex gap-4 text-[10px] text-slate-500">
 
-                              </div>
+                          <span>User: {log.metadata?.user_id || 'System'}</span>
 
-                            </div>
+                          <span>IP: {log.metadata?.ip || 'N/A'}</span>
 
-                          </div>
+                        </div>
 
-                        ))
+                      </div>
 
-                      )}
+                    </div>
 
-                    </ScrollArea>
+                  ))
 
-                  </CardContent>
+                )}
 
-                </Card>
+              </ScrollArea>
 
-              </TabsContent>
+            </CardContent>
+
+          </Card>
+
+        </TabsContent>
       </Tabs>
     </div>
   );

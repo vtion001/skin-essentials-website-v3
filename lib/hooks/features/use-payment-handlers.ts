@@ -66,12 +66,23 @@ export function usePaymentHandlers({
                 body: JSON.stringify(payload),
             })
 
-            if (!res.ok) throw new Error("Failed to save payment")
-
             // Refresh payments list
             const listRes = await fetch("/api/admin/payments", { cache: "no-store" })
             const json = await listRes.json()
             setPayments(Array.isArray(json?.payments) ? json.payments : [])
+
+            // Log Activity
+            const { logActivity } = await import('@/lib/audit-logger')
+            await logActivity(
+                selectedPayment ? 'UPDATE_PAYMENT' : 'CREATE_PAYMENT',
+                'Payment Management',
+                { 
+                    id: selectedPayment?.id || 'new', 
+                    amount: payload.amount,
+                    method: payload.method,
+                    status: payload.status
+                }
+            )
 
             showNotification(
                 "success",
@@ -126,6 +137,10 @@ export function usePaymentHandlers({
             const listRes = await fetch("/api/admin/payments", { cache: "no-store" })
             const json = await listRes.json()
             setPayments(Array.isArray(json?.payments) ? json.payments : [])
+
+            // Log Activity
+            const { logActivity } = await import('@/lib/audit-logger')
+            await logActivity('DELETE_PAYMENT', 'Payment Management', { id: paymentId })
 
             showNotification("success", "Payment deleted successfully!")
         } catch (error) {
