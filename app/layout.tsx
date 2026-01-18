@@ -11,6 +11,7 @@ import { ThemeWrapper } from "@/components/theme-wrapper"
 import SharedFooter from "@/components/shared-footer"
 import { MobileNav } from "@/components/mobile-nav"
 import { ActivityPulseTracker } from "@/components/activity-pulse-tracker"
+import { Suspense } from "react"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -107,7 +108,9 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <ActivityPulseTracker />
+          <Suspense fallback={null}>
+            <ActivityPulseTracker />
+          </Suspense>
           <StructuredData />
           <PerformanceMonitor />
           <SmoothScroll>
