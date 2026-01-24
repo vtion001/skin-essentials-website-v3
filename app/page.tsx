@@ -53,7 +53,10 @@ export default function HomePage() {
     if (typeof window !== 'undefined') {
       gsap.registerPlugin(ScrollTrigger)
     }
-    if (!headingRef.current) return
+    if (!headingRef.current) {
+      console.log("Heading ref not found")
+      return
+    }
 
     let split: SplitType | null = null
     let animation: gsap.core.Tween | null = null
@@ -61,21 +64,37 @@ export default function HomePage() {
     function setup() {
       split && split.revert()
       animation && animation.revert()
-      split = new SplitType(".hero-heading", { types: "chars,words,lines" })
       
-      // Initial animation with ScrollTrigger
-      animation = gsap.from(split.chars, {
-        x: 150,
-        opacity: 0,
-        duration: 0.7,
-        ease: "power4",
-        stagger: 0.04,
-        scrollTrigger: {
-          trigger: ".hero-heading",
-          start: "top 80%",
-          once: true
+      try {
+        split = new SplitType(".hero-heading", { types: "chars,words,lines" })
+        
+        // Initial state - set visibility
+        gsap.set(split.chars, {
+          x: 150,
+          opacity: 0
+        })
+
+        // Initial animation with ScrollTrigger
+        animation = gsap.to(split.chars, {
+          x: 0,
+          opacity: 1,
+          duration: 0.7,
+          ease: "power4",
+          stagger: 0.04,
+          scrollTrigger: {
+            trigger: ".hero-heading",
+            start: "top 80%",
+            once: true
+          }
+        })
+      } catch (error) {
+        console.log("SplitText error:", error)
+        // Fallback: ensure text is visible
+        const headingElement = document.querySelector(".hero-heading")
+        if (headingElement) {
+          gsap.set(headingElement, { opacity: 1, x: 0 })
         }
-      })
+      }
     }
 
     setup()
