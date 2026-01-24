@@ -503,8 +503,8 @@ export default function HomePage() {
                 </div>
 
                 {/* Right Column: Content */}
-                <ScrollAnimation animation="fade-up" stagger={0.1} className="space-y-8 order-1 lg:order-2">
-                  <div className="space-y-4">
+                <ScrollAnimation animation="fade-up" stagger={0.1} className="space-y-6 order-1 lg:order-2">
+                  <div className="space-y-16 -mt-30">
                     <h3 className="text-brand-tan font-serif italic text-2xl">Beyond Beautiful</h3>
                     <h2 className="text-[clamp(2.25rem,4vw+1rem,3rem)] font-bold leading-tight text-gray-900">
                       Unveil Your Best Self with <span className="text-brand-gradient italic">Artistic Precision</span>
@@ -515,7 +515,7 @@ export default function HomePage() {
                   </div>
 
                   {/* Features Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-8 mt-4">
                     {[
                       { icon: Stethoscope, title: "Qualified Doctors", desc: "Expert medical professionals" },
                       { icon: Award, title: "Certified Specialists", desc: "Highly trained team" },
@@ -537,7 +537,14 @@ export default function HomePage() {
                   </div>
 
                   <div className="border-t border-gray-100 pt-8 mt-8">
-                    <div className="grid grid-cols-3 gap-8">
+                    {/* Trust & Transformation Section */}
+                    <div className="text-center mb-8 mt-0">
+                      <h3 className="text-2xl font-serif italic text-gray-900 mb-3">Trusted by Thousands, Transforming Lives Daily</h3>
+                      <p className="text-gray-600 max-w-2xl mx-auto">
+                        With 28 specialized treatments and over 3,000 satisfied clients, our 97.8% satisfaction rate isn't just a number—it's your assurance of exceptional results and care.
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-3 gap-8 mt-8">
                       <div>
                         <div className="text-3xl font-bold text-gray-900">28 <span className="text-brand-tan"></span></div>
                         <div className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Treatments</div>
