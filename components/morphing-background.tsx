@@ -70,12 +70,13 @@ export function MorphingBackground({ className = '' }: MorphingBackgroundProps) 
   }, { scope: svgRef })
 
   return (
-    <div className={`absolute inset-0 pointer-events-none ${className}`}>
+    <div className={`absolute inset-0 pointer-events-none ${className}`} style={{ zIndex: 1 }}>
       <svg
         ref={svgRef}
         className="w-full h-full"
         viewBox="0 0 100 100"
         preserveAspectRatio="none"
+        style={{ mixBlendMode: 'screen' }}
       >
         <defs>
           <linearGradient id="morphingGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -90,8 +91,8 @@ export function MorphingBackground({ className = '' }: MorphingBackgroundProps) 
           d="M 0 50 C 20 20, 80 0, 100 50"
           fill="none"
           stroke="url(#morphingGradient)"
-          strokeWidth="0.5"
-          opacity="0.3"
+          strokeWidth="1"
+          opacity="0.6"
         />
         
         <path
