@@ -196,6 +196,21 @@
         @apply bg-clip-text text-transparent;
     }
 
+    /* Fix for SplitType with Gradient Text */
+    .text-brand-gradient .char,
+    .text-brand-gradient .word {
+        background: linear-gradient(135deg, var(--brand-rose) 0%, var(--brand-tan) 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        display: inline-block;
+        /* Prevent italic clipping */
+        padding-right: 0.2em;
+        margin-right: -0.1em;
+        padding-bottom: 0.2em;
+        margin-bottom: -0.2em;
+    }
+
     .border-brand-gradient {
         border-image: linear-gradient(135deg, var(--brand-rose) 0%, var(--brand-tan) 100%) 1;
     }
