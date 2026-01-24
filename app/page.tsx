@@ -36,6 +36,7 @@ import { useState, useEffect } from "react"
 import { PullToRefresh } from "@/components/pull-to-refresh"
 import { SharedHeader } from "@/components/shared-header"
 import { BookingModal } from "@/components/booking-modal"
+import { ScrollAnimation } from "@/components/scroll-animation"
 
 export default function HomePage() {
   const [isBookingOpen, setIsBookingOpen] = useState(false)
@@ -177,52 +178,54 @@ export default function HomePage() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center min-h-[calc(100vh-8rem)]">
                 {/* Left Content */}
                 <div className="space-y-6 lg:space-y-8 order-2 lg:order-1">
-                  <div className="space-y-4 lg:space-y-6">
-                    <Badge className="bg-brand-gradient text-white px-4 py-2 text-sm hover-lift">
-                      Trusted by 3,000+ Clients
-                    </Badge>
+                  <ScrollAnimation animation="fade-up" stagger={0.1} className="space-y-6 lg:space-y-8">
+                    <div className="space-y-4 lg:space-y-6">
+                      <Badge className="bg-brand-gradient text-white px-4 py-2 text-sm hover-lift">
+                        Trusted by 3,000+ Clients
+                      </Badge>
 
-                    <h1 className="text-[clamp(1.875rem,4vw+1rem,3.75rem)] font-bold leading-tight">
-                      <span className="text-gray-900">Quezon City's Top</span>
-                      <br />
-                      <span className="text-brand-gradient">
-                        Aesthetic Clinic
-                      </span>
-                    </h1>
+                      <h1 className="text-[clamp(1.875rem,4vw+1rem,3.75rem)] font-bold leading-tight">
+                        <span className="text-gray-900">Quezon City's Top</span>
+                        <br />
+                        <span className="text-brand-gradient">
+                          Aesthetic Clinic
+                        </span>
+                      </h1>
 
-                    <p className="text-lg md:text-xl text-gray-600 leading-relaxed max-w-lg">
-                      Experience world-class non-surgical beauty enhancements at the leading aesthetic clinic near Quezon City. Our team of licensed medical professionals uses FDA-approved materials for safe, natural results.
-                    </p>
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <Link href="/contact">
-                      <Button
-                        size="xl"
-                        variant="brand"
-                        className="px-8 py-4 text-lg font-semibold rounded-xl"
-                      >
-                        <Calendar className="w-5 h-5 mr-2" />
-                        Book Free Consultation
-                      </Button>
-                    </Link>
-                  </div>
-
-                  {/* Trust Indicators */}
-                  <div className="flex items-center justify-center sm:justify-start space-x-6 lg:space-x-8 pt-4">
-                    <div className="text-center">
-                      <div className="text-xl md:text-2xl font-bold text-gray-900">3,000+</div>
-                      <div className="text-xs md:text-sm text-gray-600">Happy Clients</div>
+                      <p className="text-lg md:text-xl text-gray-600 leading-relaxed max-w-lg">
+                        Experience world-class non-surgical beauty enhancements at the leading aesthetic clinic near Quezon City. Our team of licensed medical professionals uses FDA-approved materials for safe, natural results.
+                      </p>
                     </div>
-                    <div className="text-center">
-                      <div className="text-xl md:text-2xl font-bold text-gray-900">28</div>
-                      <div className="text-xs md:text-sm text-gray-600">Treatments</div>
+
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      <Link href="/contact">
+                        <Button
+                          size="xl"
+                          variant="brand"
+                          className="px-8 py-4 text-lg font-semibold rounded-xl"
+                        >
+                          <Calendar className="w-5 h-5 mr-2" />
+                          Book Free Consultation
+                        </Button>
+                      </Link>
                     </div>
-                    <div className="text-center">
-                      <div className="text-xl md:text-2xl font-bold text-gray-900">15+</div>
-                      <div className="text-xs md:text-sm text-gray-600">Years Experience</div>
+
+                    {/* Trust Indicators */}
+                    <div className="flex items-center justify-center sm:justify-start space-x-6 lg:space-x-8 pt-4">
+                      <div className="text-center">
+                        <div className="text-xl md:text-2xl font-bold text-gray-900">3,000+</div>
+                        <div className="text-xs md:text-sm text-gray-600">Happy Clients</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-xl md:text-2xl font-bold text-gray-900">28</div>
+                        <div className="text-xs md:text-sm text-gray-600">Treatments</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-xl md:text-2xl font-bold text-gray-900">15+</div>
+                        <div className="text-xs md:text-sm text-gray-600">Years Experience</div>
+                      </div>
                     </div>
-                  </div>
+                  </ScrollAnimation>
                 </div>
 
                 {/* Right Content - Hero Image (hidden when video is present) */}
@@ -277,7 +280,7 @@ export default function HomePage() {
 
           {/* Services Section - Luxurious Checkerboard Layout */}
           <section className="relative overflow-hidden bg-white">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+            <ScrollAnimation animation="fade-up" stagger={0.1} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
               {/* Row 1 */}
               <div className="aspect-square relative overflow-hidden group">
                 <Image
@@ -345,18 +348,18 @@ export default function HomePage() {
                   className="object-cover transition-transform duration-1000 group-hover:scale-110"
                 />
               </div>
-            </div>
+            </ScrollAnimation>
 
             {/* Choose a treatment section below */}
             <div className="py-24 bg-white">
               <div className="container mx-auto px-4 text-center">
-                <div className="mb-16">
+                <ScrollAnimation animation="fade-up" className="mb-16">
                   <h2 className="text-[clamp(2.25rem,4vw+1rem,3rem)] font-serif italic text-gray-900 mb-4 inline-block relative after:content-[''] after:absolute after:-bottom-4 after:left-1/2 after:-translate-x-1/2 after:w-20 after:h-[1px] after:bg-brand-tan">
                     Choose a treatment
                   </h2>
-                </div>
+                </ScrollAnimation>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-16 gap-x-12 max-w-6xl mx-auto">
+                <ScrollAnimation animation="fade-up" stagger={0.1} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-16 gap-x-12 max-w-6xl mx-auto">
                   {[
                     {
                       title: "Face lift",
@@ -434,7 +437,7 @@ export default function HomePage() {
                       </div>
                     </div>
                   ))}
-                </div>
+                </ScrollAnimation>
               </div>
             </div>
           </section>
@@ -452,7 +455,7 @@ export default function HomePage() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center mb-32">
                 {/* Left Column: Capsule Image Grid */}
                 <div className="relative order-2 lg:order-1">
-                  <div className="grid grid-cols-2 gap-6 items-end">
+                  <ScrollAnimation animation="fade-up" stagger={0.2} className="grid grid-cols-2 gap-6 items-end">
                     <div className="space-y-6">
                       <div className="relative aspect-[3/4] rounded-full overflow-hidden shadow-2xl transform hover:scale-105 transition-transform duration-500">
                         <Image
@@ -494,13 +497,13 @@ export default function HomePage() {
                         />
                       </div>
                     </div>
-                  </div>
+                  </ScrollAnimation>
                   {/* Decorative element */}
                   <div className="absolute -z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-brand-gradient/5 rounded-full blur-3xl"></div>
                 </div>
 
                 {/* Right Column: Content */}
-                <div className="space-y-8 order-1 lg:order-2">
+                <ScrollAnimation animation="fade-up" stagger={0.1} className="space-y-8 order-1 lg:order-2">
                   <div className="space-y-4">
                     <h3 className="text-brand-tan font-serif italic text-2xl">Beyond Beautiful</h3>
                     <h2 className="text-[clamp(2.25rem,4vw+1rem,3rem)] font-bold leading-tight text-gray-900">
@@ -549,11 +552,11 @@ export default function HomePage() {
                       </div>
                     </div>
                   </div>
-                </div>
+                </ScrollAnimation>
               </div>
 
               {/* Bottom Row: Why Choose Us & Vision/Mission */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+              <ScrollAnimation animation="fade-up" stagger={0.2} className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
                 {/* Left: Why Choose Us with Progress Bars */}
                 <div className="space-y-10">
                   <div className="space-y-4">
@@ -584,7 +587,7 @@ export default function HomePage() {
                   </div>
 
                   <Link href="/contact">
-                    <Button className="bg-brand-gradient hover:shadow-xl hover-lift text-white px-10 py-6 rounded-full text-lg font-bold">
+                    <Button className="bg-brand-gradient hover:shadow-xl hover-lift text-white px-8 py-4 rounded-full text-lg font-bold mt-8">
                       Learn More
                     </Button>
                   </Link>
@@ -618,22 +621,22 @@ export default function HomePage() {
                     </Link>
                   </div>
                 </div>
-              </div>
+              </ScrollAnimation>
             </div>
           </section>
 
           {/* Testimonials - Luxurious Centered Layout */}
           <section className="py-32 bg-white">
             <div className="container mx-auto px-4">
-              <div className="text-center mb-20 space-y-4">
+              <ScrollAnimation animation="fade-up" className="text-center mb-20 space-y-4">
                 <div className="text-gray-400 text-sm tracking-[0.3em] uppercase">Testimonials</div>
                 <div className="w-12 h-[1px] bg-brand-tan/40 mx-auto"></div>
                 <h2 className="text-[clamp(2.5rem,5vw+1rem,3.75rem)] font-serif italic text-gray-900 pt-2">
                   What Our Fantastic Clients Say
                 </h2>
-              </div>
+              </ScrollAnimation>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-16 lg:gap-24 max-w-7xl mx-auto">
+              <ScrollAnimation animation="fade-up" stagger={0.15} className="grid grid-cols-1 md:grid-cols-3 gap-16 lg:gap-24 max-w-7xl mx-auto">
                 {[
                   {
                     name: "Lexa Baby Garan",
@@ -682,7 +685,7 @@ export default function HomePage() {
                     </div>
                   </div>
                 ))}
-              </div>
+              </ScrollAnimation>
             </div>
           </section>
 
