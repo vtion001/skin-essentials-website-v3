@@ -1,6 +1,18 @@
 'use client'
 
-import { useEffect } from 'react'
+import React, { createContext, useContext, useEffect, useState } from 'react'
+import Lenis from 'lenis'
+import gsap from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+
+// Register ScrollTrigger
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(ScrollTrigger)
+}
+
+const SmoothScrollContext = createContext<Lenis | null>(null)
+
+export const useSmoothScrollContext = () => useContext(SmoothScrollContext)
 
 interface SmoothScrollProps {
   children: React.ReactNode
@@ -8,79 +20,97 @@ interface SmoothScrollProps {
   duration?: number
 }
 
-export function SmoothScroll({ children, offset = 100, duration = 800 }: SmoothScrollProps) {
-  useEffect(() => {
-    // Enhanced smooth scrolling for anchor links
-    const handleAnchorClick = (e: Event) => {
-      const target = e.target as HTMLAnchorElement
-      if (target.tagName === 'A' && target.hash) {
-        const href = target.getAttribute('href')
-        if (href?.startsWith('#')) {
-          e.preventDefault()
-          const targetElement = document.querySelector(href)
-          if (targetElement) {
-            const targetPosition = targetElement.getBoundingClientRect().top + window.pageYOffset - offset
-            
-            // Use requestAnimationFrame for smooth animation
-            const startPosition = window.pageYOffset
-            const distance = targetPosition - startPosition
-            let startTime: number | null = null
+export function SmoothScroll({ children }: SmoothScrollProps) {
+  const [lenis, setLenis] = useState<Lenis | null>(null)
 
-            const animation = (currentTime: number) => {
-              if (startTime === null) startTime = currentTime
-              const timeElapsed = currentTime - startTime
-              const progress = Math.min(timeElapsed / duration, 1)
-              
-              // Easing function for smooth animation
-              const ease = (t: number) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t
-              
-              window.scrollTo(0, startPosition + distance * ease(progress))
-              
-              if (progress < 1) {
-                requestAnimationFrame(animation)
-              }
-            }
-            
-            requestAnimationFrame(animation)
-          }
+  useEffect(() => {
+    const lenisInstance = new Lenis({
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      orientation: 'vertical',
+      gestureOrientation: 'vertical',
+      smoothWheel: true,
+      touchMultiplier: 2,
+    })
+
+    setLenis(lenisInstance)
+
+    // Sync Lenis with GSAP ScrollTrigger
+    lenisInstance.on('scroll', ScrollTrigger.update)
+
+    gsap.ticker.add((time) => {
+      lenisInstance.raf(time * 1000)
+    })
+
+    gsap.ticker.lagSmoothing(0)
+    
+    // Force a refresh after a short delay to ensure layout is settled
+    setTimeout(() => {
+        ScrollTrigger.refresh()
+    }, 1000)
+
+    // Handle anchor links
+    const handleAnchorClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement
+      const anchor = target.closest('a')
+      if (anchor && anchor.hash && anchor.hash.startsWith('#')) {
+        const targetElement = document.querySelector(anchor.hash) as HTMLElement
+        if (targetElement) {
+          e.preventDefault()
+          lenisInstance.scrollTo(targetElement, { offset: -100 })
         }
       }
     }
 
-    // Add event listener for anchor clicks
     document.addEventListener('click', handleAnchorClick)
-    
-    // Add smooth scroll class to html element
-    document.documentElement.classList.add('smooth-scroll')
 
     return () => {
+      lenisInstance.destroy()
+      gsap.ticker.remove((time) => {
+        lenisInstance.raf(time * 1000)
+      })
       document.removeEventListener('click', handleAnchorClick)
-      document.documentElement.classList.remove('smooth-scroll')
     }
-  }, [offset, duration])
+  }, [])
 
-  return <>{children}</>
+  return (
+    <SmoothScrollContext.Provider value={lenis}>
+      {children}
+    </SmoothScrollContext.Provider>
+  )
 }
 
 // Hook for programmatic smooth scrolling
 export function useSmoothScroll() {
+  const lenis = useSmoothScrollContext()
+
   const scrollToElement = (elementId: string, offset = 100) => {
-    const element = document.getElementById(elementId)
-    if (element) {
-      const targetPosition = element.getBoundingClientRect().top + window.pageYOffset - offset
-      
-      window.scrollTo({
-        top: targetPosition,
-        behavior: 'smooth'
-      })
+    if (lenis) {
+      const element = document.getElementById(elementId)
+      if (element) {
+        lenis.scrollTo(element, { offset: -offset })
+      }
+    } else {
+      const element = document.getElementById(elementId)
+      if (element) {
+        const targetPosition = element.getBoundingClientRect().top + window.pageYOffset - offset
+        window.scrollTo({
+          top: targetPosition,
+          behavior: 'smooth'
+        })
+      }
     }
   }
 
   const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    })
+    if (lenis) {
+      lenis.scrollTo(0)
+    } else {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      })
+    }
   }
 
   return { scrollToElement, scrollToTop }
