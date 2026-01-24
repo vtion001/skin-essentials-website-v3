@@ -32,16 +32,67 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
 import Image from "next/image"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { PullToRefresh } from "@/components/pull-to-refresh"
 import { SharedHeader } from "@/components/shared-header"
 import { BookingModal } from "@/components/booking-modal"
 import { ScrollAnimation } from "@/components/scroll-animation"
+import gsap from "gsap"
+import { useGSAP } from "@gsap/react"
+import { ScrollTrigger } from "gsap/ScrollTrigger"
+import SplitType from "split-type"
 
 export default function HomePage() {
   const [isBookingOpen, setIsBookingOpen] = useState(false)
   const heroVideoUrl = "https://res.cloudinary.com/dbviya1rj/video/upload/v1766267101/v2httaofqjgsxkgsoqvm.mov"
   const [heroVideoError, setHeroVideoError] = useState(false)
+  const headingRef = useRef<HTMLDivElement>(null)
+
+  // GSAP SplitText Animation
+  useGSAP(() => {
+    if (typeof window !== 'undefined') {
+      gsap.registerPlugin(ScrollTrigger)
+    }
+    if (!headingRef.current) return
+
+    let split: SplitType | null = null
+    let animation: gsap.core.Tween | null = null
+
+    function setup() {
+      split && split.revert()
+      animation && animation.revert()
+      split = new SplitType(".hero-heading", { types: "chars,words,lines" })
+      
+      // Initial animation with ScrollTrigger
+      animation = gsap.from(split.chars, {
+        x: 150,
+        opacity: 0,
+        duration: 0.7,
+        ease: "power4",
+        stagger: 0.04,
+        scrollTrigger: {
+          trigger: ".hero-heading",
+          start: "top 80%",
+          once: true
+        }
+      })
+    }
+
+    setup()
+
+    // Handle resize
+    const handleResize = () => {
+      setup()
+    }
+
+    window.addEventListener("resize", handleResize)
+
+    return () => {
+      window.removeEventListener("resize", handleResize)
+      split?.revert()
+      animation?.revert()
+    }
+  }, { scope: headingRef })
 
   const mainServices = [
     {
@@ -175,25 +226,24 @@ export default function HomePage() {
               <div className="absolute bottom-1/4 left-1/3 w-2 h-2 bg-gradient-to-r from-brand-tan to-brand-rose rounded-full animate-bounce" style={{ animationDelay: '1.1s' }}></div>
             </div>
             <div className="container mx-auto px-4 relative z-20">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center min-h-[calc(100vh-8rem)]">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center min-h-[calc(100vh-6rem)]">
                 {/* Left Content */}
-                <div className="space-y-6 lg:space-y-8 order-2 lg:order-1">
+                <div className="space-y-6 lg:space-y-8 order-2 lg:order-1 overflow-visible">
                   <ScrollAnimation animation="fade-up" stagger={0.1} className="space-y-6 lg:space-y-8">
-                    <div className="space-y-4 lg:space-y-6">
+                    <div className="space-y-4 lg:space-y-6 mb-4 overflow-visible">
                       <Badge className="bg-brand-gradient text-white px-4 py-2 text-sm hover-lift">
-                        Trusted by 3,000+ Clients
+                        3,000+ Confidence Transformations
                       </Badge>
 
-                      <h1 className="text-[clamp(1.875rem,4vw+1rem,3.75rem)] font-bold leading-tight">
-                        <span className="text-gray-900">Quezon City's Top</span>
-                        <br />
-                        <span className="text-brand-gradient">
-                          Aesthetic Clinic
+                      <div ref={headingRef} className="hero-heading text-[clamp(1.875rem,3vw+1rem,3.25rem)] font-bold leading-relaxed">
+                        <span className="text-gray-900 block">Discover Your Most Confident</span>
+                        <span className="text-brand-gradient italic block">
+                          Authentic Self
                         </span>
-                      </h1>
+                      </div>
 
                       <p className="text-lg md:text-xl text-gray-600 leading-relaxed max-w-lg">
-                        Experience world-class non-surgical beauty enhancements at the leading aesthetic clinic near Quezon City. Our team of licensed medical professionals uses FDA-approved materials for safe, natural results.
+                        Experience personalized beauty treatments designed to reveal your natural radiance. FDA-approved procedures, expert medical care, and results that feel uniquely, beautifully you.
                       </p>
                     </div>
 
