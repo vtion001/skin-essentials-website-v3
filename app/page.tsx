@@ -68,32 +68,58 @@ export default function HomePage() {
       try {
         split = new SplitType(".hero-heading", { types: "chars,words,lines" })
         
-        // Initial state - set characters to the right, invisible
-        gsap.set(split.chars, {
-          x: 150,
-          opacity: 0
-        })
+        console.log("SplitText created:", split)
+        console.log("Characters found:", split?.chars?.length)
+        
+        // Ensure parent is visible first
+        gsap.set(".hero-heading", { opacity: 1, visibility: 'visible' })
+        
+        // Set initial state for all characters - right and invisible
+        if (split.chars && split.chars.length > 0) {
+          console.log("Setting initial character state")
+          gsap.set(split.chars, {
+            x: 150,
+            opacity: 0
+          })
 
-        // Animate characters in from right to left with stagger
-        animation = gsap.to(split.chars, {
-          x: 0,
-          opacity: 1,
-          duration: 0.7,
-          ease: "power4",
-          stagger: 0.04,
-          scrollTrigger: {
-            trigger: ".hero-heading",
-            start: "top 80%",
-            once: true,
-            markers: false
-          }
-        })
+          // Animate characters in from right to left with stagger
+          animation = gsap.to(split.chars, {
+            x: 0,
+            opacity: 1,
+            duration: 0.7,
+            ease: "power4",
+            stagger: 0.04,
+            scrollTrigger: {
+              trigger: ".hero-heading",
+              start: "top 80%",
+              once: true,
+              markers: false
+            },
+            onStart: () => {
+              console.log("Animation started")
+            }
+          })
+        } else {
+          console.log("No characters found, fallback to direct animation")
+          // Fallback for when SplitText doesn't work
+          gsap.from(".hero-heading", {
+            opacity: 0,
+            y: 50,
+            duration: 0.7,
+            ease: "power4",
+            scrollTrigger: {
+              trigger: ".hero-heading",
+              start: "top 80%",
+              once: true
+            }
+          })
+        }
       } catch (error) {
         console.log("SplitText error:", error)
-        // Fallback: ensure text is visible
+        // Fallback: ensure entire heading is visible
         const headingElement = document.querySelector(".hero-heading")
         if (headingElement) {
-          gsap.set(headingElement, { opacity: 1, x: 0 })
+          gsap.set(headingElement, { opacity: 1, visibility: 'visible' })
         }
       }
     }
@@ -262,11 +288,8 @@ export default function HomePage() {
                       </Badge>
 
                       <h1 ref={headingRef} className="hero-heading text-[clamp(1.875rem,3vw+1rem,3.25rem)] font-bold leading-relaxed">
-                        <span className="text-gray-900 block">Discover Your Most Confident</span>
-                        <br />
-                        <span className="text-brand-gradient italic">
-                          Authentic Self
-                        </span>
+                        <div className="text-gray-900">Discover Your Most Confident</div>
+                        <div className="text-brand-gradient italic">Authentic Self</div>
                       </h1>
 
                       <p className="text-lg md:text-xl text-gray-600 leading-relaxed max-w-lg">
