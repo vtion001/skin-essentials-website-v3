@@ -66,57 +66,49 @@ export default function HomePage() {
       animation && animation.revert()
       
       try {
-        split = new SplitType(".hero-heading", { types: "chars,words,lines" })
-        
-        console.log("SplitText created:", split)
-        console.log("Characters found:", split?.chars?.length)
-        
-        // Ensure parent is visible first
+        // Ensure heading is visible immediately
         gsap.set(".hero-heading", { opacity: 1, visibility: 'visible' })
         
-        // Set initial state for all characters - right and invisible
-        if (split.chars && split.chars.length > 0) {
-          console.log("Setting initial character state")
-          gsap.set(split.chars, {
-            x: 150,
-            opacity: 0
-          })
-
-          // Animate characters in from right to left with stagger
-          animation = gsap.to(split.chars, {
-            x: 0,
-            opacity: 1,
-            duration: 0.7,
-            ease: "power4",
-            stagger: 0.04,
-            scrollTrigger: {
-              trigger: ".hero-heading",
-              start: "top 80%",
-              once: true,
-              markers: false
-            },
-            onStart: () => {
-              console.log("Animation started")
+        // Simple approach - animate the entire heading first
+        animation = gsap.from(".hero-heading", {
+          opacity: 0,
+          y: 30,
+          duration: 1,
+          ease: "power3.out",
+          scrollTrigger: {
+            trigger: ".hero-heading",
+            start: "top 80%",
+            once: true
+          }
+        })
+        
+        // Then try character animation for second line only
+        setTimeout(() => {
+          try {
+            split = new SplitType(".hero-heading span", { types: "chars" })
+            
+            if (split.chars && split.chars.length > 0) {
+              // Animate "Authentic Self" characters specifically
+              gsap.fromTo(split.chars, {
+                x: 100,
+                opacity: 0
+              }, {
+                x: 0,
+                opacity: 1,
+                duration: 0.8,
+                ease: "power4",
+                stagger: 0.05,
+                delay: 0.5
+              })
             }
-          })
-        } else {
-          console.log("No characters found, fallback to direct animation")
-          // Fallback for when SplitText doesn't work
-          gsap.from(".hero-heading", {
-            opacity: 0,
-            y: 50,
-            duration: 0.7,
-            ease: "power4",
-            scrollTrigger: {
-              trigger: ".hero-heading",
-              start: "top 80%",
-              once: true
-            }
-          })
-        }
+          } catch (splitError) {
+            console.log("SplitText error:", splitError)
+          }
+        }, 100)
+        
       } catch (error) {
-        console.log("SplitText error:", error)
-        // Fallback: ensure entire heading is visible
+        console.log("Animation error:", error)
+        // Ensure heading is visible as fallback
         const headingElement = document.querySelector(".hero-heading")
         if (headingElement) {
           gsap.set(headingElement, { opacity: 1, visibility: 'visible' })
@@ -287,9 +279,9 @@ export default function HomePage() {
                         3,000+ Confidence Transformations
                       </Badge>
 
-                      <h1 ref={headingRef} className="hero-heading text-[clamp(1.875rem,3vw+1rem,3.25rem)] font-bold leading-relaxed">
-                        <div className="text-gray-900">Discover Your Most Confident</div>
-                        <div className="text-brand-gradient italic">Authentic Self</div>
+                      <h1 ref={headingRef} className="hero-heading text-[clamp(1.875rem,3vw+1rem,3.25rem)] font-bold leading-relaxed" style={{ visibility: 'visible' }}>
+                        Discover Your Most Confident<br/>
+                        <span className="text-brand-gradient italic" style={{ visibility: 'visible' }}>Authentic Self</span>
                       </h1>
 
                       <p className="text-lg md:text-xl text-gray-600 leading-relaxed max-w-lg">
