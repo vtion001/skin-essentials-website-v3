@@ -48,7 +48,7 @@ export default function HomePage() {
   const [heroVideoError, setHeroVideoError] = useState(false)
   const headingRef = useRef<HTMLDivElement>(null)
 
-  // GSAP SplitText Animation - Temporarily disabled for debugging
+  // GSAP SplitText Animation
   useGSAP(() => {
     if (typeof window !== 'undefined') {
       gsap.registerPlugin(ScrollTrigger)
@@ -58,11 +58,6 @@ export default function HomePage() {
       return
     }
 
-    // Ensure heading is visible by default
-    gsap.set(headingRef.current, { opacity: 1, visibility: 'visible' })
-
-    // Commented out for debugging - will enable once text is visible
-    /*
     let split: SplitType | null = null
     let animation: gsap.core.Tween | null = null
 
@@ -73,13 +68,13 @@ export default function HomePage() {
       try {
         split = new SplitType(".hero-heading", { types: "chars,words,lines" })
         
-        // Initial state - set visibility
+        // Initial state - set characters to the right, invisible
         gsap.set(split.chars, {
           x: 150,
           opacity: 0
         })
 
-        // Initial animation with ScrollTrigger
+        // Animate characters in from right to left with stagger
         animation = gsap.to(split.chars, {
           x: 0,
           opacity: 1,
@@ -89,7 +84,8 @@ export default function HomePage() {
           scrollTrigger: {
             trigger: ".hero-heading",
             start: "top 80%",
-            once: true
+            once: true,
+            markers: false
           }
         })
       } catch (error) {
@@ -102,21 +98,26 @@ export default function HomePage() {
       }
     }
 
+    // Initial setup
     setup()
 
-    // Handle resize
+    // Handle resize with debouncing
+    let resizeTimer: NodeJS.Timeout
     const handleResize = () => {
-      setup()
+      clearTimeout(resizeTimer)
+      resizeTimer = setTimeout(() => {
+        setup()
+      }, 250)
     }
 
     window.addEventListener("resize", handleResize)
 
     return () => {
       window.removeEventListener("resize", handleResize)
+      clearTimeout(resizeTimer)
       split?.revert()
       animation?.revert()
     }
-    */
   }, { scope: headingRef })
 
   const mainServices = [
@@ -260,10 +261,10 @@ export default function HomePage() {
                         3,000+ Confidence Transformations
                       </Badge>
 
-                      <h1 ref={headingRef} className="text-[clamp(1.875rem,3vw+1rem,3.25rem)] font-bold leading-relaxed" style={{ display: 'block', visibility: 'visible', opacity: 1 }}>
-                        <span className="text-gray-900 block" style={{ display: 'block', visibility: 'visible', opacity: 1 }}>Discover Your Most Confident</span>
+                      <h1 ref={headingRef} className="hero-heading text-[clamp(1.875rem,3vw+1rem,3.25rem)] font-bold leading-relaxed">
+                        <span className="text-gray-900 block">Discover Your Most Confident</span>
                         <br />
-                        <span className="text-brand-gradient italic" style={{ display: 'inline-block', visibility: 'visible', opacity: 1 }}>
+                        <span className="text-brand-gradient italic">
                           Authentic Self
                         </span>
                       </h1>
