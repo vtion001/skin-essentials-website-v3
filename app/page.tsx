@@ -48,7 +48,7 @@ export default function HomePage() {
   const [heroVideoError, setHeroVideoError] = useState(false)
   const headingRef = useRef<HTMLDivElement>(null)
 
-  // GSAP SplitText Animation
+  // GSAP SplitText Animation - Temporarily disabled for debugging
   useGSAP(() => {
     if (typeof window !== 'undefined') {
       gsap.registerPlugin(ScrollTrigger)
@@ -58,6 +58,11 @@ export default function HomePage() {
       return
     }
 
+    // Ensure heading is visible by default
+    gsap.set(headingRef.current, { opacity: 1, visibility: 'visible' })
+
+    // Commented out for debugging - will enable once text is visible
+    /*
     let split: SplitType | null = null
     let animation: gsap.core.Tween | null = null
 
@@ -111,6 +116,7 @@ export default function HomePage() {
       split?.revert()
       animation?.revert()
     }
+    */
   }, { scope: headingRef })
 
   const mainServices = [
@@ -254,12 +260,13 @@ export default function HomePage() {
                         3,000+ Confidence Transformations
                       </Badge>
 
-                      <div ref={headingRef} className="hero-heading text-[clamp(1.875rem,3vw+1rem,3.25rem)] font-bold leading-relaxed">
-                        <span className="text-gray-900 block">Discover Your Most Confident</span>
-                        <span className="text-brand-gradient italic block">
+                      <h1 ref={headingRef} className="text-[clamp(1.875rem,3vw+1rem,3.25rem)] font-bold leading-relaxed" style={{ display: 'block', visibility: 'visible', opacity: 1 }}>
+                        <span className="text-gray-900 block" style={{ display: 'block', visibility: 'visible', opacity: 1 }}>Discover Your Most Confident</span>
+                        <br />
+                        <span className="text-brand-gradient italic" style={{ display: 'inline-block', visibility: 'visible', opacity: 1 }}>
                           Authentic Self
                         </span>
-                      </div>
+                      </h1>
 
                       <p className="text-lg md:text-xl text-gray-600 leading-relaxed max-w-lg">
                         Experience personalized beauty treatments designed to reveal your natural radiance. FDA-approved procedures, expert medical care, and results that feel uniquely, beautifully you.
