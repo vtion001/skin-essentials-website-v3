@@ -7,6 +7,7 @@ const __dirname = path.dirname(__filename);
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   outputFileTracingRoot: __dirname,
+  productionBrowserSourceMaps: true,
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -21,19 +22,19 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'res.cloudinary.com',
         port: '',
-        pathname: '/**',
+        pathname: '/**', 
       },
       {
         protocol: 'https',
         hostname: 'images.unsplash.com',
         port: '',
-        pathname: '/**',
+        pathname: '/**', 
       },
       {
         protocol: 'https',
         hostname: 'www.transparenttextures.com',
         port: '',
-        pathname: '/**',
+        pathname: '/**', 
       },
     ],
   },
@@ -55,5 +56,4 @@ const nextConfig = {
     },
   },
 }
-
 export default nextConfig

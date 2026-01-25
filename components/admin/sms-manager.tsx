@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { SmsAnalytics } from "./sms-analytics"
 import { ScheduledSmsList } from "./scheduled-sms-list"
 import { SmsLogs } from "./sms-logs"
-import { trackActivity } from "@/app/actions/developer"
+import { trackActivity } from "@/app/actions/activity"
 
 interface SmsStatus {
     configured: boolean

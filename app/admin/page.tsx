@@ -144,7 +144,7 @@ import { useStaffHandlers } from "@/lib/hooks/features/use-staff-handlers"
 import { useInfluencerHandlers } from "@/lib/hooks/features/use-influencer-handlers"
 import { AuditLogsTab } from "@/components/admin/tabs/audit-logs-tab"
 import { EncryptionErrorBanner } from "@/components/admin/encryption-error-banner"
-import { trackActivity } from "@/app/actions/developer"
+import { trackActivity } from "@/app/actions/activity"
 
 const services = [
   "Thread Lifts - Nose Enhancement",
@@ -2310,7 +2310,17 @@ export default function AdminDashboard() {
                               open={!!editPortfolioItem}
                               onOpenChange={(v) => { setEditPortfolioItem(v ? editPortfolioItem : null) }}
                               target={editPortfolioItem}
-                              onSaved={async () => { try { const r = await fetch('/api/portfolio'); const jr = await r.json(); if (jr?.ok && Array.isArray(jr.data)) setContentPortfolioItems(jr.data); showNotification('success', 'Changes saved') } catch { } }}
+                              onSaved={async () => { 
+                                try { 
+                                  const r = await fetch('/api/portfolio'); 
+                                  const jr = await r.json(); 
+                                  if (jr?.ok && Array.isArray(jr.data)) {
+                                    setContentPortfolioItems(jr.data);
+                                  }
+                                  loadAllData(); // Refresh all data
+                                  showNotification('success', 'Changes saved');
+                                } catch { } 
+                              }}
                               categoryOptions={categoryOptions}
                               procedureOptions={procedureOptions}
                             />

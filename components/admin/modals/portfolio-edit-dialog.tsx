@@ -47,26 +47,27 @@ export const PortfolioEditDialog = memo(function PortfolioEditDialog({
         const b = String(inlineAdd.beforeImage || "")
         const a = String(inlineAdd.afterImage || "")
         if (!b || !a) return
+
+        const newResult = { beforeImage: b, afterImage: a }
+        const currentExtra = Array.isArray(target.extraResults) ? target.extraResults : []
+        const updatedExtra = [...currentExtra, newResult]
+
         const payload = {
-            title: target.title,
-            category: target.category,
-            beforeImage: b,
-            afterImage: a,
-            description: target.description,
-            treatment: target.treatment,
-            duration: target.duration,
-            results: target.results,
-            extraResults: [],
+            extraResults: updatedExtra
         }
-        const res = await fetch("/api/portfolio", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-        })
-        if (res.ok) {
-            setInlineAdd({ beforeImage: "", afterImage: "" })
-            onSaved()
-        }
+
+        try {
+            const res = await fetch(`/api/portfolio/${target.id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            })
+            
+            if (res.ok) {
+                setInlineAdd({ beforeImage: "", afterImage: "" })
+                onSaved()
+            }
+        } catch { }
     }
 
     const handleSave = async () => {

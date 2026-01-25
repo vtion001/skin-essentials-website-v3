@@ -172,29 +172,3 @@ export async function simulateActivity(): Promise<ActionResult> {
     return { success: false, error: message };
   }
 }
-
-// ============================================================================
-// ACTIVITY TRACKING
-// ============================================================================
-
-/**
- * Tracks user activity across the admin dashboard.
- * This is called from client components to log administrative actions.
- * 
- * @param action - The action type (e.g., 'CREATE_SERVICE', 'DELETE_STAFF')
- * @param resource - The resource being acted upon (e.g., 'Staff Management')
- * @param details - Optional structured details about the action
- */
-export async function trackActivity(
-  action: string,
-  resource: string,
-  details?: ActivityDetails
-): Promise<ActionResult> {
-  try {
-    await logActivity(action, resource, details);
-    return { success: true };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to track activity';
-    return { success: false, error: message };
-  }
-}

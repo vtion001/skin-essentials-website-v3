@@ -96,6 +96,10 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(url)
     }
 
+    // Add comprehensive security headers to admin responses
+    Object.entries(securityHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value)
+    })
     response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload')
 
     // MFA Check
@@ -108,13 +112,67 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(url)
     }
 
-    return response
-  }
+   return response
+  } 
 
+  // Add global security headers for non-admin routes
+  const globalResponse = NextResponse.next()
+  
+  // Basic security headers for all pages
+  globalResponse.headers.set('X-Frame-Options', 'DENY')
+  globalResponse.headers.set('X-Content-Type-Options', 'nosniff')
+  globalResponse.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+  globalResponse.headers.set('Permissions-Policy', 
+    'camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), autoplay=(self), fullscreen=(self), picture-in-picture=(self)'
+  )
 
-  return NextResponse.next()
+  // CSP for non-admin pages
+  const csp = [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cloudinary.com",
+    "img-src 'self' data: https: blob: https://res.cloudinary.com https://images.unsplash.com https://*.stripe.com",
+    "font-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com",
+    "connect-src 'self' https://api.supabase.co https://www.google-analytics.com https://www.googletagmanager.com ws://localhost:*",
+    "frame-src 'none'",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+    "upgrade-insecure-requests"
+  ].join('; ')
+  
+  globalResponse.headers.set('Content-Security-Policy', csp)
+
+  return globalResponse
+}
+
+// Security headers configuration
+const securityHeaders = {
+  'Content-Security-Policy': [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://checkout.stripe.com https://js.stripe.com",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cloudinary.com",
+    "img-src 'self' data: https: blob: https://res.cloudinary.com https://images.unsplash.com https://*.stripe.com",
+    "font-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com",
+    "connect-src 'self' https://api.supabase.co https://www.google-analytics.com https://www.googletagmanager.com https://checkout.stripe.com https://api.stripe.com ws://localhost:*",
+    "frame-src 'none'",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self' https://checkout.stripe.com",
+    "frame-ancestors 'none'",
+    "upgrade-insecure-requests"
+  ].join('; '),
+  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
+  'Cross-Origin-Opener-Policy': 'same-origin',
+  'X-Frame-Options': 'DENY',
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), autoplay=(self), fullscreen=(self), picture-in-picture=(self)'
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/api/admin/:path*"],
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico).*)',
+  ],
 }

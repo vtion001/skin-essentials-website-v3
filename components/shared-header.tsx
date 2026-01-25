@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { BookingModal } from '@/components/booking-modal'
 
-import { trackActivity } from '@/app/actions/developer'
+import { trackActivity } from '@/app/actions/activity'
 
 interface SharedHeaderProps {
   showBackButton?: boolean

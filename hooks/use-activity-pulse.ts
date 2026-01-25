@@ -2,7 +2,7 @@
 
 import { useEffect, useCallback } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { trackActivity } from '@/app/actions/developer';
+import { trackActivity } from '@/app/actions/activity';
 
 /**
  * Hook to automatically track page views and provide manual tracking methods.
