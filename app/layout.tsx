@@ -11,6 +11,7 @@ import { ThemeWrapper } from "@/components/theme-wrapper"
 import SharedFooter from "@/components/shared-footer"
 import { MobileNav } from "@/components/mobile-nav"
 import { ActivityPulseTracker } from "@/components/activity-pulse-tracker"
+import { MorphingBackground } from "@/components/morphing-background"
 import { Suspense } from "react"
 
 const inter = Inter({
@@ -112,6 +113,7 @@ export default function RootLayout({
           </Suspense>
           <StructuredData />
           <PerformanceMonitor />
+          <MorphingBackground />
           <SmoothScroll>
             <ThemeWrapper>
               <main className="pb-24 md:pb-0">

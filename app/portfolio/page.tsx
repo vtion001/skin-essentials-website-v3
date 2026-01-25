@@ -48,13 +48,6 @@ export default function PortfolioPage() {
   return (
     <PullToRefresh>
       <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-50">
-        {/* Animated Background Elements */}
-        <div className="fixed inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-rose-200/20 to-pink-200/20 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-rose-200/20 to-pink-200/20 rounded-full blur-3xl animate-pulse delay-1000" />
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-rose-100/10 to-pink-100/10 rounded-full blur-3xl animate-pulse delay-500" />
-        </div>
-
         <SharedHeader />
 
         {/* Hero Section */}

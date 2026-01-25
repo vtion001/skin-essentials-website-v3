@@ -76,13 +76,6 @@ export default function AboutPage() {
     return (
         <PullToRefresh>
             <div className="min-h-screen bg-[#fffaff] dark:bg-gray-950 pb-20 md:pb-0 relative overflow-hidden">
-                {/* Animated Background Elements */}
-                <div className="fixed inset-0 pointer-events-none">
-                    <div className="absolute top-16 left-10 w-32 h-32 bg-gradient-to-br from-[#fbc6c5]/20 to-[#d09d80]/20 dark:from-[#fbc6c5]/10 dark:to-[#d09d80]/10 rounded-full blur-xl animate-pulse"></div>
-                    <div className="absolute top-40 right-20 w-24 h-24 bg-gradient-to-br from-[#d09d80]/30 to-[#fbc6c5]/30 dark:from-[#d09d80]/20 dark:to-[#fbc6c5]/20 rounded-full blur-lg animate-bounce"></div>
-                    <div className="absolute bottom-40 left-1/4 w-40 h-40 bg-gradient-to-br from-[#fbc6c5]/10 to-[#d09d80]/10 dark:from-[#fbc6c5]/5 dark:to-[#d09d80]/5 rounded-full blur-2xl animate-pulse delay-1000"></div>
-                </div>
-
                 {/* Shared Header */}
                 <SharedHeader />
 

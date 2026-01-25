@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef } from 'react'
+import { usePathname } from 'next/navigation'
 import gsap from 'gsap'
 import { useGSAP } from '@gsap/react'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
@@ -9,123 +10,111 @@ if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger)
 }
 
-interface MorphingBackgroundProps {
-  className?: string
-}
-
-export function MorphingBackground({ className = '' }: MorphingBackgroundProps) {
+export function MorphingBackground() {
+  const containerRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
-
+  const pathname = usePathname()
+  
+  // Brand Colors: Soft Rose and Muted Tan
+  const colors = ['#fbc6c5', '#d09d80', '#fbc6c5', '#d09d80']
+  const numPaths = colors.length
+  const numPoints = 6 // Fewer points for smoother, simpler waves
+  
   useGSAP(() => {
     if (!svgRef.current) return
 
-    // Timeline for morphing animation
-    const tl = gsap.timeline({
-      repeat: -1,
-      defaults: {
-        ease: "power2.inOut",
-        duration: 0.9
+    const paths = Array.from(svgRef.current.querySelectorAll('path'))
+    
+    // UI/UX Decision: Use point objects for a "Liquid Horizon" look
+    // Instead of full screen, we keep the wave in a subtle band
+    const allPoints: { y: number }[][] = []
+    for (let i = 0; i < numPaths; i++) {
+      const points = []
+      for (let j = 0; j < numPoints; j++) {
+        // Start at 95% height (bottom anchor)
+        points.push({ y: 95 }) 
       }
-    })
+      allPoints.push(points)
+    }
 
-    // Create morphing paths
-    const paths = [
-      "M 0 50 C 20 20, 80 0, 100 50",
-      "M 0 30 C 15 60, 85 10, 100 30",
-      "M 0 70 C 25 40, 75 60, 100 70",
-      "M 0 20 C 10 50, 90 15, 100 20",
-      "M 0 80 C 30 60, 70 70, 100 80"
-    ]
-
-    const pathElements = Array.from(svgRef.current?.querySelectorAll('path') || [])
-
-    // Animate each path
-    paths.forEach((pathData, index) => {
-      const pathElement = pathElements[index]
-      
-      gsap.set(pathElement, { d: pathData, opacity: 0.3 })
-      
-      // Add to timeline with stagger
-      tl.to(pathElement, {
-        opacity: 0.8,
-        duration: 0.9,
-        ease: "power2.inOut",
-        delay: index * 0.25
+    const render = () => {
+      paths.forEach((path, i) => {
+        const points = allPoints[i]
+        let d = `M 0 ${points[0].y} C`
+        
+        for (let j = 0; j < numPoints - 1; j++) {
+          const p = (j + 1) / (numPoints - 1) * 100
+          const cp = p - (1 / (numPoints - 1) * 100) / 2
+          d += ` ${cp} ${points[j].y} ${cp} ${points[j+1].y} ${p} ${points[j+1].y}`
+        }
+        
+        // Close the shape at the bottom to create a rising/falling floor
+        d += ` V 100 H 0 Z` 
+        path.setAttribute('d', d)
       })
-    })
+    }
 
-    // ScrollTrigger integration
-    ScrollTrigger.create({
-      trigger: ".hero-section",
-      start: "top 70%",
-      end: "bottom 30%",
-      onEnter: () => {
-        tl.restart()
-      },
-      onLeave: () => {
-        tl.pause()
+    // Scrub is set higher (3) to make the animation feel "heavy" and premium
+    const tl = gsap.timeline({
+      onUpdate: render,
+      scrollTrigger: {
+        trigger: "body",
+        start: "top top",
+        end: "bottom bottom",
+        scrub: 3, 
+        invalidateOnRefresh: true
       }
     })
 
-  }, { scope: svgRef })
+    // Create 6 slow undulating "Atmospheric Shifts" throughout the page
+    const totalMovements = 6
+    for (let m = 0; m < totalMovements; m++) {
+      const startTime = m * 2
+      
+      allPoints.forEach((points, i) => {
+        const pathDelay = i * 0.2
+        
+        // Wave rises slightly (only up to 70-85% height to avoid covering text)
+        points.forEach((pt, j) => {
+          const pointDelay = Math.random() * 0.5
+          tl.to(pt, {
+            y: 70 + (Math.random() * 15),
+            duration: 1.5,
+            ease: "sine.inOut"
+          }, startTime + pathDelay + pointDelay)
+        })
+        
+        // Wave falls back
+        points.forEach((pt, j) => {
+          const pointDelay = Math.random() * 0.5
+          tl.to(pt, {
+            y: 95 + (Math.random() * 5),
+            duration: 1.5,
+            ease: "sine.inOut"
+          }, startTime + pathDelay + pointDelay + 1.2)
+        })
+      })
+    }
+
+    ScrollTrigger.refresh()
+
+  }, { scope: containerRef, dependencies: [pathname] })
 
   return (
-    <div className={`absolute inset-0 pointer-events-none ${className}`} style={{ zIndex: 1 }}>
+    <div 
+      ref={containerRef}
+      className="fixed inset-0 pointer-events-none overflow-hidden" 
+      style={{ zIndex: 0 }} // Moved to background
+    >
       <svg
         ref={svgRef}
-        className="w-full h-full"
+        className="w-full h-full opacity-[0.06] dark:opacity-[0.03] mix-blend-multiply dark:mix-blend-screen"
         viewBox="0 0 100 100"
         preserveAspectRatio="none"
-        style={{ mixBlendMode: 'screen' }}
       >
-        <defs>
-          <linearGradient id="morphingGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="rgba(254, 178, 178, 0.1)" />
-            <stop offset="50%" stopColor="rgba(210, 157, 128, 0.05)" />
-            <stop offset="100%" stopColor="rgba(217, 119, 6, 0.1)" />
-          </linearGradient>
-        </defs>
-        
-        {/* Morphing paths */}
-        <path
-          d="M 0 50 C 20 20, 80 0, 100 50"
-          fill="none"
-          stroke="url(#morphingGradient)"
-          strokeWidth="1"
-          opacity="0.6"
-        />
-        
-        <path
-          d="M 0 30 C 15 60, 85 10, 100 30"
-          fill="none"
-          stroke="url(#morphingGradient)"
-          strokeWidth="0.5"
-          opacity="0.3"
-        />
-        
-        <path
-          d="M 0 70 C 25 40, 75 60, 100 70"
-          fill="none"
-          stroke="url(#morphingGradient)"
-          strokeWidth="0.5"
-          opacity="0.3"
-        />
-
-        <path
-          d="M 0 20 C 10 50, 90 15, 100 20"
-          fill="none"
-          stroke="url(#morphingGradient)"
-          strokeWidth="0.5"
-          opacity="0.3"
-        />
-
-        <path
-          d="M 0 80 C 30 60, 70 70, 100 80"
-          fill="none"
-          stroke="url(#morphingGradient)"
-          strokeWidth="0.5"
-          opacity="0.3"
-        />
+        {colors.map((color, i) => (
+          <path key={i} fill={color} />
+        ))}
       </svg>
     </div>
   )

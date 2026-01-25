@@ -41,7 +41,6 @@ import gsap from "gsap"
 import { useGSAP } from "@gsap/react"
 import { ScrollTrigger } from "gsap/ScrollTrigger"
 import SplitType from "split-type"
-import { MorphingBackground } from "@/components/morphing-background"
 
 export default function HomePage() {
   const [isBookingOpen, setIsBookingOpen] = useState(false)
@@ -161,7 +160,6 @@ export default function HomePage() {
           {/* Hero Section */}
           <section className="relative pt-24 md:pt-28 lg:pt-32 pb-20 overflow-hidden">
             <div className="absolute inset-0 z-0">
-              {(!heroVideoUrl || heroVideoError) && <MorphingBackground />}
               {heroVideoUrl && !heroVideoError ? (
                 <video
                   className="w-full h-full object-cover"
