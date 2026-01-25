@@ -117,6 +117,7 @@ export async function middleware(request: NextRequest) {
 
   // Add global security headers for non-admin routes
   const globalResponse = NextResponse.next()
+  globalResponse.headers.set('x-middleware-debug', 'true')
   
   // Basic security headers for all pages
   globalResponse.headers.set('X-Frame-Options', 'DENY')
@@ -129,6 +130,7 @@ export async function middleware(request: NextRequest) {
   // CSP for non-admin pages
   const csp = [
     "default-src 'self'",
+    "media-src 'self' https://res.cloudinary.com blob: data:",
     "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cloudinary.com",
     "img-src 'self' data: https: blob: https://res.cloudinary.com https://images.unsplash.com https://*.stripe.com",
@@ -154,6 +156,7 @@ const securityHeaders = {
     "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://checkout.stripe.com https://js.stripe.com",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cloudinary.com",
     "img-src 'self' data: https: blob: https://res.cloudinary.com https://images.unsplash.com https://*.stripe.com",
+    "media-src 'self' https://res.cloudinary.com",
     "font-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com",
     "connect-src 'self' https://api.supabase.co https://www.google-analytics.com https://www.googletagmanager.com https://checkout.stripe.com https://api.stripe.com ws://localhost:*",
     "frame-src 'none'",

@@ -45,7 +45,8 @@ import { MorphingBackground } from "@/components/morphing-background"
 
 export default function HomePage() {
   const [isBookingOpen, setIsBookingOpen] = useState(false)
-  const heroVideoUrl = "https://res.cloudinary.com/dbviya1rj/video/upload/v1766267101/v2httaofqjgsxkgsoqvm.mov"
+  const heroVideoUrl = "https://res.cloudinary.com/dbviya1rj/video/upload/f_auto,q_auto/v1766267101/v2httaofqjgsxkgsoqvm.mp4"
+  const heroPosterUrl = "https://res.cloudinary.com/dbviya1rj/video/upload/v1766267101/v2httaofqjgsxkgsoqvm.jpg"
   const [heroVideoError, setHeroVideoError] = useState(false)
   const headingRef = useRef<HTMLDivElement>(null)
 
@@ -65,22 +66,28 @@ export default function HomePage() {
     function setup() {
       split && split.revert()
       animation && animation.revert()
-      
-      split = new SplitType(".hero-heading", { types: "chars,words,lines" })
-      
-      // Initial state - set characters to the right, invisible
-      gsap.set(split.chars, {
-        x: 150,
+
+      // Use a simpler split on mobile to improve performance
+      const isMobile = window.innerWidth < 768
+      split = new SplitType(".hero-heading", { 
+        types: isMobile ? "words,lines" : "chars,words,lines" 
+      })
+
+      const target = isMobile ? split.words : split.chars
+
+      // Initial state
+      gsap.set(target, {
+        x: isMobile ? 50 : 150,
         opacity: 0
       })
 
-      // Animate characters in from right to left with stagger
-      animation = gsap.to(split.chars, {
+      // Animate characters/words in
+      animation = gsap.to(target, {
         x: 0,
         opacity: 1,
         duration: 0.7,
         ease: "power4",
-        stagger: 0.04,
+        stagger: isMobile ? 0.1 : 0.04,
         scrollTrigger: {
           trigger: ".hero-heading",
           start: "top 80%",
@@ -110,71 +117,6 @@ export default function HomePage() {
       animation?.revert()
     }
   }, { scope: headingRef })
-
-  const mainServices = [
-    {
-      name: "Thread Lifts",
-      description: "Non-surgical face and nose lifting using PDO/PCL threads",
-      image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1758859267/bbecd5de-3bea-4490-8fef-144ca997ed41.png?height=300&width=400&text=Thread+Lift",
-      treatments: ["Hiko Nose Lift", "Face Thread Lift", "Neck Thread Lift"],
-      href: "/hiko-nose-lift",
-    },
-    {
-      name: "Dermal Fillers",
-      description: "Hyaluronic acid fillers for face, lips, and body enhancement",
-      image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1758859335/f380e512-53bd-4501-81e3-685818b51001.png?height=300&width=400&text=Dermal+Fillers",
-      treatments: ["Lip Fillers", "Cheek Fillers", "Butt Fillers"],
-      href: "/services#dermal-fillers",
-    },
-    {
-      name: "Laser Treatments",
-      description: "Advanced laser technology for hair removal and skin rejuvenation",
-      image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1758859399/31549a56-c2be-4517-81e3-9b866a9a1a23.png?height=300&width=400&text=Laser+Treatment",
-      treatments: ["Hair Removal", "Pico Laser", "Tattoo Removal"],
-      href: "/services#laser-treatments",
-    },
-    {
-      name: "Skin Rejuvenation",
-      description: "Medical-grade treatments for youthful, glowing skin",
-      image: "https://res.cloudinary.com/dbviya1rj/image/upload/v1758859466/3ae3dd78-09b7-474a-86af-6ff7df610626.png?height=300&width=400&text=Skin+Treatment",
-      treatments: ["Vampire Facial", "Thermage", "Stem Cell Boosters"],
-      href: "/services#skin-treatments",
-    },
-  ]
-
-  const [visibleCards, setVisibleCards] = useState<boolean[]>(Array(mainServices.length).fill(false))
-
-  // Intersection Observer for card animations
-  useEffect(() => {
-    const observers: IntersectionObserver[] = []
-
-    mainServices.forEach((_, index) => {
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              setVisibleCards(prev => {
-                const newVisible = [...prev]
-                newVisible[index] = true
-                return newVisible
-              })
-            }
-          })
-        },
-        { threshold: 0.1, rootMargin: '0px 0px -50px 0px' }
-      )
-
-      const element = document.getElementById(`service-card-${index}`)
-      if (element) {
-        observer.observe(element)
-        observers.push(observer)
-      }
-    })
-
-    return () => {
-      observers.forEach(observer => observer.disconnect())
-    }
-  }, [])
 
   const whyChooseUs = [
     {
@@ -219,7 +161,7 @@ export default function HomePage() {
           {/* Hero Section */}
           <section className="relative pt-24 md:pt-28 lg:pt-32 pb-20 overflow-hidden">
             <div className="absolute inset-0 z-0">
-              <MorphingBackground />
+              {(!heroVideoUrl || heroVideoError) && <MorphingBackground />}
               {heroVideoUrl && !heroVideoError ? (
                 <video
                   className="w-full h-full object-cover"
@@ -227,13 +169,20 @@ export default function HomePage() {
                   muted
                   loop
                   playsInline
-                  preload="metadata"
+                  preload="auto"
+                  poster={heroPosterUrl}
                   aria-hidden="true"
                   src={heroVideoUrl}
-                  onError={() => setHeroVideoError(true)}
+                  onError={(e) => {
+                    console.error("Hero video failed to load:", heroVideoUrl);
+                    setHeroVideoError(true);
+                  }}
+                  onLoadedData={() => console.log("Hero video loaded successfully")}
                 />
               ) : (
-                <div className="w-full h-full bg-gradient-to-br from-brand-rose/5 to-brand-tan/5"></div>
+                <div className="w-full h-full bg-brand-rose/20 flex items-center justify-center">
+                  <span className="text-brand-tan font-serif italic text-xl">Video Placeholder</span>
+                </div>
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-black/10 to-transparent"></div>
             </div>

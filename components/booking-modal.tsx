@@ -66,9 +66,10 @@ export function BookingModal({ isOpen, onClose, defaultServiceId }: BookingModal
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={(v) => { if (!v) handleClose() }} modal={false}>
+    <Dialog open={isOpen} onOpenChange={(v) => { if (!v) handleClose() }}>
       <DialogContent
         ref={contentRef}
+        data-lenis-prevent
         className="w-full max-w-[calc(100vw-1.5rem)] sm:max-w-5xl max-h-[90vh] overflow-y-auto overflow-x-hidden bg-white/95 backdrop-blur-md border border-white/20 shadow-2xl p-0 rounded-[1.5rem] sm:rounded-3xl"
       >
         <div className="flex flex-col">

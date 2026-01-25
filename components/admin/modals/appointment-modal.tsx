@@ -98,8 +98,11 @@ export function AppointmentModal({
     }
 
     return (
-        <Dialog open={isOpen} onOpenChange={(v) => { if (!v) onClose() }} modal={false}>
-            <DialogContent className="sm:max-w-xl bg-white/95 backdrop-blur-xl border border-white/20 shadow-2xl">
+        <Dialog open={isOpen} onOpenChange={(v) => { if (!v) onClose() }}>
+            <DialogContent 
+                data-lenis-prevent
+                className="sm:max-w-xl bg-white/95 backdrop-blur-xl border border-white/20 shadow-2xl"
+            >
                 <DialogHeader>
                     <DialogTitle>{appointment ? 'Edit Appointment' : 'New Appointment'}</DialogTitle>
                 </DialogHeader>

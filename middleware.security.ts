@@ -10,8 +10,9 @@ const securityHeaders = {
     "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://checkout.stripe.com https://js.stripe.com",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cloudinary.com",
     "img-src 'self' data: https: blob: https://res.cloudinary.com https://images.unsplash.com https://*.stripe.com",
+    "media-src 'self' https://res.cloudinary.com blob: data:",
     "font-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com",
-    "connect-src 'self' https://api.supabase.co https://www.google-analytics.com https://www.googletagmanager.com https://checkout.stripe.com https://api.stripe.com",
+    "connect-src 'self' https://api.supabase.co https://www.google-analytics.com https://www.googletagmanager.com https://checkout.stripe.com https://api.stripe.com ws://localhost:*",
     "frame-src 'none'",
     "object-src 'none'",
     "base-uri 'self'",
@@ -63,6 +64,7 @@ const securityHeaders = {
 
 export function middleware(request: NextRequest) {
   const response = NextResponse.next()
+  response.headers.set('x-middleware-debug-security', 'true')
 
   // Add security headers to all responses (except admin routes which have their own middleware)
   if (!request.nextUrl.pathname.startsWith('/admin') && !request.nextUrl.pathname.startsWith('/api/admin')) {

@@ -441,7 +441,11 @@ export function PortfolioGallery() {
 
       {/* Detail Modal */}
       <Dialog open={!!selectedItem} onOpenChange={(v) => { if (!v) setSelectedItem(null) }}>
-        <DialogContent className="w-full max-w-[calc(100vw-1rem)] sm:max-w-5xl max-h-[85vh] sm:max-h-[90vh] overflow-y-auto bg-white/95 backdrop-blur-md border border-white/20 shadow-2xl p-0" onInteractOutside={(e) => e.preventDefault()}>
+        <DialogContent 
+          data-lenis-prevent
+          className="w-full max-w-[calc(100vw-1rem)] sm:max-w-5xl max-h-[85vh] sm:max-h-[90vh] overflow-y-auto bg-white/95 backdrop-blur-md border border-white/20 shadow-2xl p-0" 
+          onInteractOutside={(e) => e.preventDefault()}
+        >
           {selectedItem && (
             <div className="flex flex-col">
               {/* Header Image Header / Title */}
