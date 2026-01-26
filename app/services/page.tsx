@@ -240,22 +240,38 @@ function ServicesContent() {
                     <p className="text-lg text-gray-500 max-w-2xl mx-auto font-light">{category.description}</p>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {category.services.map((service, serviceIndex) => (
                         <motion.button
                           key={serviceIndex}
-                          className="group flex flex-col items-center text-center w-full focus:outline-none bg-white p-6 rounded-[2.5rem] shadow-sm hover:shadow-xl transition-all duration-500 border border-gray-100"
+                          className="group flex flex-col items-center text-center w-full h-full cursor-pointer transition-all duration-500 focus:outline-none"
                           onClick={() => { setPreview({ service, category }); setIsPreviewOpen(true) }}
                         >
-                          <div className="w-full aspect-[4/3] bg-gray-100 mb-6 overflow-hidden rounded-[2rem]">
+                          <div className="w-full aspect-[4/3] bg-gray-100 mb-4 overflow-hidden rounded-[1.5rem] rounded-bl-[2.5rem] shadow-sm relative border border-gray-100">
                             <img
-                              src={service.image || `/placeholder.svg?height=400&width=600&text=${encodeURIComponent(service.name)}`}
+                              src={service.image || `/placeholder.svg?height=600&width=800&text=${encodeURIComponent(service.name)}`}
                               alt={service.name}
                               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                             />
                           </div>
-                          <h3 className="font-serif text-lg tracking-widest text-gray-900 uppercase mb-3 line-clamp-1">{service.name}</h3>
-                          <div className="mt-auto text-[#d09d80] font-bold text-xs tracking-widest uppercase">{service.price}</div>
+                          
+                          <div className="flex flex-col flex-grow w-full px-2">
+                            <div className="mb-1">
+                              <span className="text-[8px] tracking-[0.2em] font-bold text-[#d09d80] uppercase block mb-1">
+                                {category.category}
+                              </span>
+                              <h3 className="font-serif text-sm tracking-widest text-gray-900 uppercase mb-2 line-clamp-1 group-hover:text-[#d09d80] transition-colors">
+                                {service.name}
+                              </h3>
+                            </div>
+                            <p className="text-[10px] text-gray-500 leading-relaxed mb-4 line-clamp-2 min-h-[2.5em]">
+                              {service.description}
+                            </p>
+                            <div className="mt-auto pt-2 border-t border-gray-100 w-full flex items-center justify-center gap-3 text-[8px] tracking-wider text-gray-400 uppercase font-medium">
+                              {service.duration && <span>{service.duration}</span>}
+                              <span className="text-[#d09d80] font-bold">{service.price}</span>
+                            </div>
+                          </div>
                         </motion.button>
                       ))}
                   </div>
